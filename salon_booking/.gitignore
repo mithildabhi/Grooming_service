@@ -202,3 +202,78 @@ docker-compose.yml
 # */migrations/
 
 staticfiles/
+
+# ==============================
+# Flutter / Dart
+# ==============================
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# ==============================
+# Android
+# ==============================
+android/.gradle/
+android/local.properties
+android/key.properties
+android/**/GeneratedPluginRegistrant.java
+android/app/debug
+android/app/profile
+android/app/release
+
+# ==============================
+# iOS / macOS
+# ==============================
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Pods/
+ios/.symlinks/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/
+macos/Flutter/ephemeral/
+macos/Pods/
+
+# ==============================
+# Web
+# ==============================
+web/.dart_tool/
+web/build/
+
+# ==============================
+# Windows / Linux
+# ==============================
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+
+# ==============================
+# IDE
+# ==============================
+.idea/
+.vscode/
+*.iml
+
+# ==============================
+# Logs
+# ==============================
+*.log
+
+# ==============================
+# Firebase (REMOVED / DO NOT TRACK)
+# ==============================
+firebase.json
+.firebaserc
+google-services.json
+GoogleService-Info.plist
+
+# ==============================
+# OS
+# ==============================
+.DS_Store
+Thumbs.db
