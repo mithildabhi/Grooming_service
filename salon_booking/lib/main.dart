@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salon_booking/services/auth_service.dart';
 
 import 'controllers/admin_controller.dart';
 import 'controllers/auth_controller.dart';
@@ -9,12 +10,9 @@ import 'app_routes.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ REGISTER SERVICES FIRST
-  Get.put<MockAuthService>(MockAuthService(), permanent: true);
-
-  // ✅ THEN CONTROLLERS
-  Get.put(AdminController(), permanent: true);
+  Get.put<AuthService>(MockAuthService(), permanent: true);
   Get.put(AuthController(), permanent: true);
+  Get.put(AdminController(), permanent: true);
 
   runApp(const MyApp());
 }

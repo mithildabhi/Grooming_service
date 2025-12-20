@@ -10,11 +10,6 @@ class AuthController extends GetxController {
   final RxBool isLoggedIn = false.obs;
   final RxString role = 'user'.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-  }
-
   // ---------------- LOGIN ----------------
   Future<void> login(String email, String password) async {
     try {
