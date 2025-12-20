@@ -277,3 +277,27 @@ GoogleService-Info.plist
 # ==============================
 .DS_Store
 Thumbs.db
+
+
+# Flutter generated files
+.dart_tool/
+.packages
+.pub/
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# Platform-specific build folders
+android/.gradle/
+android/local.properties
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+# Desktop generated files
+linux/flutter/generated_*
+windows/flutter/generated_*
+macos/Flutter/Generated*
