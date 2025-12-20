@@ -297,6 +297,8 @@ ios/.symlinks/
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
 
+
+
 # Desktop generated files
 linux/flutter/generated_*
 windows/flutter/generated_*
