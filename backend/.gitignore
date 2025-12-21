@@ -1,0 +1,64 @@
+# ============================
+# DJANGO / PYTHON
+# ============================
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Logs
+*.log
+*.pot
+
+# Virtual environments
+env/
+venv/
+jobenv/
+
+# Environment variables
+.env
+*.env
+
+# Django specific
+local_settings.py
+staticfiles/
+
+# Database & media
+# ❌ Keep ignored (copy manually if needed)
+# db.sqlite3
+# media/
+
+# ============================
+# IDE / OS
+# ============================
+
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+*.swp
+.DS_Store
+Thumbs.db
+
+# ============================
+# DOCKER (optional)
+# ============================
+
+.dockerignore
+Dockerfile
+docker-compose.yml
+*.log
+*.pot
+
+
+# Django specific
+# db.sqlite3
+# media/
+# */migrations/
+# migrations/
+local_settings.py
+staticfiles/
+
