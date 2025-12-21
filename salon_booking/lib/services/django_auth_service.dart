@@ -11,25 +11,20 @@ class DjangoAuthService implements AuthService {
   @override
   Future<void> login(String email, String password) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/api/auth/login/"),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      Uri.parse('$baseUrl/api/auth/login/'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "username": email, // Django uses username
+        "username": email, // email == username in Django
         "password": password,
       }),
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-
       _accessToken = data['access'];
 
-      // 🔴 TEMP ROLE LOGIC (SAFE DEFAULT)
-      // Later we’ll decode JWT or call /me/
+      // TEMP role logic (can improve later)
       _role = email == 'admin' ? 'admin' : 'user';
-
     } else {
       throw Exception("Invalid credentials");
     }
@@ -37,8 +32,26 @@ class DjangoAuthService implements AuthService {
 
   @override
   Future<void> register(String email, String password, String role) async {
-    throw UnimplementedError("Use Django register API later");
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/register/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "email": email,
+        "password": password,
+        "role": role,
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception("Registration failed");
+    }
   }
+
+  @override
+  String getRole() => _role;
+
+  @override
+  bool isLoggedIn() => _accessToken != null;
 
   @override
   Future<void> logout() async {
@@ -48,19 +61,6 @@ class DjangoAuthService implements AuthService {
 
   @override
   Future<void> resetPassword(String email) async {
-    throw UnimplementedError("Use Django reset API later");
+    throw UnimplementedError();
   }
-
-  @override
-  bool isLoggedIn() {
-    return _accessToken != null;
-  }
-
-  @override
-  String getRole() {
-    return _role;
-  }
-
-  // EXTRA (we’ll use this later)
-  String? get token => _accessToken;
 }

@@ -32,9 +32,7 @@ Widget build(BuildContext context) {
     final salonId = ctrl.activeSalonId.value;
 
     if (salonId.isEmpty) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return CircularProgressIndicator();
     }
 
     final screens = [

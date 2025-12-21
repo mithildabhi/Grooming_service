@@ -46,8 +46,8 @@ Future<void> login(String email, String password) async {
     if (role.value == 'admin') {
       final adminCtrl = Get.find<AdminController>();
 
-      // TEMP FIX (until API-based salon fetch)
-      adminCtrl.setActiveSalon('1'); // 👈 YOUR SALON ID FROM BACKEND
+      // TEMP FIX (until API-based salon mapping)
+      adminCtrl.activeSalonId.value = '1';
 
       Get.offAllNamed(AppRoutes.adminDashboard);
     } else {
