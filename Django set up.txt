@@ -1,0 +1,23 @@
+cd backend
+
+python --version
+
+python -m venv venv
+
+venv\Scripts\activate
+
+pip install -r requirements.txt
+
+python manage.py migrate
+
+python manage.py createsuperuser
+
+STEPS WHEN TERMINAL ASK FOR DATA        admin
+                                        admin@gmail.com
+                                        admin
+                                        admin
+                                        y
+                                        y
+
+
+python manage.py runserver
