@@ -8,13 +8,16 @@ class DjangoAuthService implements AuthService {
   String? _accessToken;
   String _role = 'user';
 
+  // ✅ ADD THIS LINE
+  String? get token => _accessToken;
+
   @override
   Future<void> login(String email, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "username": email, // email == username in Django
+        "username": email,
         "password": password,
       }),
     );
@@ -23,11 +26,23 @@ class DjangoAuthService implements AuthService {
       final data = jsonDecode(response.body);
       _accessToken = data['access'];
 
-      // TEMP role logic (can improve later)
+      // TEMP role logic
       _role = email == 'admin' ? 'admin' : 'user';
     } else {
       throw Exception("Invalid credentials");
     }
+  }
+
+  @override
+  String getRole() => _role;
+
+  @override
+  bool isLoggedIn() => _accessToken != null;
+
+  @override
+  Future<void> logout() async {
+    _accessToken = null;
+    _role = 'user';
   }
 
   @override
@@ -45,18 +60,6 @@ class DjangoAuthService implements AuthService {
     if (response.statusCode != 201) {
       throw Exception("Registration failed");
     }
-  }
-
-  @override
-  String getRole() => _role;
-
-  @override
-  bool isLoggedIn() => _accessToken != null;
-
-  @override
-  Future<void> logout() async {
-    _accessToken = null;
-    _role = 'user';
   }
 
   @override
