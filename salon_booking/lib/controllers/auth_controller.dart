@@ -11,18 +11,20 @@ class AuthController extends GetxController {
   final RxString role = 'user'.obs;
 
   // ---------------- LOGIN ----------------
-  Future<void> login(String email, String password) async {
-    try {
-      await _authService.login(email, password);
+Future<void> login(String email, String password) async {
+  try {
+    await _authService.login(email, password);
 
-      isLoggedIn.value = true;
-      role.value = _authService.getRole();
+    isLoggedIn.value = true;
+    role.value = _authService.getRole();
 
-      _redirectByRole();
-    } catch (e) {
-      Get.snackbar('Login failed', e.toString());
-    }
+    print("LOGIN SUCCESS, ROLE = ${role.value}");
+
+    _redirectByRole();
+  } catch (e) {
+    Get.snackbar('Login failed', e.toString());
   }
+}
 
   // ---------------- REGISTER ----------------
   Future<void> register(String email, String password, String role) async {
