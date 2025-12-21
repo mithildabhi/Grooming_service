@@ -26,12 +26,15 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     ctrl = Get.find<AdminController>();
   }
 
-  @override
-  Widget build(BuildContext context) {
+@override
+Widget build(BuildContext context) {
+  return Obx(() {
     final salonId = ctrl.activeSalonId.value;
 
     if (salonId.isEmpty) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     final screens = [
@@ -59,5 +62,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         ],
       ),
     );
-  }
+  });
+}
 }

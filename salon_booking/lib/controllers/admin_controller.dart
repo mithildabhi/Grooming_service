@@ -62,12 +62,21 @@ class AdminController extends GetxController {
   // =========================
   // INIT
   // =========================
+@override
+void onInit() {
+  super.onInit();
 
-  @override
-  void onInit() {
-    super.onInit();
-    filteredEmployees.assignAll(employeesList);
-  }
+  // TEMP: assume admin owns salon with id = 1
+  activeSalonId.value = '1';
+
+  filteredEmployees.assignAll(employeesList);
+}
+
+  // @override
+  // void onInit() {
+  //   super.onInit();
+  //   filteredEmployees.assignAll(employeesList);
+  // }
 
   // =========================
   // SALON

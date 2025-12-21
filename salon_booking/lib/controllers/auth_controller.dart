@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../app_routes.dart';
 import '../services/auth_service.dart';
+import 'admin_controller.dart';
 
 class AuthController extends GetxController {
   static AuthController get to => Get.find();
@@ -43,6 +44,11 @@ Future<void> login(String email, String password) async {
   // ---------------- REDIRECT ----------------
   void _redirectByRole() {
     if (role.value == 'admin') {
+      final adminCtrl = Get.find<AdminController>();
+
+      // TEMP FIX (until API-based salon fetch)
+      adminCtrl.setActiveSalon('1'); // 👈 YOUR SALON ID FROM BACKEND
+
       Get.offAllNamed(AppRoutes.adminDashboard);
     } else {
       Get.offAllNamed(AppRoutes.userHome);
