@@ -36,7 +36,7 @@ Widget build(BuildContext context) {
     }
 
     final screens = [
-      const DashboardScreen(),
+      const AdminDashboardScreen(),
       AdminBookingsScreen(salonId: salonId),
       EmployeesScreen(),
       const ServicesScreen(),
