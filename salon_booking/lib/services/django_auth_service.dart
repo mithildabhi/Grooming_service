@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class DjangoAuthService implements AuthService {
-  static const String baseUrl = 'http://192.168.29.87:8000';
+  static const String baseUrl = 'http://10.94.179.16:8000';
 
   String? _accessToken;
   String _role = 'user';
