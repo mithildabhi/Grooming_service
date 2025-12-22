@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class DjangoAuthService implements AuthService {
-  static const String baseUrl = 'http://10.94.179.16:8000';
+  static const String baseUrl = 'http://192.168.29.87:8000';
 
   String? _accessToken;
   String _role = 'user';
@@ -16,10 +16,7 @@ class DjangoAuthService implements AuthService {
     final response = await http.post(
       Uri.parse('$baseUrl/api/auth/login/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "username": email,
-        "password": password,
-      }),
+      body: jsonEncode({"username": email, "password": password}),
     );
 
     if (response.statusCode == 200) {
@@ -50,11 +47,7 @@ class DjangoAuthService implements AuthService {
     final response = await http.post(
       Uri.parse('$baseUrl/api/auth/register/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "email": email,
-        "password": password,
-        "role": role,
-      }),
+      body: jsonEncode({"email": email, "password": password, "role": role}),
     );
 
     if (response.statusCode != 201) {

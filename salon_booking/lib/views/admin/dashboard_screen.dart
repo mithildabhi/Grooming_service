@@ -1,312 +1,236 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../../controllers/admin_controller.dart';
-import '../../app_routes.dart';
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+class AdminDashboardScreen extends StatelessWidget {
+  const AdminDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final AdminController ctrl = Get.find<AdminController>();
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F5F2),
-      body: Obx(() {
-        final profile = ctrl.salonProfile.value;
-        if (profile == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      backgroundColor: const Color(0xFFF6F7FB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          "Admin Dashboard",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
 
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                //------------------------- HEADER -------------------------
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Dashboard",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// 👤 Admin Info
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: const [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.admin_panel_settings,
+                      size: 30,
+                      color: Colors.deepPurple,
                     ),
-
-                    // PROFILE MENU
-                    PopupMenuButton(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      icon: CircleAvatar(
-                        backgroundColor: Colors.grey.shade300,
-                        backgroundImage: profile.imageUrl.isNotEmpty
-                            ? NetworkImage(profile.imageUrl)
-                            : const AssetImage("assets/user.png")
-                                  as ImageProvider,
-                      ),
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: "profile", child: Text("Profile")),
-                        PopupMenuItem(
-                          value: "settings",
-                          child: Text("Settings"),
-                        ),
-                        PopupMenuItem(value: "logout", child: Text("Logout")),
-                      ],
-                      onSelected: (value) async {
-                        if (value == "profile") {
-                          Get.toNamed(AppRoutes.adminProfile);
-                        } else if (value == "settings") {
-                          Get.toNamed(AppRoutes.adminSettings);
-                        } else if (value == "logout") {
-                          ctrl.logout();
-                          Get.offAllNamed(AppRoutes.login);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                //---------------------- GREETING -------------------------
-                Text(
-                  "Welcome back, ${profile.name}!",
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  "Here’s your salon activity today.",
-                  style: TextStyle(color: Colors.black54),
-                ),
-
-                const SizedBox(height: 25),
-
-                //---------------------- KPI CARDS -------------------------
-                Row(
-                  children: [
-                    Expanded(
-                      child: _kpiCard(
-                        "Today's Bookings",
-                        ctrl.todayBookings.toString(),
-                        Icons.calendar_month,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _kpiCard(
-                        "Employees",
-                        ctrl.employeesList.length.toString(),
-                        Icons.people_alt,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _kpiCard(
-                        "Pending",
-                        ctrl.pendingBookings.toString(),
-                        Icons.timelapse,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _kpiCard(
-                        "Completed",
-                        ctrl.completedBookings.toString(),
-                        Icons.check_circle_outline,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 25),
-
-                //-------------------- WEEKLY OVERVIEW --------------------
-                _sectionCard(
-                  "Weekly Overview",
+                  SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "${ctrl.weeklyBookings} Bookings",
-                        style: const TextStyle(
-                          fontSize: 20,
+                        "Welcome, Admin",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 15),
-
-                      // Chart placeholder
-                      Container(
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text("Mon"),
-                          Text("Tue"),
-                          Text("Wed"),
-                          Text("Thu"),
-                          Text("Fri"),
-                          Text("Sat"),
-                          Text("Sun"),
-                        ],
+                      SizedBox(height: 4),
+                      Text(
+                        "Manage your salon",
+                        style: TextStyle(color: Colors.white70),
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// 📊 Stats Section
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.3,
+              children: const [
+                _StatCard(
+                  title: "Bookings",
+                  value: "128",
+                  icon: Icons.calendar_today,
+                  color: Colors.blue,
                 ),
-
-                const SizedBox(height: 25),
-
-                //---------------------- TOP STAFF ----------------------
-                _sectionCard(
-                  "Top Staff",
-                  Column(
-                    children: ctrl.topStaff
-                        .map(
-                          (e) => _rankingTile(
-                            e['name'],
-                            "${e['count']} Bookings",
-                            e['rank'],
-                          ),
-                        )
-                        .toList(),
-                  ),
+                _StatCard(
+                  title: "Revenue",
+                  value: "₹42,500",
+                  icon: Icons.currency_rupee,
+                  color: Colors.green,
                 ),
-
-                const SizedBox(height: 25),
-
-                //---------------------- POPULAR SERVICES ----------------------
-                _sectionCard(
-                  "Popular Services",
-                  Column(
-                    children: ctrl.popularServices
-                        .map(
-                          (e) => _serviceTile(
-                            e['name'],
-                            "${e['count']} Bookings",
-                            e['rank'],
-                          ),
-                        )
-                        .toList(),
-                  ),
+                _StatCard(
+                  title: "Users",
+                  value: "320",
+                  icon: Icons.people,
+                  color: Colors.orange,
                 ),
-
-                const SizedBox(height: 40),
+                _StatCard(
+                  title: "Services",
+                  value: "24",
+                  icon: Icons.cut,
+                  color: Colors.purple,
+                ),
               ],
             ),
-          ),
-        );
-      }),
-    );
-  }
 
-  // ---------------- KPI CARD ----------------
-  Widget _kpiCard(String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Colors.pinkAccent, size: 30),
-          const SizedBox(height: 20),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(title, style: const TextStyle(color: Colors.black54)),
-        ],
-      ),
-    );
-  }
+            const SizedBox(height: 24),
 
-  // ---------------- SECTION CARD ----------------
-  Widget _sectionCard(String title, Widget child) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 15),
-          child,
-        ],
-      ),
-    );
-  }
+            /// ⚙️ Management Actions
+            const Text(
+              "Quick Actions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
 
-  // ---------------- RANKING TILE ----------------
-  Widget _rankingTile(String name, String subtitle, int rank) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        radius: 22,
-        backgroundColor: Colors.grey.shade300,
-        child: Text(name[0]),
-      ),
-      title: Text(name),
-      subtitle: Text(subtitle),
-      trailing: Text(
-        "#$rank",
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.pinkAccent,
+            const SizedBox(height: 12),
+
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.1,
+              children: [
+                _ActionCard(
+                  icon: Icons.content_cut,
+                  title: "Manage Services",
+                  onTap: () {},
+                ),
+                _ActionCard(
+                  icon: Icons.people_outline,
+                  title: "Employees",
+                  onTap: () {},
+                ),
+                _ActionCard(
+                  icon: Icons.book_online,
+                  title: "Bookings",
+                  onTap: () {},
+                ),
+                _ActionCard(
+                  icon: Icons.bar_chart,
+                  title: "Reports",
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
-  // ---------------- SERVICE TILE ----------------
-  Widget _serviceTile(String name, String subtitle, int rank) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        radius: 22,
-        backgroundColor: Colors.pink.shade50,
-        child: const Icon(Icons.spa, color: Colors.pinkAccent),
+/// 📊 Stat Card Widget
+class _StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
       ),
-      title: Text(name),
-      subtitle: Text(subtitle),
-      trailing: Text(
-        "#$rank",
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.pinkAccent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundColor: color.withOpacity(0.15),
+            child: Icon(icon, color: color),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(title, style: const TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
+
+/// ⚙️ Action Card Widget
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _ActionCard({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 36, color: Colors.deepPurple),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ],
         ),
       ),
     );
