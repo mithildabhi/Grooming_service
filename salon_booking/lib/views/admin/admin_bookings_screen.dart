@@ -13,9 +13,9 @@ class AdminBookingsScreen extends StatefulWidget {
 class _AdminBookingsScreenState extends State<AdminBookingsScreen>
     with SingleTickerProviderStateMixin {
   late final AdminController ctrl;
-  late final TabController _tabController;
+  TabController? _tabController;
 
-  final tabs = ['new', 'approved', 'completed', 'cancelled'];
+  final tabs = ['today', 'upcoming', 'completed'];
 
   @override
   void initState() {
@@ -30,121 +30,174 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen>
   }
 
   @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (widget.salonId.isEmpty) {
-      return const Scaffold(body: Center(child: Text("Salon not selected")));
+    if (_tabController == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F5F2),
+      backgroundColor: const Color(0xFF0F1E1E),
+
+      // ---------------- APP BAR ----------------
       appBar: AppBar(
+        backgroundColor: const Color(0xFF0F1E1E),
         elevation: 0,
-        backgroundColor: const Color(0xFFF9F5F2),
+        leading: const BackButton(color: Colors.white),
         title: const Text(
-          "Manage Bookings",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          "All Bookings",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
+        actions: [IconButton(icon: const Icon(Icons.search), onPressed: () {})],
         bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Colors.pinkAccent,
+          controller: _tabController!,
+          labelColor: const Color(0xFF22E6D3),
+          unselectedLabelColor: Colors.white54,
+          indicatorColor: const Color(0xFF22E6D3),
           tabs: const [
-            Tab(text: "New"),
-            Tab(text: "Ongoing"),
+            Tab(text: "Today"),
+            Tab(text: "Upcoming"),
             Tab(text: "Completed"),
-            Tab(text: "Cancelled"),
           ],
         ),
       ),
 
+      // ---------------- BODY ----------------
       body: Obx(() {
-        final all = ctrl.bookingsList;
+        final bookings = ctrl.bookingsList;
 
         return TabBarView(
-          controller: _tabController,
-          children: tabs.map((status) {
-            final list = status == 'new'
-                ? all
-                      .where((b) => (b['status'] ?? 'created') == 'created')
-                      .toList()
-                : all.where((b) => (b['status'] ?? '') == status).toList();
+          controller: _tabController!,
+          children: tabs.map((type) {
+            final filtered = _filterBookings(bookings, type);
 
-            if (list.isEmpty) {
+            if (filtered.isEmpty) {
               return _emptyState();
             }
 
             return ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: list.length,
-              itemBuilder: (_, i) => _bookingCard(list[i]),
+              itemCount: filtered.length,
+              itemBuilder: (_, i) => _bookingCard(filtered[i]),
             );
           }).toList(),
         );
       }),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF22E6D3),
+        onPressed: () {},
+        child: const Icon(Icons.add, color: Colors.black),
+      ),
     );
+  }
+
+  // ---------------- FILTER BOOKINGS ----------------
+  List<Map<String, dynamic>> _filterBookings(
+    List<Map<String, dynamic>> all,
+    String type,
+  ) {
+    final now = DateTime.now();
+
+    if (type == 'today') {
+      return all.where((b) {
+        final d = b['startAt'];
+        return d is DateTime &&
+            d.day == now.day &&
+            d.month == now.month &&
+            d.year == now.year;
+      }).toList();
+    }
+
+    if (type == 'upcoming') {
+      return all.where((b) {
+        final d = b['startAt'];
+        return d is DateTime && d.isAfter(now);
+      }).toList();
+    }
+
+    return all.where((b) => b['status'] == 'completed').toList();
   }
 
   // ---------------- BOOKING CARD ----------------
   Widget _bookingCard(Map<String, dynamic> b) {
     final String id = b['id'] ?? '';
     final String customer = b['customerName'] ?? 'Customer';
-    final String services = b['services'] is List
-        ? (b['services'] as List).join(', ')
-        : b['serviceName'] ?? 'Service';
-    final String price = (b['price'] ?? 0).toString();
-    final String status = (b['status'] ?? 'created').toString();
-
+    final String service = b['serviceName'] ?? 'Service';
+    final String staff = b['staffName'] ?? 'Alex';
+    final String status = b['status'] ?? 'created';
     final DateTime? time = b['startAt'];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF162B2B),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // name + time
+          // -------- HEADER --------
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                customer,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              CircleAvatar(
+                backgroundColor: const Color(0xFF22E6D3),
+                child: Text(
+                  customer[0],
+                  style: const TextStyle(color: Colors.black),
                 ),
               ),
-              if (time != null)
-                Text(
-                  TimeOfDay.fromDateTime(time).format(context),
-                  style: const TextStyle(color: Colors.grey),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customer,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      service,
+                      style: const TextStyle(color: Colors.white54),
+                    ),
+                  ],
                 ),
+              ),
+              _statusBadge(status),
             ],
           ),
 
-          const SizedBox(height: 10),
-          Text(services),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
+          // -------- TIME & STAFF --------
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              const Icon(Icons.access_time, size: 16, color: Colors.white54),
+              const SizedBox(width: 6),
               Text(
-                "₹$price",
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                time != null
+                    ? TimeOfDay.fromDateTime(time).format(context)
+                    : '--',
+                style: const TextStyle(color: Colors.white54),
               ),
-              _statusChip(status),
+              const SizedBox(width: 20),
+              const Icon(Icons.person, size: 16, color: Colors.white54),
+              const SizedBox(width: 6),
+              Text(staff, style: const TextStyle(color: Colors.white54)),
             ],
           ),
 
+          // -------- ACTIONS --------
           if (status == 'created') ...[
             const SizedBox(height: 16),
             Row(
@@ -152,15 +205,19 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen>
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () =>
-                        ctrl.cancelBooking(id, "Rejected by admin"),
-                    child: const Text("Reject"),
+                        ctrl.cancelBooking(id, "Declined by admin"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                    child: const Text("Decline"),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pinkAccent,
+                      backgroundColor: const Color(0xFF22E6D3),
+                      foregroundColor: Colors.black,
                     ),
                     onPressed: () {
                       final staffId = ctrl.employeesList.isNotEmpty
@@ -168,16 +225,10 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen>
                           : 'auto_staff';
                       ctrl.approveBooking(id, staffId);
                     },
-                    child: const Text("Accept"),
+                    child: const Text("Accept Request"),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 10),
-            TextButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.person_add),
-              label: const Text("Assign Staff"),
             ),
           ],
         ],
@@ -185,24 +236,27 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen>
     );
   }
 
-  // ---------------- STATUS CHIP ----------------
-  Widget _statusChip(String s) {
-    final map = {
+  // ---------------- STATUS BADGE ----------------
+  Widget _statusBadge(String status) {
+    final colors = {
       'created': Colors.orange,
       'approved': Colors.blue,
       'completed': Colors.green,
       'cancelled': Colors.red,
     };
 
-    final c = map[s] ?? Colors.grey;
+    final c = colors[status] ?? Colors.grey;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: c.withOpacity(.15),
+        color: c.withOpacity(.2),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(s.toUpperCase(), style: TextStyle(fontSize: 10, color: c)),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(color: c, fontSize: 10),
+      ),
     );
   }
 
@@ -212,13 +266,9 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.event_busy, size: 80, color: Colors.grey),
+          Icon(Icons.event_busy, size: 80, color: Colors.white24),
           SizedBox(height: 10),
-          Text(
-            "No More Bookings",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          Text("Check back later"),
+          Text("No bookings found", style: TextStyle(color: Colors.white54)),
         ],
       ),
     );
