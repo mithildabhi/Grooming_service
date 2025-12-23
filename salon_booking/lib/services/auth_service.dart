@@ -32,4 +32,15 @@ class AuthService {
     if (user == null) throw Exception("User not logged in");
     return await user.getIdToken(true);
   }
+
+  bool isUserLoggedIn() {
+    return _auth.currentUser != null;
+  }
+
+  String restoreRole() {
+    final user = _auth.currentUser;
+    if (user == null) return 'user';
+
+    return user.email!.contains('admin') ? 'admin' : 'user';
+  }
 }
