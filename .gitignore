@@ -78,7 +78,6 @@ media/
 # ============================
 # IDEs and Editors
 # ============================
-.vscode/
 .idea/
 *.swp
 
@@ -181,7 +180,6 @@ media/
 # ============================
 # IDEs and Editors
 # ============================
-.vscode/
 .idea/
 *.swp
 
@@ -256,7 +254,6 @@ linux/flutter/ephemeral/
 # IDE
 # ==============================
 .idea/
-.vscode/
 *.iml
 
 # ==============================
@@ -286,7 +283,6 @@ build/
 
 # IDE
 .idea/
-.vscode/
 
 # Platform-specific build folders
 android/.gradle/
@@ -300,3 +296,5 @@ ios/Flutter/flutter_export_environment.sh
 linux/flutter/generated_*
 windows/flutter/generated_*
 macos/Flutter/Generated*
+config.bat
+node_modules
