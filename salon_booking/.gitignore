@@ -77,3 +77,7 @@ ios/Flutter/flutter_export_environment.sh
 linux/flutter/generated_*
 windows/flutter/generated_*
 macos/Flutter/Generated*
+
+
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist

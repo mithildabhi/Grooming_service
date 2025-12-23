@@ -1,54 +1,27 @@
 import 'package:get/get.dart';
-import '../app_routes.dart';
 import '../services/auth_service.dart';
+import '../app_routes.dart';
 import 'admin_controller.dart';
-import '../services/salon_api_service.dart';
 
 class AuthController extends GetxController {
-  static AuthController get to => Get.find();
-
   final AuthService _authService = Get.find<AuthService>();
 
-  final RxBool isLoggedIn = false.obs;
-  final RxString role = 'user'.obs;
+  RxBool isLoggedIn = false.obs;
+  RxString role = 'user'.obs;
 
   // ---------------- LOGIN ----------------
+  Future<void> login(String email, String password) async {
+    try {
+      await _authService.login(email, password);
 
-Future<void> login(String email, String password) async {
-  try {
-    // 🔐 Step 1: Login
-    await _authService.login(email, password);
+      isLoggedIn.value = true;
+      role.value = _authService.getRole();
 
-    isLoggedIn.value = true;
-    role.value = _authService.getRole();
-
-    print('LOGIN SUCCESS → ROLE = ${role.value}');
-
-    // 🟢 Step 2: ONLY FOR ADMIN
-    if (role.value == 'admin') {
-      final adminCtrl = Get.find<AdminController>();
-
-      // get JWT token from auth service
-      final token = (_authService as dynamic).token;
-
-      // 🔽 Step 3: CALL BACKEND
-      final salons = await SalonApiService.fetchSalons(token);
-
-      if (salons.isNotEmpty) {
-        adminCtrl.activeSalonId.value = salons[0]['id'].toString();
-        print('ACTIVE SALON ID SET → ${adminCtrl.activeSalonId.value}');
-      } else {
-        throw Exception('No salon found for this admin');
-      }
+      _redirectByRole();
+    } catch (e) {
+      Get.snackbar('Login failed', e.toString());
     }
-
-    // 🚀 Step 4: Redirect
-    _redirectByRole();
-
-  } catch (e) {
-    Get.snackbar('Login failed', e.toString());
   }
-}
 
   // ---------------- REGISTER ----------------
   Future<void> register(String email, String password, String role) async {
@@ -64,17 +37,13 @@ Future<void> login(String email, String password) async {
     }
   }
 
-  // ---------------- REDIRECT ----------------
-  void _redirectByRole() {
-    if (role.value == 'admin') {
-      final adminCtrl = Get.find<AdminController>();
-
-      // TEMP FIX (until API-based salon mapping)
-      adminCtrl.activeSalonId.value = '1';
-
-      Get.offAllNamed(AppRoutes.adminDashboard);
-    } else {
-      Get.offAllNamed(AppRoutes.userHome);
+  // ---------------- RESET PASSWORD ----------------
+  Future<void> resetPassword(String email) async {
+    try {
+      await _authService.resetPassword(email);
+      Get.snackbar('Success', 'Password reset email sent');
+    } catch (e) {
+      Get.snackbar('Error', e.toString());
     }
   }
 
@@ -86,8 +55,13 @@ Future<void> login(String email, String password) async {
     Get.offAllNamed(AppRoutes.login);
   }
 
-  Future<void> resetPassword(String email) async {
-    await _authService.resetPassword(email);
-    Get.snackbar('Success', 'Password reset requested');
+  // ---------------- REDIRECT ----------------
+  void _redirectByRole() {
+    if (role.value == 'admin') {
+      Get.find<AdminController>().activeSalonId.value = '1';
+      Get.offAllNamed(AppRoutes.adminDashboard);
+    } else {
+      Get.offAllNamed(AppRoutes.userHome);
+    }
   }
 }

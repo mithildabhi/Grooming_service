@@ -1,26 +1,43 @@
 {
   "project_info": {
-    "project_number": "121642420271",
-    "project_id": "salonbook-b66fb",
-    "storage_bucket": "salonbook-b66fb.firebasestorage.app"
+    "project_number": "154951956730",
+    "project_id": "style1-d3ad3",
+    "storage_bucket": "style1-d3ad3.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:121642420271:android:4e922a6aeeed62a71adeda",
+        "mobilesdk_app_id": "1:154951956730:android:78228f12f7bd5f97457143",
         "android_client_info": {
           "package_name": "com.example.salon_booking"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "154951956730-6vvrnbpu7uikleu4b8vqnt1i8aiudhaj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBBcfNXDHXWtMFMro0TwRfUr-QFZvh-_34"
+          "current_key": "AIzaSyBxxdnsb50hLYt7aaDjj5QO7fKUPIcWV6Q"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "154951956730-6vvrnbpu7uikleu4b8vqnt1i8aiudhaj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "154951956730-vj0g4qucabc24lp9dvgpta5806a83hb4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.salonBooking"
+              }
+            }
+          ]
         }
       }
     }

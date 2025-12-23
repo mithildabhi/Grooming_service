@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:firebase_core/firebase_core.dart';
 
+import 'firebase_options.dart';
 import 'services/auth_service.dart';
-import 'services/django_auth_service.dart';
-
-import 'controllers/admin_controller.dart';
 import 'controllers/auth_controller.dart';
+import 'controllers/admin_controller.dart';
 import 'app_routes.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔥 THIS IS THE KEY FIX
-  Get.put<AuthService>(DjangoAuthService(), permanent: true);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  Get.put(AuthController(), permanent: true);
-  Get.put(AdminController(), permanent: true);
+  Get.put<AuthService>(AuthService(), permanent: true);
+  Get.put<AuthController>(AuthController(), permanent: true);
+  Get.put<AdminController>(AdminController(), permanent: true);
 
   runApp(const MyApp());
 }

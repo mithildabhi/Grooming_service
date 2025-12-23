@@ -66,4 +66,5 @@ class DefaultFirebaseOptions {
     iosClientId: '154951956730-vj0g4qucabc24lp9dvgpta5806a83hb4.apps.googleusercontent.com',
     iosBundleId: 'com.example.salonBooking',
   );
+
 }
