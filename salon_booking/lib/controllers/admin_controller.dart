@@ -59,18 +59,20 @@ class AdminController extends GetxController {
   List<Map<String, dynamic>> get topStaff => employeesList;
   List<Map<String, dynamic>> get popularServices => servicesList;
 
+  get adminProfile => null;
+
   // =========================
   // INIT
   // =========================
-@override
-void onInit() {
-  super.onInit();
+  @override
+  void onInit() {
+    super.onInit();
 
-  // TEMP: assume admin owns salon with id = 1
-  activeSalonId.value = '1';
+    // TEMP: assume admin owns salon with id = 1
+    activeSalonId.value = '1';
 
-  filteredEmployees.assignAll(employeesList);
-}
+    filteredEmployees.assignAll(employeesList);
+  }
 
   // @override
   // void onInit() {

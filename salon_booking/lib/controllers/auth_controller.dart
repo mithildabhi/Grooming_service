@@ -68,4 +68,20 @@ class AuthController extends GetxController {
       Get.offAllNamed(AppRoutes.userHome);
     }
   }
+
+  @override
+  void onInit() {
+    super.onInit();
+    restoreSession();
+  }
+
+  void restoreSession() {
+    if (_authService.isUserLoggedIn()) {
+      isLoggedIn.value = true;
+      role.value = _authService.restoreRole();
+    } else {
+      isLoggedIn.value = false;
+      role.value = 'user';
+    }
+  }
 }

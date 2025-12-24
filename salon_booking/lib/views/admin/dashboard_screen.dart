@@ -1,116 +1,111 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:salon_booking/views/admin/profile_screen.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
+
+  @override
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  bool acceptingBookings = true;
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: const Color(0xFF0F1E1E),
+
+      // ---------------- APP BAR ----------------
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0F1E1E),
         elevation: 0,
         title: const Text(
-          "Admin Dashboard",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          "Salon Hub",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(context, ProfileScreen() as Route<Object?>);
+            },
+          ),
+          const SizedBox(width: 16),
+        ],
       ),
 
+      // ---------------- BODY ----------------
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 👤 Admin Info
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.deepPurple,
-                borderRadius: BorderRadius.circular(16),
+            // Greeting
+            const Text(
+              "Hello, Luxe Cuts",
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              child: Row(
-                children: const [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.admin_panel_settings,
-                      size: 30,
-                      color: Colors.deepPurple,
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Welcome, Admin",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        "Manage your salon",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              "Here's what's happening today.",
+              style: TextStyle(color: Colors.white70),
             ),
 
             const SizedBox(height: 20),
 
-            /// 📊 Stats Section
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.3,
-              children: const [
-                _StatCard(
-                  title: "Bookings",
-                  value: "128",
+            // Profile Completeness
+            _profileCompletion(),
+
+            const SizedBox(height: 20),
+
+            // Stats Row
+            Row(
+              children: [
+                _statCard(
+                  title: "Today",
+                  value: "14",
+                  subtitle: "+12% vs last week",
                   icon: Icons.calendar_today,
-                  color: Colors.blue,
                 ),
-                _StatCard(
+                const SizedBox(width: 12),
+                _statCard(
                   title: "Revenue",
-                  value: "₹42,500",
+                  value: "₹1,240",
+                  subtitle: "+5% vs yesterday",
                   icon: Icons.currency_rupee,
-                  color: Colors.green,
-                ),
-                _StatCard(
-                  title: "Users",
-                  value: "320",
-                  icon: Icons.people,
-                  color: Colors.orange,
-                ),
-                _StatCard(
-                  title: "Services",
-                  value: "24",
-                  icon: Icons.cut,
-                  color: Colors.purple,
                 ),
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            /// ⚙️ Management Actions
+            // Accepting Bookings Toggle
+            _bookingToggle(),
+
+            const SizedBox(height: 30),
+
             const Text(
-              "Quick Actions",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              "Management",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             GridView.count(
               crossAxisCount: 2,
@@ -120,119 +115,243 @@ class AdminDashboardScreen extends StatelessWidget {
               crossAxisSpacing: 12,
               childAspectRatio: 1.1,
               children: [
-                _ActionCard(
-                  icon: Icons.content_cut,
-                  title: "Manage Services",
-                  onTap: () {},
+                _managementCard(
+                  title: "Salon Info",
+                  subtitle: "Update name, bio & contacts",
+                  icon: Icons.store,
                 ),
-                _ActionCard(
-                  icon: Icons.people_outline,
-                  title: "Employees",
-                  onTap: () {},
+                _managementCard(
+                  title: "Gallery",
+                  subtitle: "Manage portfolio images",
+                  icon: Icons.photo_library,
                 ),
-                _ActionCard(
-                  icon: Icons.book_online,
-                  title: "Bookings",
-                  onTap: () {},
+                _managementCard(
+                  title: "Timings",
+                  subtitle: "Set opening hours",
+                  icon: Icons.access_time,
                 ),
-                _ActionCard(
-                  icon: Icons.bar_chart,
-                  title: "Reports",
-                  onTap: () {},
+                _managementCard(
+                  title: "Location",
+                  subtitle: "Map & address settings",
+                  icon: Icons.location_on,
                 ),
               ],
             ),
+
+            const SizedBox(height: 30),
+
+            // Promo Card
+            _promoCard(),
           ],
         ),
       ),
+
+      // ---------------- BOTTOM NAV ----------------
+      // bottomNavigationBar: BottomNavigationBar(
+      //   backgroundColor: const Color(0xFF0F1E1E),
+      //   selectedItemColor: const Color(0xFF22E6D3),
+      //   unselectedItemColor: Colors.white54,
+      //   currentIndex: selectedIndex,
+      //   onTap: (i) => setState(() => selectedIndex = i),
+      //   items: const [
+      //     BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: "Hub"),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.calendar_month),
+      //       label: "Calendar",
+      //     ),
+      //     BottomNavigationBarItem(icon: Icon(Icons.people), label: "Staff"),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.settings),
+      //       label: "Settings",
+      //     ),
+      //   ],
+      // ),
     );
   }
-}
 
-/// 📊 Stat Card Widget
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
+  // ---------------- WIDGETS ----------------
 
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _profileCompletion() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.15),
-            child: Icon(icon, color: color),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                "Profile Completeness",
+                style: TextStyle(color: Colors.white),
+              ),
+              Text(
+                "85%",
+                style: TextStyle(
+                  color: Color(0xFF22E6D3),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          const SizedBox(height: 10),
+          LinearProgressIndicator(
+            value: 0.85,
+            backgroundColor: Colors.white24,
+            color: const Color(0xFF22E6D3),
+            minHeight: 6,
           ),
-          const SizedBox(height: 4),
-          Text(title, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 8),
+          const Text(
+            "Complete your location details to reach 100%",
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
         ],
       ),
     );
   }
-}
 
-/// ⚙️ Action Card Widget
-class _ActionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+  Widget _statCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-          ],
-        ),
+        decoration: _cardDecoration(),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 36, color: Colors.deepPurple),
-            const SizedBox(height: 10),
+            Icon(icon, color: const Color(0xFF22E6D3)),
+            const SizedBox(height: 16),
             Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              value,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            Text(title, style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: const TextStyle(color: Color(0xFF22E6D3), fontSize: 12),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _bookingToggle() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Accepting Bookings", style: TextStyle(color: Colors.white)),
+              Text(
+                "Salon is currently visible",
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ],
+          ),
+          Switch(
+            value: acceptingBookings,
+            activeColor: const Color(0xFF22E6D3),
+            onChanged: (v) => setState(() => acceptingBookings = v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _managementCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFF22E6D3)),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _promoCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "PRO FEATURE",
+            style: TextStyle(
+              color: Color(0xFF22E6D3),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            "Boost Your Visibility",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            "Promote your salon to get more bookings this weekend.",
+            style: TextStyle(color: Colors.white70),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF22E6D3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text("Start Campaign"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: const Color(0xFF162B2B),
+      borderRadius: BorderRadius.circular(18),
     );
   }
 }
