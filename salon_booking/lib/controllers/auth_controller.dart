@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../services/auth_service.dart';
 import '../app_routes.dart';
 import 'admin_controller.dart';
+import '../services/django_api_service.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -16,11 +17,14 @@ class AuthController extends GetxController {
 
       isLoggedIn.value = true;
       role.value = _authService.getRole();
+      // await DjangoApiService.testAuth();
+      await DjangoApiService.syncUser();
 
       _redirectByRole();
     } catch (e) {
       Get.snackbar('Login failed', e.toString());
     }
+    
   }
 
   // ---------------- REGISTER ----------------
