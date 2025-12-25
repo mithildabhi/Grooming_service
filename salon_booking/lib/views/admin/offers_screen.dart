@@ -31,7 +31,7 @@ class OffersScreen extends StatelessWidget {
       ),
       textConfirm: 'Save',
       onConfirm: () async {
-        await ctrl.addOffer({
+        ctrl.addOffer({
           'title': title.text.trim(),
           'description': desc.text.trim(),
           'discount': double.tryParse(discount.text.trim()) ?? 0.0,
@@ -76,7 +76,7 @@ class OffersScreen extends StatelessWidget {
                       ],
                     ),
                   );
-                  if (ok == true) await ctrl.deleteOffer(o['id']);
+                  if (ok == true) ctrl.deleteOffer(o['id']);
                 },
               ),
             );

@@ -57,7 +57,7 @@ class GalleryScreen extends StatelessWidget {
                           ],
                         ),
                       );
-                      if (ok == true) await ctrl.deleteGalleryImage(g['id']);
+                      if (ok == true) ctrl.deleteGalleryImage(g['id']);
                     },
                     child: Container(
                       decoration: BoxDecoration(
@@ -99,6 +99,6 @@ class GalleryScreen extends StatelessWidget {
       ),
     );
     if (fromCamera == null) return;
-    await ctrl.pickAndUploadGalleryImage(fromCamera: fromCamera);
+    ctrl.pickAndUploadGalleryImage(fromCamera: fromCamera);
   }
 }

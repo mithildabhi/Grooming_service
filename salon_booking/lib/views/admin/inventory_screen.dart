@@ -26,7 +26,7 @@ class InventoryScreen extends StatelessWidget {
       ),
       textConfirm: 'Save',
       onConfirm: () async {
-        await ctrl.addInventory({
+        ctrl.addInventory({
           'name': name.text.trim(),
           'qty': int.tryParse(qty.text.trim()) ?? 0,
           "createdAt": DateTime.now().toIso8601String(),
@@ -81,7 +81,7 @@ class InventoryScreen extends StatelessWidget {
                       ],
                     ),
                   );
-                  if (ok == true) await ctrl.deleteInventory(it['id']);
+                  if (ok == true) ctrl.deleteInventory(it['id']);
                 },
               ),
             );

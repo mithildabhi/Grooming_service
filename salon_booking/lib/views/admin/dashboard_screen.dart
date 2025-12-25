@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:salon_booking/views/admin/profile_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {

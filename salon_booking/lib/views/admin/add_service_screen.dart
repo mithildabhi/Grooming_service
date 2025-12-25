@@ -1,8 +1,5 @@
-// lib/views/admin/add_service_screen.dart
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../controllers/admin_controller.dart';
 
 class AddServiceScreen extends StatefulWidget {
@@ -20,17 +17,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   final priceCtrl = TextEditingController();
   final durationCtrl = TextEditingController(text: "45");
 
-  File? beforeImg;
-  File? afterImg;
-
-  Future<void> pick(bool before) async {
-    final img = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (img != null) {
-      setState(() {
-        before ? beforeImg = File(img.path) : afterImg = File(img.path);
-      });
-    }
-  }
+  final category = 'hair'.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -38,43 +25,51 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       backgroundColor: const Color(0xFF0F1E1E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F1E1E),
-        title: const Text(
-          "Add New Service",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Add New Service"),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _gallery(),
             _field("Service Name", nameCtrl),
             _field("Description", descCtrl, maxLines: 3),
-            Row(
-              children: [
-                Expanded(child: _field("Price", priceCtrl)),
-                const SizedBox(width: 12),
-                Expanded(child: _field("Duration (min)", durationCtrl)),
-              ],
+            _field("Price", priceCtrl),
+            _field("Duration (min)", durationCtrl),
+            const SizedBox(height: 16),
+
+            Obx(
+              () => DropdownButtonFormField<String>(
+                value: category.value,
+                dropdownColor: Colors.black,
+                items: const [
+                  DropdownMenuItem(value: 'hair', child: Text("Hair")),
+                  DropdownMenuItem(value: 'spa', child: Text("Spa")),
+                  DropdownMenuItem(value: 'facial', child: Text("Facial")),
+                  DropdownMenuItem(value: 'massage', child: Text("Massage")),
+                ],
+                onChanged: (v) => category.value = v!,
+                decoration: _inputDecoration("Category"),
+              ),
             ),
+
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF22E6D3),
                 ),
                 onPressed: () {
-                  ctrl.servicesList.add({
-                    "id": DateTime.now().toString(),
-                    "name": nameCtrl.text,
-                    "description": descCtrl.text,
-                    "price": priceCtrl.text,
-                    "duration": durationCtrl.text,
-                  });
-                  Get.back();
+                  ctrl.addService(
+                    token: "YOUR_JWT_TOKEN_HERE",
+                    name: nameCtrl.text,
+                    description: descCtrl.text,
+                    price: double.parse(priceCtrl.text),
+                    duration: int.parse(durationCtrl.text),
+                    category: category.value,
+                  );
                 },
                 child: const Text(
                   "Save Service",
@@ -88,53 +83,27 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     );
   }
 
-  Widget _gallery() => Row(
-    children: [
-      _imgBox("Before", beforeImg, () => pick(true)),
-      const SizedBox(width: 12),
-      _imgBox("After", afterImg, () => pick(false)),
-    ],
-  );
-
-  Widget _imgBox(String t, File? f, VoidCallback tap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: tap,
-        child: Container(
-          height: 110,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white24),
-            image: f != null
-                ? DecorationImage(image: FileImage(f), fit: BoxFit.cover)
-                : null,
-          ),
-          child: f == null
-              ? Center(
-                  child: Text(t, style: const TextStyle(color: Colors.white54)),
-                )
-              : null,
-        ),
-      ),
-    );
-  }
-
-  Widget _field(String l, TextEditingController c, {int maxLines = 1}) {
+  Widget _field(String label, TextEditingController c, {int maxLines = 1}) {
     return Padding(
-      padding: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: c,
         maxLines: maxLines,
         style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: l,
-          filled: true,
-          fillColor: Colors.white10,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-        ),
+        decoration: _inputDecoration(label),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: Colors.white10,
+      labelStyle: const TextStyle(color: Colors.white70),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
       ),
     );
   }

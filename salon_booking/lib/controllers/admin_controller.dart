@@ -2,33 +2,29 @@ import 'package:get/get.dart';
 import '../models/booking_model.dart';
 import '../models/salon_profile.dart';
 import '../models/service_model.dart';
+import '../services/service_api.dart';
 
 class AdminController extends GetxController {
   // =========================
-  // CORE STATE
+  // CORE
   // =========================
 
-  final RxString activeSalonId = ''.obs;
+  final RxString activeSalonId = '1'.obs;
   final Rxn<SalonProfile> salonProfile = Rxn<SalonProfile>();
+  final RxBool isLoadingServices = false.obs;
 
   // =========================
-  // BOOKINGS
+  // BOOKINGS (UI + USER)
   // =========================
 
   final RxList<Map<String, dynamic>> bookingsList =
       <Map<String, dynamic>>[].obs;
 
-  /// ✅ REQUIRED BY DASHBOARD
   List<Map<String, dynamic>> get todayBookings =>
-      bookingsList.where((b) => b['status'] == 'created').toList();
-
-  List<Map<String, dynamic>> get pendingBookings =>
       bookingsList.where((b) => b['status'] == 'created').toList();
 
   List<Map<String, dynamic>> get completedBookings =>
       bookingsList.where((b) => b['status'] == 'completed').toList();
-
-  List<Map<String, dynamic>> get weeklyBookings => bookingsList;
 
   // =========================
   // STAFF
@@ -41,44 +37,34 @@ class AdminController extends GetxController {
       <Map<String, dynamic>>[].obs;
 
   // =========================
-  // SERVICES / OFFERS / INVENTORY / GALLERY / REVIEWS
+  // SERVICES (DJANGO)
   // =========================
 
-  final RxList<Map<String, dynamic>> servicesList =
-      <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> offersList = <Map<String, dynamic>>[].obs;
+  final RxList<ServiceModel> servicesList = <ServiceModel>[].obs;
+
+  // =========================
+  // OTHER MODULES (UI)
+  // =========================
+
   final RxList<Map<String, dynamic>> inventoryList =
       <Map<String, dynamic>>[].obs;
+
+  final RxList<Map<String, dynamic>> offersList = <Map<String, dynamic>>[].obs;
+
   final RxList<Map<String, dynamic>> galleryList = <Map<String, dynamic>>[].obs;
+
   final RxList<Map<String, dynamic>> reviewsList = <Map<String, dynamic>>[].obs;
-
-  // =========================
-  // DASHBOARD HELPERS
-  // =========================
-
-  List<Map<String, dynamic>> get topStaff => employeesList;
-  List<Map<String, dynamic>> get popularServices => servicesList;
-
-  get adminProfile => null;
 
   // =========================
   // INIT
   // =========================
+
   @override
   void onInit() {
     super.onInit();
-
-    // TEMP: assume admin owns salon with id = 1
-    activeSalonId.value = '1';
-
+    fetchServices();
     filteredEmployees.assignAll(employeesList);
   }
-
-  // @override
-  // void onInit() {
-  //   super.onInit();
-  //   filteredEmployees.assignAll(employeesList);
-  // }
 
   // =========================
   // SALON
@@ -89,7 +75,54 @@ class AdminController extends GetxController {
   }
 
   // =========================
-  // BOOKINGS
+  // SERVICES (DJANGO CONNECTED)
+  // =========================
+
+  Future<void> fetchServices() async {
+    try {
+      isLoadingServices.value = true;
+      servicesList.assignAll(await ServiceApi.fetchServices());
+    } catch (e) {
+      Get.snackbar("Error", "Failed to load services");
+    } finally {
+      isLoadingServices.value = false;
+    }
+  }
+
+  Future<void> addService({
+    required String token,
+    required String name,
+    required String description,
+    required double price,
+    required int duration,
+    required String category,
+  }) async {
+    await ServiceApi.createService(
+      token: token,
+      name: name,
+      description: description,
+      price: price,
+      duration: duration,
+      category: category,
+    );
+
+    await fetchServices();
+    Get.back();
+    Get.snackbar("Success", "Service added");
+  }
+
+  Future<void> deleteService({
+    required String token,
+    required int serviceId,
+  }) async {
+    await ServiceApi.deleteService(token: token, serviceId: serviceId);
+
+    servicesList.removeWhere((s) => s.id == serviceId);
+    Get.snackbar("Deleted", "Service removed");
+  }
+
+  // =========================
+  // BOOKINGS (ADMIN + USER)
   // =========================
 
   Future<void> addBooking(BookingModel booking) async {
@@ -110,68 +143,16 @@ class AdminController extends GetxController {
     updateBookingStatus(bookingId, 'cancelled');
   }
 
-  Future<void> completeBooking(String bookingId) async {
-    updateBookingStatus(bookingId, 'completed');
+  Future<void> deleteBooking(String bookingId) async {
+    bookingsList.removeWhere((b) => b['id'] == bookingId);
   }
 
-  /// ✅ MUST BE PUBLIC (USED BY WIDGETS)
   void updateBookingStatus(String id, String status) {
     final index = bookingsList.indexWhere((b) => b['id'] == id);
     if (index != -1) {
       bookingsList[index]['status'] = status;
       bookingsList.refresh();
     }
-  }
-
-  // =========================
-  // EMPLOYEES
-  // =========================
-
-  Future<void> addEmployee(Map<String, dynamic> employee) async {
-    employeesList.add(employee);
-    filteredEmployees.assignAll(employeesList);
-  }
-
-  Future<void> deleteEmployee(String id) async {
-    employeesList.removeWhere((e) => e['id'] == id);
-    filteredEmployees.assignAll(employeesList);
-  }
-
-  void searchEmployee(String query) {
-    if (query.isEmpty) {
-      filteredEmployees.assignAll(employeesList);
-    } else {
-      filteredEmployees.assignAll(
-        employeesList.where(
-          (e) =>
-              e['name'].toString().toLowerCase().contains(query.toLowerCase()),
-        ),
-      );
-    }
-  }
-
-  // =========================
-  // SERVICES
-  // =========================
-
-  Future<void> addService(ServiceModel service) async {
-    servicesList.add(service.toJson());
-  }
-
-  Future<void> deleteService(String serviceId) async {
-    servicesList.removeWhere((s) => s['id'] == serviceId);
-  }
-
-  // =========================
-  // OFFERS
-  // =========================
-
-  Future<void> addOffer(Map<String, dynamic> offer) async {
-    offersList.add(offer);
-  }
-
-  Future<void> deleteOffer(String offerId) async {
-    offersList.removeWhere((o) => o['id'] == offerId);
   }
 
   // =========================
@@ -182,8 +163,20 @@ class AdminController extends GetxController {
     inventoryList.add(item);
   }
 
-  Future<void> deleteInventory(String itemId) async {
-    inventoryList.removeWhere((i) => i['id'] == itemId);
+  Future<void> deleteInventory(String id) async {
+    inventoryList.removeWhere((i) => i['id'] == id);
+  }
+
+  // =========================
+  // OFFERS
+  // =========================
+
+  Future<void> addOffer(Map<String, dynamic> offer) async {
+    offersList.add(offer);
+  }
+
+  Future<void> deleteOffer(String id) async {
+    offersList.removeWhere((o) => o['id'] == id);
   }
 
   // =========================
@@ -194,22 +187,41 @@ class AdminController extends GetxController {
     galleryList.removeWhere((g) => g['id'] == id);
   }
 
-  Future<void> pickAndUploadGalleryImage({required bool fromCamera}) async {}
-
-  // =========================
-  // PROFILE
-  // =========================
-
-  Future<void> saveSalonProfile(SalonProfile profile) async {
-    salonProfile.value = profile;
+  Future<void> pickAndUploadGalleryImage({required bool fromCamera}) async {
+    // backend later
   }
 
   // =========================
   // REVIEWS
   // =========================
 
-  Future<void> deleteReview(String reviewId) async {
-    reviewsList.removeWhere((r) => r['id'] == reviewId);
+  Future<void> deleteReview(String id) async {
+    reviewsList.removeWhere((r) => r['id'] == id);
+  }
+
+  // =========================
+  // STAFF
+  // =========================
+
+  Future<void> deleteStaff(dynamic staff) async {
+    employeesList.remove(staff);
+    filteredEmployees.assignAll(employeesList);
+  }
+
+  // =========================
+  // PROFILE
+  // =========================
+
+  Future<String?> pickAndUploadImage({
+    required bool fromCamera,
+    int imageQuality = 80,
+    String? pathPrefix,
+  }) async {
+    return null;
+  }
+
+  Future<void> saveSalonProfile(SalonProfile profile) async {
+    salonProfile.value = profile;
   }
 
   // =========================
@@ -218,23 +230,5 @@ class AdminController extends GetxController {
 
   Future<void> logout() async {
     Get.snackbar("Logged out", "Session ended");
-  }
-
-  Future<String?> pickAndUploadImage({
-    required bool fromCamera,
-    int imageQuality = 80,
-    String? pathPrefix,
-  }) async {
-    // MOCK implementation (backend will replace)
-    return null;
-  }
-
-  Future<void> deleteBooking(String bookingId, booking) async {
-    bookingsList.removeWhere((b) => b['id'] == bookingId);
-  }
-
-  void deleteStaff(dynamic staff) {
-    employeesList.remove(staff);
-    filteredEmployees.assignAll(employeesList);
   }
 }
