@@ -3,8 +3,7 @@ class SalonProfile {
   final String id;
   final String name;
   final String type; // Male|Female|Unisex
-  final Map<String, dynamic>
-  hours; // per_day schedule: e.g. {'monday': {'open':'09:00','close':'20:00','closed':false}, ...}
+  final Map<String, dynamic> hours;
   final String address;
   final String phone;
   final String about;
@@ -22,43 +21,60 @@ class SalonProfile {
   });
 
   Map<String, dynamic> toMap() => {
-    'name': name,
-    'type': type,
-    'hours': hours,
-    'address': address,
-    'phone': phone,
-    'about': about,
-    'imageUrl': imageUrl,
-  };
+        'name': name,
+        'type': type,
+        'hours': hours,
+        'address': address,
+        'phone': phone,
+        'about': about,
+        'imageUrl': imageUrl,
+      };
 
-  factory SalonProfile.fromMap(Map<String, dynamic> m, String id) =>
-      SalonProfile(
-        id: id,
-        name: (m['name'] ?? '') as String,
-        type: (m['type'] ?? 'Unisex') as String,
-        hours: Map<String, dynamic>.from(m['hours'] ?? _defaultHours()),
-        address: (m['address'] ?? '') as String,
-        phone: (m['phone'] ?? '') as String,
-        about: (m['about'] ?? '') as String,
-        imageUrl: (m['imageUrl'] ?? '') as String,
-      );
-
-  static Map<String, dynamic> _defaultHours() {
-    final days = [
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-      'sunday',
-    ];
-    final Map<String, dynamic> result = {};
-    for (var d in days) {
-      result[d] = {'open': '09:00', 'close': '20:00', 'closed': false};
-    }
-    return result;
+  /// Create from Django API response
+  factory SalonProfile.fromMap(Map<String, dynamic> m, String id) {
+    return SalonProfile(
+      id: id,
+      name: m['name']?.toString() ?? '',
+      type: _formatType(m['salon_type']?.toString() ?? 'unisex'),
+      hours: _parseHours(m['hours']),
+      address: m['address']?.toString() ?? '',
+      phone: m['phone']?.toString() ?? '',
+      about: m['about']?.toString() ?? '',
+      imageUrl: m['image_url']?.toString() ?? '',
+    );
   }
 
-  void operator [](String other) {}
+  /// Format type from Django (male/female/unisex) to Flutter (Male/Female/Unisex)
+  static String _formatType(String type) {
+    switch (type.toLowerCase()) {
+      case 'male':
+        return 'Male';
+      case 'female':
+        return 'Female';
+      case 'unisex':
+        return 'Unisex';
+      default:
+        return 'Unisex';
+    }
+  }
+
+  /// Parse hours from Django format
+  static Map<String, dynamic> _parseHours(dynamic hours) {
+    if (hours is Map) {
+      return Map<String, dynamic>.from(hours);
+    }
+    return _defaultHours();
+  }
+
+  static Map<String, dynamic> _defaultHours() {
+    return {
+      'Mon': '09:00-19:00',
+      'Tue': '09:00-19:00',
+      'Wed': '09:00-19:00',
+      'Thu': '09:00-19:00',
+      'Fri': '09:00-19:00',
+      'Sat': '09:00-19:00',
+      'Sun': 'Closed',
+    };
+  }
 }

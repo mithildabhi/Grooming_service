@@ -68,4 +68,28 @@ class AuthController extends GetxController {
       Get.offAllNamed(AppRoutes.userHome);
     }
   }
+<<<<<<< Updated upstream
+=======
+
+  @override
+  void onInit() {
+    super.onInit();
+    // restoreSession();
+      if (isLoggedIn.value) {
+    // 🔥 User already logged in → verify backend
+    DjangoApiService.testAuth();
+    DjangoApiService.syncUser();
+    }
+  }
+
+  void restoreSession() {
+    if (_authService.isUserLoggedIn()) {
+      isLoggedIn.value = true;
+      role.value = _authService.restoreRole();
+    } else {
+      isLoggedIn.value = false;
+      role.value = 'user';
+    }
+  }
+>>>>>>> Stashed changes
 }
