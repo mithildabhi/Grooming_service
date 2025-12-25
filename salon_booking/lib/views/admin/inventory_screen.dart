@@ -1,131 +1,219 @@
-// lib/views/admin/inventory_screen.dart
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../../controllers/admin_controller.dart';
 
 class InventoryScreen extends StatelessWidget {
   const InventoryScreen({super.key});
 
-  void _showAdd(BuildContext context, AdminController ctrl) {
-    final name = TextEditingController();
-    final qty = TextEditingController();
-    Get.defaultDialog(
-      title: 'Add Item',
-      content: Column(
-        children: [
-          TextField(
-            controller: name,
-            decoration: const InputDecoration(labelText: 'Name'),
-          ),
-          TextField(
-            controller: qty,
-            decoration: const InputDecoration(labelText: 'Quantity'),
-            keyboardType: TextInputType.number,
-          ),
-        ],
-      ),
-      textConfirm: 'Save',
-      onConfirm: () async {
-        ctrl.addInventory({
-          'name': name.text.trim(),
-          'qty': int.tryParse(qty.text.trim()) ?? 0,
-          "createdAt": DateTime.now().toIso8601String(),
-        });
-        Get.back();
-      },
-      textCancel: 'Cancel',
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<AdminController>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventory'),
+        title: const Text("Smart Inventory"),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () =>
-                showSearch(context: context, delegate: _InvSearch(ctrl)),
+          Chip(
+            label: const Text("AI ACTIVE"),
+            backgroundColor: const Color(0xFF19F6E8),
+            labelStyle: const TextStyle(color: Colors.black),
           ),
+          const SizedBox(width: 12),
         ],
       ),
-      body: Obx(() {
-        final list = ctrl.inventoryList;
-        if (list.isEmpty) {
-          return const Center(child: Text('No inventory items'));
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.all(12),
-          itemBuilder: (_, i) {
-            final it = list[i];
-            return ListTile(
-              title: Text(it['name'] ?? ''),
-              subtitle: Text('Qty: ${it['qty'] ?? 0}'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () async {
-                  final ok = await Get.dialog<bool>(
-                    AlertDialog(
-                      title: const Text('Delete item?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Get.back(result: false),
-                          child: const Text('No'),
-                        ),
-                        TextButton(
-                          onPressed: () => Get.back(result: true),
-                          child: const Text('Yes'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (ok == true) ctrl.deleteInventory(it['id']);
-                },
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// 🧠 Inventory Health
+            _card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Inventory Health",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Excellent (94%)",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    "AI predicts stable stock levels for the next 7 days.",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text("View Analysis →"),
+                  ),
+                ],
               ),
-            );
-          },
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemCount: list.length,
-        );
-      }),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => _showAdd(context, Get.find<AdminController>()),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// 🚨 Urgent Predictions
+            _sectionTitle("Urgent Predictions"),
+            const SizedBox(height: 12),
+
+            SizedBox(
+              height: 170,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _urgentItem(
+                    title: "Argan Shampoo",
+                    subtitle: "Empty in 2 days",
+                    action: "Reorder",
+                    color: Colors.redAccent,
+                  ),
+                  _urgentItem(
+                    title: "Keratin Conditioner",
+                    subtitle: "Low Stock (5)",
+                    action: "Add to Cart",
+                    color: Colors.orangeAccent,
+                  ),
+                  _urgentItem(
+                    title: "Styling Wax",
+                    subtitle: "High Demand",
+                    action: "Stock Up",
+                    color: Colors.greenAccent,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            /// 📊 Usage Forecast
+            _sectionTitle("Usage Forecast"),
+            const SizedBox(height: 12),
+
+            _card(
+              child: Container(
+                height: 140,
+                alignment: Alignment.center,
+                child: const Text("📈 Forecast Chart (Mock)"),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            /// 📦 All Inventory
+            _sectionTitle("All Inventory"),
+            const SizedBox(height: 12),
+
+            _inventoryItem(
+              title: "Purple Shampoo",
+              stock: "24 units",
+              burnRate: "3/day",
+              status: "Stable",
+              statusColor: Colors.green,
+            ),
+            _inventoryItem(
+              title: "Black Hair Dye",
+              stock: "2 units",
+              burnRate: "5/day",
+              status: "Critical",
+              statusColor: Colors.red,
+            ),
+            _inventoryItem(
+              title: "Tea Tree Oil",
+              stock: "45 units",
+              burnRate: "0.5/day",
+              status: "Low Velocity",
+              statusColor: Colors.orange,
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class _InvSearch extends SearchDelegate {
-  final AdminController ctrl;
-  _InvSearch(this.ctrl);
-  @override
-  List<Widget>? buildActions(BuildContext context) => [
-    IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
-  ];
-  @override
-  Widget? buildLeading(BuildContext context) => IconButton(
-    icon: const Icon(Icons.arrow_back),
-    onPressed: () => close(context, null),
-  );
-  @override
-  Widget buildResults(BuildContext context) => Container();
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    final list = ctrl.inventoryList
-        .where(
-          (i) => (i['name'] ?? '').toString().toLowerCase().contains(
-            query.toLowerCase(),
+  // ---------------- UI Helpers ----------------
+
+  Widget _card({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121A22),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _urgentItem({
+    required String title,
+    required String subtitle,
+    required String action,
+    required Color color,
+  }) {
+    return Container(
+      width: 200,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121A22),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: TextStyle(color: color)),
+          const Spacer(),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: color),
+            onPressed: () {},
+            child: Text(action),
           ),
-        )
-        .toList();
-    return ListView.builder(
-      itemCount: list.length,
-      itemBuilder: (_, i) => ListTile(
-        title: Text(list[i]['name'] ?? ''),
-        subtitle: Text('Qty: ${list[i]['qty'] ?? 0}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _inventoryItem({
+    required String title,
+    required String stock,
+    required String burnRate,
+    required String status,
+    required Color statusColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _card(
+        child: Row(
+          children: [
+            const Icon(Icons.inventory),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    "$stock • Burn rate: $burnRate",
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            Chip(label: Text(status), backgroundColor: statusColor),
+          ],
+        ),
       ),
     );
   }

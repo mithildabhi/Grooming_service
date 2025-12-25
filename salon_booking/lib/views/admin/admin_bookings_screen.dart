@@ -1,275 +1,183 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../../controllers/admin_controller.dart';
 
-class AdminBookingsScreen extends StatefulWidget {
-  final String salonId;
-  const AdminBookingsScreen({super.key, required this.salonId});
+class AdminBookingsScreen extends StatelessWidget {
+  const AdminBookingsScreen({super.key, required salonId});
 
-  @override
-  State<AdminBookingsScreen> createState() => _AdminBookingsScreenState();
-}
-
-class _AdminBookingsScreenState extends State<AdminBookingsScreen>
-    with SingleTickerProviderStateMixin {
-  late final AdminController ctrl;
-  TabController? _tabController;
-
-  final tabs = ['today', 'upcoming', 'completed'];
-
-  @override
-  void initState() {
-    super.initState();
-    ctrl = Get.find<AdminController>();
-
-    if (widget.salonId.isNotEmpty) {
-      ctrl.setActiveSalon(widget.salonId);
-    }
-
-    _tabController = TabController(length: tabs.length, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController?.dispose();
-    super.dispose();
-  }
+  static const Color bg = Color(0xFF0B0F14);
+  static const Color card = Color(0xFF121A22);
+  static const Color accent = Color(0xFF19F6E8);
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1E1E),
+      backgroundColor: bg,
 
-      // ---------------- APP BAR ----------------
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F1E1E),
+        backgroundColor: bg,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: const Text(
-          "All Bookings",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        actions: [IconButton(icon: const Icon(Icons.search), onPressed: () {})],
-        bottom: TabBar(
-          controller: _tabController!,
-          labelColor: const Color(0xFF22E6D3),
-          unselectedLabelColor: Colors.white54,
-          indicatorColor: const Color(0xFF22E6D3),
-          tabs: const [
-            Tab(text: "Today"),
-            Tab(text: "Upcoming"),
-            Tab(text: "Completed"),
-          ],
-        ),
+        title: const Text('Bookings', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
-      // ---------------- BODY ----------------
-      body: Obx(() {
-        final bookings = ctrl.bookingsList;
-
-        return TabBarView(
-          controller: _tabController!,
-          children: tabs.map((type) {
-            final filtered = _filterBookings(bookings, type);
-
-            if (filtered.isEmpty) {
-              return _emptyState();
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: filtered.length,
-              itemBuilder: (_, i) => _bookingCard(filtered[i]),
-            );
-          }).toList(),
-        );
-      }),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF22E6D3),
-        onPressed: () {},
-        child: const Icon(Icons.add, color: Colors.black),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _aiSummaryCard(),
+            const SizedBox(height: 24),
+            _sectionTitle('Today’s Bookings'),
+            const SizedBox(height: 12),
+            _bookingTile(
+              id: '#BK1023',
+              customer: 'Rahul Sharma',
+              service: 'Hair Cut',
+              staff: 'Alex',
+              time: '10:30 AM',
+              status: 'Completed',
+              statusColor: Colors.greenAccent,
+            ),
+            _bookingTile(
+              id: '#BK1024',
+              customer: 'Neha Patel',
+              service: 'Facial',
+              staff: 'Sarah',
+              time: '12:00 PM',
+              status: 'Pending',
+              statusColor: Colors.orangeAccent,
+            ),
+            _bookingTile(
+              id: '#BK1025',
+              customer: 'Amit Verma',
+              service: 'Beard Trim',
+              staff: 'John',
+              time: '2:00 PM',
+              status: 'Cancelled',
+              statusColor: Colors.redAccent,
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
 
-  // ---------------- FILTER BOOKINGS ----------------
-  List<Map<String, dynamic>> _filterBookings(
-    List<Map<String, dynamic>> all,
-    String type,
-  ) {
-    final now = DateTime.now();
+  // ───────────────────────── UI HELPERS ─────────────────────────
 
-    if (type == 'today') {
-      return all.where((b) {
-        final d = b['startAt'];
-        return d is DateTime &&
-            d.day == now.day &&
-            d.month == now.month &&
-            d.year == now.year;
-      }).toList();
-    }
-
-    if (type == 'upcoming') {
-      return all.where((b) {
-        final d = b['startAt'];
-        return d is DateTime && d.isAfter(now);
-      }).toList();
-    }
-
-    return all.where((b) => b['status'] == 'completed').toList();
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    );
   }
 
-  // ---------------- BOOKING CARD ----------------
-  Widget _bookingCard(Map<String, dynamic> b) {
-    final String id = b['id'] ?? '';
-    final String customer = b['customerName'] ?? 'Customer';
-    final String service = b['serviceName'] ?? 'Service';
-    final String staff = b['staffName'] ?? 'Alex';
-    final String status = b['status'] ?? 'created';
-    final DateTime? time = b['startAt'];
-
+  Widget _aiSummaryCard() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF162B2B),
-        borderRadius: BorderRadius.circular(22),
+        color: card,
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // -------- HEADER --------
           Row(
             children: [
-              CircleAvatar(
-                backgroundColor: const Color(0xFF22E6D3),
-                child: Text(
-                  customer[0],
-                  style: const TextStyle(color: Colors.black),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      customer,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      service,
-                      style: const TextStyle(color: Colors.white54),
-                    ),
-                  ],
-                ),
-              ),
-              _statusBadge(status),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // -------- TIME & STAFF --------
-          Row(
-            children: [
-              const Icon(Icons.access_time, size: 16, color: Colors.white54),
-              const SizedBox(width: 6),
+              Icon(Icons.psychology, color: accent),
+              SizedBox(width: 8),
               Text(
-                time != null
-                    ? TimeOfDay.fromDateTime(time).format(context)
-                    : '--',
-                style: const TextStyle(color: Colors.white54),
+                'AI Booking Insights',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              const SizedBox(width: 20),
-              const Icon(Icons.person, size: 16, color: Colors.white54),
-              const SizedBox(width: 6),
-              Text(staff, style: const TextStyle(color: Colors.white54)),
             ],
           ),
+          SizedBox(height: 10),
+          Text(
+            'Peak booking hours today: 11 AM – 3 PM.\n'
+            'AI recommends adding extra staff in afternoon slots.',
+            style: TextStyle(color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
 
-          // -------- ACTIONS --------
-          if (status == 'created') ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () =>
-                        ctrl.cancelBooking(id, "Declined by admin"),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
+  Widget _bookingTile({
+    required String id,
+    required String customer,
+    required String service,
+    required String staff,
+    required String time,
+    required String status,
+    required Color statusColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: statusColor.withOpacity(0.2),
+              child: Icon(Icons.event, color: statusColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$service • $time',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: const Text("Decline"),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF22E6D3),
-                      foregroundColor: Colors.black,
-                    ),
-                    onPressed: () {
-                      final staffId = ctrl.employeesList.isNotEmpty
-                          ? ctrl.employeesList.first['id']
-                          : 'auto_staff';
-                      ctrl.approveBooking(id, staffId);
-                    },
-                    child: const Text("Accept Request"),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Customer: $customer',
+                    style: const TextStyle(color: Colors.white70),
                   ),
+                  Text(
+                    'Staff: $staff',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(id, style: const TextStyle(color: Colors.white38)),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                status,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
+              ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  // ---------------- STATUS BADGE ----------------
-  Widget _statusBadge(String status) {
-    final colors = {
-      'created': Colors.orange,
-      'approved': Colors.blue,
-      'completed': Colors.green,
-      'cancelled': Colors.red,
-    };
-
-    final c = colors[status] ?? Colors.grey;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: c.withOpacity(.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status.toUpperCase(),
-        style: TextStyle(color: c, fontSize: 10),
-      ),
-    );
-  }
-
-  // ---------------- EMPTY STATE ----------------
-  Widget _emptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.event_busy, size: 80, color: Colors.white24),
-          SizedBox(height: 10),
-          Text("No bookings found", style: TextStyle(color: Colors.white54)),
-        ],
+        ),
       ),
     );
   }

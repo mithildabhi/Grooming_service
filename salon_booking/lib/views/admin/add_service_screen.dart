@@ -22,9 +22,10 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true, // ✅ keyboard fix
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFF0F1E1E),
       appBar: AppBar(
+        leading: const BackButton(color: Colors.white),
         backgroundColor: const Color(0xFF0F1E1E),
         title: const Text(
           "Add New Service",

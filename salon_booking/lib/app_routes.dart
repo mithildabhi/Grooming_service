@@ -1,10 +1,10 @@
 // lib/app_routes.dart
 import 'package:get/get.dart';
+import 'package:salon_booking/views/admin/admin_shell.dart';
 import 'package:salon_booking/views/splash_screen.dart';
 import 'package:salon_booking/views/login_screen.dart';
 import 'package:salon_booking/views/register_screen.dart';
 
-import 'package:salon_booking/views/admin/admin_home_screen.dart';
 import 'package:salon_booking/views/admin/admin_bookings_screen.dart';
 import 'package:salon_booking/views/admin/services_screen.dart';
 import 'package:salon_booking/views/admin/employee_screen.dart';
@@ -42,8 +42,8 @@ class AppRoutes {
     GetPage(name: login, page: () => const LoginScreen()),
     GetPage(name: register, page: () => const RegisterScreen()),
 
-    // ✅ ADMIN ROOT (BOTTOM NAV)
-    GetPage(name: adminDashboard, page: () => const AdminHomeScreen()),
+    // ✅ ADMIN ROOT (BOTTOM NAV + SMOOTH NAVIGATION)
+    GetPage(name: AppRoutes.adminDashboard, page: () => const AdminShell()),
 
     // ✅ ADMIN SUB SCREENS
     GetPage(

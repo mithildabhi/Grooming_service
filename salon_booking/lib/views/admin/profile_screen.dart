@@ -1,378 +1,339 @@
-// lib/views/admin/profile_screen.dart
-
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../../controllers/admin_controller.dart';
-import '../../models/salon_profile.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
+  // THEME COLORS (LOCAL — SAFE)
+  static const Color bg = Color(0xFF0B0F14);
+  static const Color card = Color(0xFF121A22);
+  static const Color accent = Color(0xFF19F6E8);
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  final AdminController ctrl = Get.find<AdminController>();
-  final _formKey = GlobalKey<FormState>();
-
-  bool saving = false;
-
-  late TextEditingController nameCtrl,
-      addressCtrl,
-      phoneCtrl,
-      aboutCtrl,
-      imageCtrl;
-
-  String salonType = "Unisex";
-  Map<String, dynamic> hours = {};
-
-  @override
-  void initState() {
-    super.initState();
-    final p = ctrl.salonProfile.value;
-
-    nameCtrl = TextEditingController(text: p?.name ?? "");
-    addressCtrl = TextEditingController(text: p?.address ?? "");
-    phoneCtrl = TextEditingController(text: p?.phone ?? "");
-    aboutCtrl = TextEditingController(text: p?.about ?? "");
-    imageCtrl = TextEditingController(text: p?.imageUrl ?? "");
-
-    salonType = p?.type ?? "Unisex";
-
-    hours =
-        p?.hours ??
-        {
-          "Mon": "09:00–19:00",
-          "Tue": "09:00–19:00",
-          "Wed": "09:00–19:00",
-          "Thu": "09:00–19:00",
-          "Fri": "09:00–19:00",
-          "Sat": "09:00–19:00",
-          "Sun": "Closed",
-        };
-  }
-
-  // ---------------- SAVE PROFILE ----------------
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => saving = true);
-
-    try {
-      final profile = SalonProfile(
-        id: ctrl.activeSalonId.value,
-        name: nameCtrl.text.trim(),
-        type: salonType,
-        address: addressCtrl.text.trim(),
-        phone: phoneCtrl.text.trim(),
-        about: aboutCtrl.text.trim(),
-        imageUrl: imageCtrl.text.trim(),
-        hours: hours,
-      );
-
-      await ctrl.saveSalonProfile(profile);
-      Get.snackbar("Success", "Salon profile updated successfully");
-    } catch (e) {
-      Get.snackbar("Error", e.toString());
-    }
-
-    setState(() => saving = false);
-  }
-
-  // ----------------- UPLOAD IMAGE -----------------
-  Future<void> _uploadImage(bool fromCamera) async {
-    final url = await ctrl.pickAndUploadImage(fromCamera: fromCamera);
-
-    if (url != null && url.isNotEmpty) {
-      setState(() => imageCtrl.text = url);
-      Get.snackbar("Updated", "Profile image updated");
-    }
-  }
-
-  // ----------------- EDIT HOURS -----------------
-  void _editHours() {
-    final days = hours.keys.toList();
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final controllers = {
-          for (var d in days) d: TextEditingController(text: hours[d]),
-        };
-
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text("Working Hours"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: days.map((day) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: TextField(
-                    controller: controllers[day],
-                    decoration: InputDecoration(
-                      labelText: day,
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  hours = {for (var d in days) d: controllers[d]!.text.trim()};
-                });
-                Navigator.pop(ctx);
-              },
-              child: const Text("Save"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ----------------- UI START -----------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F5F2),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F5F2),
+        backgroundColor: bg,
         elevation: 0,
         title: const Text(
-          "Salon Profile",
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          "Admin Profile",
+          style: TextStyle(color: Colors.white),
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Icon(Icons.settings, color: Colors.white),
+          ),
+        ],
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(18),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // ---------------- PROFILE IMAGE SECTION ----------------
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 👤 PROFILE HEADER
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                const CircleAvatar(
+                  radius: 44,
+                  backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
                 ),
-                child: Column(
-                  children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        CircleAvatar(
-                          radius: 55,
-                          backgroundColor: Colors.grey.shade300,
-                          backgroundImage: imageCtrl.text.isNotEmpty
-                              ? NetworkImage(imageCtrl.text)
-                              : null,
-                          child: imageCtrl.text.isEmpty
-                              ? const Icon(
-                                  Icons.storefront,
-                                  size: 50,
-                                  color: Colors.white,
-                                )
-                              : null,
-                        ),
-                        GestureDetector(
-                          onTap: () => _uploadImage(false),
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.pinkAccent,
-                            child: const Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      "Update Salon Picture",
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: accent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.smart_toy,
+                    size: 16,
+                    color: Colors.black,
+                  ),
                 ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text(
+              "Sarah Jenkins",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 4),
 
-              // ---------------- INPUT FIELDS CARD ----------------
-              _cardWrapper(
-                children: [
-                  _inputBox(
-                    "Salon Name",
-                    nameCtrl,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return "Salon name required";
-                      }
-                      return null;
-                    },
-                  ),
+            const Text(
+              "Salon Owner • AI Active",
+              style: TextStyle(color: accent),
+            ),
 
-                  _dropdownBox("Salon Type", salonType, [
-                    "Male",
-                    "Female",
-                    "Unisex",
-                  ], (v) => setState(() => salonType = v!)),
+            const SizedBox(height: 20),
 
-                  _inputBox(
-                    "Phone Number",
-                    phoneCtrl,
-                    type: TextInputType.phone,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return "Phone required";
-                      }
-                      if (v.length != 10) return "Must be 10 digits";
-                      return null;
-                    },
-                  ),
-
-                  _inputBox("Address", addressCtrl, maxLines: 2),
-                  _inputBox("About", aboutCtrl, maxLines: 3),
-
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      "Working Hours",
-                      style: TextStyle(fontWeight: FontWeight.w600),
+            // 🤖 ASK AI
+            _cardBox(
+              child: Row(
+                children: const [
+                  Icon(Icons.auto_awesome, color: accent),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Ask AI: Create an offer for next Tuesday...",
+                      style: TextStyle(color: Colors.white70),
                     ),
-                    subtitle: Text(
-                      hours.entries
-                          .map((e) => "${e.key}: ${e.value}")
-                          .join("\n"),
-                      style: const TextStyle(color: Colors.black54),
-                    ),
-                    trailing: const Icon(Icons.schedule),
-                    onTap: _editHours,
+                  ),
+                  Icon(Icons.mic, color: accent),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // 📊 BUSINESS SNAPSHOT
+            _sectionTitle("Business Snapshot"),
+            const SizedBox(height: 12),
+
+            Row(
+              children: const [
+                Expanded(
+                  child: _SnapshotCard(
+                    title: "Revenue",
+                    value: "\$4.2k",
+                    footer: "+12%",
+                    footerColor: Colors.greenAccent,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _SnapshotCard(
+                    title: "Retention",
+                    value: "88%",
+                    footer: "AI",
+                    footerColor: accent,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _SnapshotCard(
+                    title: "Inventory",
+                    value: "2 Low",
+                    footer: "!",
+                    footerColor: Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // 🧠 AI INSIGHT
+            _cardBox(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Row(
+                    children: [
+                      Icon(Icons.lightbulb, color: accent),
+                      SizedBox(width: 8),
+                      Text(
+                        "AI Insight",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Tuesday afternoon demand is predicted to be low. "
+                    "A 10% flash offer could improve occupancy.",
+                    style: TextStyle(color: Colors.white70),
                   ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 25),
+            const SizedBox(height: 24),
 
-              // ---------------- SAVE BUTTON ----------------
-              ElevatedButton(
-                onPressed: saving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pinkAccent,
-                  minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text(
-                        "Save Profile",
-                        style: TextStyle(fontSize: 16),
-                      ),
-              ),
-            ],
-          ),
+            // 🚨 SMART ALERTS
+            _sectionTitle("Smart Alerts"),
+            const SizedBox(height: 12),
+
+            _alertTile(
+              icon: Icons.inventory,
+              title: "Low Stock",
+              subtitle: "Argan Oil below 15%",
+              color: Colors.redAccent,
+            ),
+            _alertTile(
+              icon: Icons.event_busy,
+              title: "Overbooking Risk",
+              subtitle: "Friday 4 PM is congested",
+              color: Colors.orangeAccent,
+            ),
+
+            const SizedBox(height: 24),
+
+            // ⚡ QUICK ACTIONS (WRAP = SAFE)
+            _sectionTitle("Quick Actions"),
+            const SizedBox(height: 12),
+
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: const [
+                _QuickAction(icon: Icons.people, label: "Staff"),
+                _QuickAction(icon: Icons.cut, label: "Services"),
+                _QuickAction(icon: Icons.payments, label: "Billing"),
+                _QuickAction(icon: Icons.settings, label: "Settings"),
+              ],
+            ),
+
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
   }
 
-  // ----------------- UI SUB COMPONENTS -----------------
+  // ───────── UI HELPERS ─────────
 
-  Widget _cardWrapper({required List<Widget> children}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+  Widget _sectionTitle(String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
-      child: Column(children: children),
     );
   }
 
-  Widget _inputBox(
-    String label,
-    TextEditingController ctrl, {
-    int maxLines = 1,
-    TextInputType type = TextInputType.text,
-    FormFieldValidator? validator,
+  Widget _cardBox({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _alertTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextFormField(
-        controller: ctrl,
-        validator: validator,
-        maxLines: maxLines,
-        keyboardType: type,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _cardBox(
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(subtitle, style: const TextStyle(color: Colors.white70)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _dropdownBox(
-    String label,
-    String value,
-    List<String> items,
-    Function(String?) onChange,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: DropdownButtonFormField(
-        value: value,
-        items: items
-            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-            .toList(),
-        onChanged: onChange,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
+// ───────── SUB WIDGETS ─────────
+
+class _SnapshotCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String footer;
+  final Color footerColor;
+
+  const _SnapshotCard({
+    required this.title,
+    required this.value,
+    required this.footer,
+    required this.footerColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: ProfileScreen.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(footer, style: TextStyle(color: footerColor)),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _QuickAction({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      decoration: BoxDecoration(
+        color: ProfileScreen.card,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: ProfileScreen.accent),
+          const SizedBox(height: 10),
+          Text(label, style: const TextStyle(color: Colors.white)),
+        ],
       ),
     );
   }

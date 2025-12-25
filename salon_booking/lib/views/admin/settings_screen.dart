@@ -1,144 +1,242 @@
-// lib/views/admin/settings_screen.dart
-
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../../controllers/admin_controller.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  // Safe local colors
+  static const Color bg = Color(0xFF0B0F14);
+  static const Color card = Color(0xFF121A22);
+  static const Color accent = Color(0xFF19F6E8);
+
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<AdminController>();
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F5F2),
-
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F5F2),
+        backgroundColor: bg,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text(
-          "Settings",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
+        title: const Text("Settings", style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          const SizedBox(height: 10),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 🧠 AI CONFIGURATION
+            _sectionTitle("AI Configuration"),
+            const SizedBox(height: 12),
 
-          //--------------------- ACCOUNT SETTINGS ---------------------
-          _sectionTitle("Account Settings"),
-
-          _settingsTile(
-            icon: Icons.store,
-            title: "Salon Profile",
-            onTap: () => Get.toNamed("/admin/profile"),
-          ),
-          _settingsTile(
-            icon: Icons.notifications_active,
-            title: "Notification Settings",
-            onTap: () {},
-          ),
-          _settingsTile(
-            icon: Icons.receipt_long,
-            title: "Tax & Commission",
-            onTap: () {},
-          ),
-
-          const SizedBox(height: 30),
-
-          //--------------------- APP SETTINGS ---------------------
-          _sectionTitle("App Preferences"),
-
-          _settingsTile(
-            icon: Icons.color_lens_outlined,
-            title: "Theme & Appearance",
-            onTap: () {},
-          ),
-          _settingsTile(
-            icon: Icons.shield_outlined,
-            title: "Privacy & Security",
-            onTap: () {},
-          ),
-
-          const SizedBox(height: 40),
-
-          //--------------------- LOGOUT BUTTON ---------------------
-          ElevatedButton(
-            onPressed: ctrl.logout,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+            _cardBox(
+              child: Column(
+                children: [
+                  _toggleTile(
+                    icon: Icons.smart_toy,
+                    title: "Enable AI Insights",
+                    subtitle: "Show predictions and recommendations",
+                    value: true,
+                  ),
+                  _divider(),
+                  _toggleTile(
+                    icon: Icons.analytics,
+                    title: "Demand Forecasting",
+                    subtitle: "Predict bookings and busy hours",
+                    value: true,
+                  ),
+                  _divider(),
+                  _toggleTile(
+                    icon: Icons.person_search,
+                    title: "Customer Behavior Analysis",
+                    subtitle: "Detect churn and loyalty trends",
+                    value: false,
+                  ),
+                ],
               ),
             ),
-            child: const Text(
-              "Logout",
-              style: TextStyle(fontSize: 16, color: Colors.white),
-            ),
-          ),
 
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
+            const SizedBox(height: 24),
 
-  // ---------------- SECTION TITLE ----------------
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: Colors.black54,
-        ),
-      ),
-    );
-  }
+            // 🏢 SALON SETTINGS
+            _sectionTitle("Salon Settings"),
+            const SizedBox(height: 12),
 
-  // ---------------- SETTINGS TILE ----------------
-  Widget _settingsTile({
-    required IconData icon,
-    required String title,
-    required Function() onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.pink.shade50,
-              child: Icon(icon, color: Colors.pinkAccent),
+            _cardBox(
+              child: Column(
+                children: [
+                  _actionTile(
+                    icon: Icons.store,
+                    title: "Salon Profile",
+                    subtitle: "Name, address, working hours",
+                  ),
+                  _divider(),
+                  _actionTile(
+                    icon: Icons.receipt_long,
+                    title: "Business Policies",
+                    subtitle: "Taxes, commission, cancellation",
+                  ),
+                  _divider(),
+                  _actionTile(
+                    icon: Icons.payment,
+                    title: "Payment Settings",
+                    subtitle: "UPI, card, bank accounts",
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(width: 16),
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.black38,
+
+            const SizedBox(height: 24),
+
+            // 🔔 NOTIFICATIONS
+            _sectionTitle("Notifications"),
+            const SizedBox(height: 12),
+
+            _cardBox(
+              child: Column(
+                children: [
+                  _toggleTile(
+                    icon: Icons.notifications_active,
+                    title: "Push Notifications",
+                    subtitle: "Booking and payment alerts",
+                    value: true,
+                  ),
+                  _divider(),
+                  _toggleTile(
+                    icon: Icons.email,
+                    title: "Email Notifications",
+                    subtitle: "Reports and summaries",
+                    value: false,
+                  ),
+                ],
+              ),
             ),
+
+            const SizedBox(height: 24),
+
+            // 🔐 SECURITY
+            _sectionTitle("Security"),
+            const SizedBox(height: 12),
+
+            _cardBox(
+              child: Column(
+                children: [
+                  _actionTile(
+                    icon: Icons.lock,
+                    title: "Change Password",
+                    subtitle: "Update admin password",
+                  ),
+                  _divider(),
+                  _actionTile(
+                    icon: Icons.logout,
+                    title: "Logout",
+                    subtitle: "Sign out from admin panel",
+                    danger: true,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
+    );
+  }
+
+  // ───────── UI HELPERS ─────────
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _cardBox({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _divider() {
+    return const Divider(color: Colors.white12, height: 24);
+  }
+
+  Widget _toggleTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+  }) {
+    return Row(
+      children: [
+        CircleAvatar(
+          backgroundColor: accent.withOpacity(0.2),
+          child: Icon(icon, color: accent),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(subtitle, style: const TextStyle(color: Colors.white70)),
+            ],
+          ),
+        ),
+        Switch(value: value, activeColor: accent, onChanged: (_) {}),
+      ],
+    );
+  }
+
+  Widget _actionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    bool danger = false,
+  }) {
+    final Color color = danger ? Colors.redAccent : accent;
+
+    return Row(
+      children: [
+        CircleAvatar(
+          backgroundColor: color.withOpacity(0.2),
+          child: Icon(icon, color: color),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: danger ? Colors.redAccent : Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(subtitle, style: const TextStyle(color: Colors.white70)),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right, color: Colors.white54),
+      ],
     );
   }
 }

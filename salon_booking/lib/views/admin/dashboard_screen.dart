@@ -1,243 +1,162 @@
 import 'package:flutter/material.dart';
-import 'package:salon_booking/views/admin/profile_screen.dart';
+import 'package:salon_booking/widgets/ai_badge.dart';
+import 'package:salon_booking/widgets/ai_card.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
-
-  @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
-}
-
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  bool acceptingBookings = true;
-  int selectedIndex = 0;
+class DashboardScreen extends StatelessWidget {
+  const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1E1E),
+      backgroundColor: const Color(0xFF0B0F14),
 
-      // ---------------- APP BAR ----------------
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F1E1E),
-        elevation: 0,
-        title: const Text(
-          "Salon Hub",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        title: const Text("AI Command Center"),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(context, ProfileScreen() as Route<Object?>);
-            },
-          ),
-          const SizedBox(width: 16),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications)),
         ],
       ),
 
-      // ---------------- BODY ----------------
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Greeting
-            const Text(
-              "Hello, Luxe Cuts",
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              "Here's what's happening today.",
-              style: TextStyle(color: Colors.white70),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Profile Completeness
-            _profileCompletion(),
-
-            const SizedBox(height: 20),
-
-            // Stats Row
-            Row(
-              children: [
-                _statCard(
-                  title: "Today",
-                  value: "14",
-                  subtitle: "+12% vs last week",
-                  icon: Icons.calendar_today,
-                ),
-                const SizedBox(width: 12),
-                _statCard(
-                  title: "Revenue",
-                  value: "₹1,240",
-                  subtitle: "+5% vs yesterday",
-                  icon: Icons.currency_rupee,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Accepting Bookings Toggle
-            _bookingToggle(),
-
-            const SizedBox(height: 30),
-
-            const Text(
-              "Management",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            /// 🔮 AI Optimization Card
+            AICard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, color: Color(0xFF19F6E8)),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "AI Optimization",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      aiBadge("BETA v2.4"),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Friday afternoons are understaffed. Adding 1 stylist could increase revenue by 15%.",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                        ),
+                        onPressed: () {},
+                        child: const Text("Apply"),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton(
+                        onPressed: () {},
+                        child: const Text("Details"),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
+            /// 📊 Insight Metrics
+            const Text(
+              "Insight Metrics",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
 
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 1.1,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.2,
               children: [
-                _managementCard(
-                  title: "Salon Info",
-                  subtitle: "Update name, bio & contacts",
-                  icon: Icons.store,
-                ),
-                _managementCard(
-                  title: "Gallery",
-                  subtitle: "Manage portfolio images",
-                  icon: Icons.photo_library,
-                ),
-                _managementCard(
-                  title: "Timings",
-                  subtitle: "Set opening hours",
-                  icon: Icons.access_time,
-                ),
-                _managementCard(
-                  title: "Location",
-                  subtitle: "Map & address settings",
-                  icon: Icons.location_on,
-                ),
+                _metricCard("Busy Prediction", "2pm – 5pm", "98% CONF"),
+                _metricCard("Revenue Est.", "\$18.2k", "TREND"),
+                _metricCard("Low Demand", "Tue Morning", "ALERT"),
+                _metricCard("Churn Risk", "12 Clients", "RISK"),
               ],
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 24),
 
-            // Promo Card
-            _promoCard(),
-          ],
-        ),
-      ),
-
-      // ---------------- BOTTOM NAV ----------------
-      // bottomNavigationBar: BottomNavigationBar(
-      //   backgroundColor: const Color(0xFF0F1E1E),
-      //   selectedItemColor: const Color(0xFF22E6D3),
-      //   unselectedItemColor: Colors.white54,
-      //   currentIndex: selectedIndex,
-      //   onTap: (i) => setState(() => selectedIndex = i),
-      //   items: const [
-      //     BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: "Hub"),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.calendar_month),
-      //       label: "Calendar",
-      //     ),
-      //     BottomNavigationBarItem(icon: Icon(Icons.people), label: "Staff"),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.settings),
-      //       label: "Settings",
-      //     ),
-      //   ],
-      // ),
-    );
-  }
-
-  // ---------------- WIDGETS ----------------
-
-  Widget _profileCompletion() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                "Profile Completeness",
-                style: TextStyle(color: Colors.white),
-              ),
-              Text(
-                "85%",
-                style: TextStyle(
-                  color: Color(0xFF22E6D3),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          LinearProgressIndicator(
-            value: 0.85,
-            backgroundColor: Colors.white24,
-            color: const Color(0xFF22E6D3),
-            minHeight: 6,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Complete your location details to reach 100%",
-            style: TextStyle(color: Colors.white54, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statCard({
-    required String title,
-    required String value,
-    required String subtitle,
-    required IconData icon,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _cardDecoration(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: const Color(0xFF22E6D3)),
-            const SizedBox(height: 16),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            /// 📈 Booking Forecast
+            AICard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        "Booking Forecast",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      aiBadge("AI Model v2.1"),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0E141B),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text("📊 Forecast Chart Placeholder"),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(title, style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: const TextStyle(color: Color(0xFF22E6D3), fontSize: 12),
+
+            const SizedBox(height: 24),
+
+            /// 🚨 Live Alerts
+            AICard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Inventory Low: Shampoos",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    "AI detected stock below 10%. Auto-reorder recommended.",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      OutlinedButton(
+                        onPressed: () {},
+                        child: const Text("Dismiss"),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                        ),
+                        onPressed: () {},
+                        child: const Text("Reorder"),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -245,112 +164,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _bookingToggle() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Accepting Bookings", style: TextStyle(color: Colors.white)),
-              Text(
-                "Salon is currently visible",
-                style: TextStyle(color: Colors.white54, fontSize: 12),
-              ),
-            ],
-          ),
-          Switch(
-            value: acceptingBookings,
-            activeColor: const Color(0xFF22E6D3),
-            onChanged: (v) => setState(() => acceptingBookings = v),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _managementCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
+  static Widget _metricCard(String title, String value, String tag) {
+    return AICard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFF22E6D3)),
-          const SizedBox(height: 16),
+          aiBadge(tag),
+          const Spacer(),
           Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(color: Colors.white54, fontSize: 12),
-          ),
+          Text(title, style: const TextStyle(color: Colors.white70)),
         ],
       ),
-    );
-  }
-
-  Widget _promoCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "PRO FEATURE",
-            style: TextStyle(
-              color: Color(0xFF22E6D3),
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Boost Your Visibility",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            "Promote your salon to get more bookings this weekend.",
-            style: TextStyle(color: Colors.white70),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF22E6D3),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: const Text("Start Campaign"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: const Color(0xFF162B2B),
-      borderRadius: BorderRadius.circular(18),
     );
   }
 }

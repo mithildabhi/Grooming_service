@@ -30,7 +30,27 @@ class MyApp extends StatelessWidget {
       title: 'Salon Booking App',
       initialRoute: AppRoutes.splash,
       getPages: AppRoutes.routes,
-      theme: ThemeData(primarySwatch: Colors.pink),
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0B0F14),
+
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
+          titleLarge: TextStyle(color: Colors.white),
+        ),
+
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.black,
+            backgroundColor: Color(0xFF19F6E8),
+          ),
+        ),
+
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: Color(0xFF19F6E8)),
+        ),
+      ),
     );
   }
 }

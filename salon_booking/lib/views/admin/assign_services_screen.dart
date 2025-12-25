@@ -3,87 +3,227 @@ import 'package:flutter/material.dart';
 class AssignServicesScreen extends StatelessWidget {
   const AssignServicesScreen({super.key});
 
+  // Safe local colors
+  static const Color bg = Color(0xFF0B0F14);
+  static const Color card = Color(0xFF121A22);
+  static const Color accent = Color(0xFF19F6E8);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1E1E),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F1E1E),
+        backgroundColor: bg,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: const Text("Assign Services"),
+        title: const Text(
+          "Assign Services",
+          style: TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
-        children: [
-          ListTile(
-            leading: const CircleAvatar(),
-            title: const Text(
-              "Sarah Jenkins",
-              style: TextStyle(color: Colors.white),
-            ),
-            subtitle: const Text(
-              "Senior Stylist",
-              style: TextStyle(color: Colors.white54),
-            ),
-          ),
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search services...",
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white10,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 🧠 AI RECOMMENDATION
+            _cardBox(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Row(
+                    children: [
+                      Icon(Icons.psychology, color: accent),
+                      SizedBox(width: 8),
+                      Text(
+                        "AI Assignment Recommendation",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "AI suggests assigning Hair Styling and Beard Trim services "
+                    "to Alex Johnson to balance workload and improve efficiency.",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
               ),
-              style: const TextStyle(color: Colors.white),
             ),
-          ),
 
-          Expanded(
-            child: ListView(
+            const SizedBox(height: 24),
+
+            // 👤 SELECT STAFF
+            _sectionTitle("Select Staff"),
+            const SizedBox(height: 12),
+
+            _staffTile(
+              name: "Alex Johnson",
+              role: "Senior Stylist",
+              selected: true,
+            ),
+            _staffTile(name: "Sarah Lee", role: "Hair Specialist"),
+            _staffTile(name: "John Miller", role: "Beard Expert"),
+
+            const SizedBox(height: 24),
+
+            // ✂️ SELECT SERVICES
+            _sectionTitle("Assign Services"),
+            const SizedBox(height: 12),
+
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
               children: [
-                _service("Women's Haircut", "45 mins • \$65"),
-                _service("Blow Dry & Style", "30 mins • \$45"),
-                _service("Full Balayage", "120 mins • \$150"),
-                _service("Keratin Smooth", "90 mins • \$120"),
+                _serviceChip("Hair Styling", active: true),
+                _serviceChip("Beard Trim", active: true),
+                _serviceChip("Facial"),
+                _serviceChip("Spa Therapy"),
+                _serviceChip("Hair Color"),
               ],
             ),
-          ),
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
+            const SizedBox(height: 24),
+
+            // 📊 ASSIGNMENT SUMMARY
+            _cardBox(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    "Assignment Summary",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "• Staff: Alex Johnson\n"
+                    "• Services: Hair Styling, Beard Trim\n"
+                    "• Estimated Load: Balanced",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // ✅ SAVE BUTTON
+            SizedBox(
               width: double.infinity,
-              height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF22E6D3),
+                  backgroundColor: accent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
                 onPressed: () {},
                 child: const Text(
-                  "Save Assignments",
-                  style: TextStyle(color: Colors.black),
+                  "Save Assignment",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _service(String title, String subtitle) {
-    return SwitchListTile(
-      value: false,
-      onChanged: (_) {},
-      title: Text(title, style: const TextStyle(color: Colors.white)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54)),
-      activeColor: const Color(0xFF22E6D3),
+  // ───────── UI HELPERS ─────────
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _cardBox({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _staffTile({
+    required String name,
+    required String role,
+    bool selected = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selected ? accent.withOpacity(0.15) : card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: selected ? accent : Colors.transparent),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: accent.withOpacity(0.2),
+              child: const Icon(Icons.person, color: accent),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(role, style: const TextStyle(color: Colors.white70)),
+                ],
+              ),
+            ),
+            if (selected) const Icon(Icons.check_circle, color: accent),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _serviceChip(String label, {bool active = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: active ? accent.withOpacity(0.2) : card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: active ? accent : Colors.transparent),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: active ? accent : Colors.white70,
+          fontWeight: active ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
     );
   }
 }
