@@ -22,73 +22,120 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true, // ✅ keyboard fix
       backgroundColor: const Color(0xFF0F1E1E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F1E1E),
-        title: const Text("Add New Service"),
+        title: const Text(
+          "Add New Service",
+          style: TextStyle(color: Colors.white),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _field("Service Name", nameCtrl),
-            _field("Description", descCtrl, maxLines: 3),
-            _field("Price", priceCtrl),
-            _field("Duration (min)", durationCtrl),
-            const SizedBox(height: 16),
-
-            Obx(
-              () => DropdownButtonFormField<String>(
-                value: category.value,
-                dropdownColor: Colors.black,
-                items: const [
-                  DropdownMenuItem(value: 'hair', child: Text("Hair")),
-                  DropdownMenuItem(value: 'spa', child: Text("Spa")),
-                  DropdownMenuItem(value: 'facial', child: Text("Facial")),
-                  DropdownMenuItem(value: 'massage', child: Text("Massage")),
-                ],
-                onChanged: (v) => category.value = v!,
-                decoration: _inputDecoration("Category"),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _field("Service Name", nameCtrl),
+              _field("Description", descCtrl, maxLines: 3),
+              _field("Price", priceCtrl, keyboard: TextInputType.number),
+              _field(
+                "Duration (min)",
+                durationCtrl,
+                keyboard: TextInputType.number,
               ),
-            ),
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF22E6D3),
-                ),
-                onPressed: () {
-                  ctrl.addService(
-                    token: "YOUR_JWT_TOKEN_HERE",
-                    name: nameCtrl.text,
-                    description: descCtrl.text,
-                    price: double.parse(priceCtrl.text),
-                    duration: int.parse(durationCtrl.text),
-                    category: category.value,
-                  );
-                },
-                child: const Text(
-                  "Save Service",
-                  style: TextStyle(color: Colors.black),
+              /// CATEGORY DROPDOWN (FIXED TEXT COLOR)
+              Obx(
+                () => DropdownButtonFormField<String>(
+                  value: category.value,
+                  dropdownColor: const Color(0xFF1E3535),
+                  style: const TextStyle(color: Colors.white),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'hair',
+                      child: Text(
+                        "Hair",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'spa',
+                      child: Text("Spa", style: TextStyle(color: Colors.white)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'facial',
+                      child: Text(
+                        "Facial",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'massage',
+                      child: Text(
+                        "Massage",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) => category.value = v!,
+                  decoration: _inputDecoration("Category"),
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 28),
+
+              /// SAVE BUTTON
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF22E6D3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    ctrl.addService(
+                      token: "YOUR_JWT_TOKEN_HERE",
+                      name: nameCtrl.text.trim(),
+                      description: descCtrl.text.trim(),
+                      price: double.tryParse(priceCtrl.text) ?? 0,
+                      duration: int.tryParse(durationCtrl.text) ?? 0,
+                      category: category.value,
+                    );
+                  },
+                  child: const Text(
+                    "Save Service",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _field(String label, TextEditingController c, {int maxLines = 1}) {
+  Widget _field(
+    String label,
+    TextEditingController c, {
+    int maxLines = 1,
+    TextInputType keyboard = TextInputType.text,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: c,
         maxLines: maxLines,
+        keyboardType: keyboard,
+        cursorColor: Colors.white, // ✅ cursor visible
         style: const TextStyle(color: Colors.white),
         decoration: _inputDecoration(label),
       ),
