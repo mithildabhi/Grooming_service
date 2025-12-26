@@ -206,7 +206,7 @@ class ReviewsScreen extends StatelessWidget {
     );
 
     if (ok == true) {
-      await ctrl.deleteReview(id);
+      ctrl.deleteReview(id);
       Get.snackbar("Deleted", "Review removed successfully");
     }
   }

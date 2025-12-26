@@ -198,7 +198,7 @@ class AdminBookingCard extends StatelessWidget {
             ),
           );
           if (ok == true) {
-            await ctrl.deleteBooking(salonId, booking['id']);
+            ctrl.deleteBooking(booking['id']);
           }
         },
       ),

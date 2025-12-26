@@ -1,47 +1,34 @@
 class ServiceModel {
-  final String id;
+  final int id;
+  final int salon;
   final String name;
-  final double price;
-  final int durationMinutes;
-  final String category;
-  final String gender;
   final String description;
-  final String image;
+  final String category;
+  final double price;
+  final int duration;
+  final bool isActive;
 
   ServiceModel({
     required this.id,
+    required this.salon,
     required this.name,
-    required this.price,
-    required this.durationMinutes,
-    required this.category,
-    required this.gender,
     required this.description,
-    required this.image,
+    required this.category,
+    required this.price,
+    required this.duration,
+    required this.isActive,
   });
 
-  Map<String, dynamic> toMap() => {
-    'name': name,
-    'price': price,
-    'durationMinutes': durationMinutes,
-    'category': category,
-    'gender': gender,
-    'description': description,
-    'image': image,
-  };
-
-  factory ServiceModel.fromMap(String id, Map<String, dynamic> m) =>
-      ServiceModel(
-        id: id,
-        name: (m['name'] ?? '') as String,
-        price: (m['price'] ?? 0).toDouble(),
-        durationMinutes: (m['durationMinutes'] ?? 30) is int
-            ? (m['durationMinutes'] as int)
-            : (m['durationMinutes'] ?? 30).toInt(),
-        category: (m['category'] ?? '') as String,
-        gender: (m['gender'] ?? 'Unisex') as String,
-        description: (m['description'] ?? '') as String,
-        image: (m['image'] ?? '') as String,
-      );
-
-  Map<String, dynamic> toJson() => {'id': id, ...toMap()};
+  factory ServiceModel.fromJson(Map<String, dynamic> json) {
+    return ServiceModel(
+      id: json['id'],
+      salon: json['salon'],
+      name: json['name'],
+      description: json['description'] ?? '',
+      category: json['category'],
+      price: double.parse(json['price'].toString()),
+      duration: json['duration'],
+      isActive: json['is_active'],
+    );
+  }
 }

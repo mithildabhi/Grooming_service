@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import '../services/auth_service.dart';
 import '../app_routes.dart';
@@ -11,21 +12,31 @@ class AuthController extends GetxController {
   RxString role = 'user'.obs;
 
   // ---------------- LOGIN ----------------
-  Future<void> login(String email, String password) async {
-    try {
-      await _authService.login(email, password);
+Future<void> login(String email, String password) async {
+  print("🟡 LOGIN STARTED");
 
-      isLoggedIn.value = true;
-      role.value = _authService.getRole();
-      // await DjangoApiService.testAuth();
-      await DjangoApiService.syncUser();
+  try {
+    await _authService.login(email, password);
 
-      _redirectByRole();
-    } catch (e) {
-      Get.snackbar('Login failed', e.toString());
-    }
-    
+    final user = FirebaseAuth.instance.currentUser;
+    print("🟢 Firebase User: ${user?.email}");
+
+    final token = await user?.getIdToken(true);
+    print("🔥 FIREBASE TOKEN:");
+    print(token);
+
+    DjangoApiService.testAuth();
+    DjangoApiService.syncUser();
+
+    isLoggedIn.value = true;
+    role.value = _authService.getRole();
+
+    _redirectByRole();
+  } catch (e) {
+    print("❌ LOGIN ERROR: $e");
+    Get.snackbar('Login failed', e.toString());
   }
+}
 
   // ---------------- REGISTER ----------------
   Future<void> register(String email, String password, String role) async {
@@ -68,13 +79,11 @@ class AuthController extends GetxController {
       Get.offAllNamed(AppRoutes.userHome);
     }
   }
-<<<<<<< Updated upstream
-=======
 
   @override
   void onInit() {
     super.onInit();
-    // restoreSession();
+    restoreSession();
       if (isLoggedIn.value) {
     // 🔥 User already logged in → verify backend
     DjangoApiService.testAuth();
@@ -91,5 +100,5 @@ class AuthController extends GetxController {
       role.value = 'user';
     }
   }
->>>>>>> Stashed changes
+
 }
