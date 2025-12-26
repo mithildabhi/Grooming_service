@@ -2,157 +2,164 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/admin_controller.dart';
 
-class AddServiceScreen extends StatefulWidget {
+class AddServiceScreen extends StatelessWidget {
   const AddServiceScreen({super.key});
 
-  @override
-  State<AddServiceScreen> createState() => _AddServiceScreenState();
-}
-
-class _AddServiceScreenState extends State<AddServiceScreen> {
-  final ctrl = Get.find<AdminController>();
-
-  final nameCtrl = TextEditingController();
-  final descCtrl = TextEditingController();
-  final priceCtrl = TextEditingController();
-  final durationCtrl = TextEditingController(text: "45");
-
-  final category = 'hair'.obs;
+  static const Color bg = Color(0xFF0B0F14);
+  static const Color card = Color(0xFF121A22);
+  static const Color accent = Color(0xFF19F6E8);
 
   @override
   Widget build(BuildContext context) {
+    final ctrl = Get.find<AdminController>();
+
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+    final durationCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final category = 'Hair'.obs;
+
     return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: const Color(0xFF0F1E1E),
+      backgroundColor: bg,
       appBar: AppBar(
-        leading: const BackButton(color: Colors.white),
-        backgroundColor: const Color(0xFF0F1E1E),
-        title: const Text(
-          "Add New Service",
-          style: TextStyle(color: Colors.white),
+        backgroundColor: bg,
+        elevation: 0,
+        title: const Text("Add Service", style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _aiHint(),
+            const SizedBox(height: 24),
+
+            _sectionTitle("Service Details"),
+            const SizedBox(height: 12),
+
+            _input("Service Name", nameCtrl),
+            _input("Price (₹)", priceCtrl),
+            _input("Duration (minutes)", durationCtrl),
+            _dropdown(category),
+            _multiline("Description", descCtrl),
+
+            const SizedBox(height: 32),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: () {
+                  ctrl.addService(
+                    token: "JWT_TOKEN",
+                    name: nameCtrl.text,
+                    description: descCtrl.text,
+                    price: double.tryParse(priceCtrl.text) ?? 0,
+                    duration: int.tryParse(durationCtrl.text) ?? 0,
+                    category: category.value,
+                  );
+                },
+                child: const Text(
+                  "Save Service",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _field("Service Name", nameCtrl),
-              _field("Description", descCtrl, maxLines: 3),
-              _field("Price", priceCtrl, keyboard: TextInputType.number),
-              _field(
-                "Duration (min)",
-                durationCtrl,
-                keyboard: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
+    );
+  }
 
-              /// CATEGORY DROPDOWN (FIXED TEXT COLOR)
-              Obx(
-                () => DropdownButtonFormField<String>(
-                  value: category.value,
-                  dropdownColor: const Color(0xFF1E3535),
-                  style: const TextStyle(color: Colors.white),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'hair',
-                      child: Text(
-                        "Hair",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'spa',
-                      child: Text("Spa", style: TextStyle(color: Colors.white)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'facial',
-                      child: Text(
-                        "Facial",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'massage',
-                      child: Text(
-                        "Massage",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                  onChanged: (v) => category.value = v!,
-                  decoration: _inputDecoration("Category"),
-                ),
-              ),
+  // ───────── UI PARTS ─────────
 
-              const SizedBox(height: 28),
-
-              /// SAVE BUTTON
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF22E6D3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () {
-                    ctrl.addService(
-                      token: "YOUR_JWT_TOKEN_HERE",
-                      name: nameCtrl.text.trim(),
-                      description: descCtrl.text.trim(),
-                      price: double.tryParse(priceCtrl.text) ?? 0,
-                      duration: int.tryParse(durationCtrl.text) ?? 0,
-                      category: category.value,
-                    );
-                  },
-                  child: const Text(
-                    "Save Service",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+  Widget _aiHint() => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: card,
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: const Row(
+      children: [
+        Icon(Icons.psychology, color: accent),
+        SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            "AI suggests services under 30 mins get more bookings.",
+            style: TextStyle(color: Colors.white70),
           ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
 
-  Widget _field(
-    String label,
-    TextEditingController c, {
-    int maxLines = 1,
-    TextInputType keyboard = TextInputType.text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: TextField(
-        controller: c,
-        maxLines: maxLines,
-        keyboardType: keyboard,
-        cursorColor: Colors.white, // ✅ cursor visible
-        style: const TextStyle(color: Colors.white),
-        decoration: _inputDecoration(label),
-      ),
-    );
-  }
+  Widget _sectionTitle(String t) => Text(
+    t,
+    style: const TextStyle(
+      color: Colors.white,
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+    ),
+  );
 
-  InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: Colors.white10,
-      labelStyle: const TextStyle(color: Colors.white70),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
+  Widget _input(String label, TextEditingController c) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      controller: c,
+      style: const TextStyle(color: Colors.white),
+      decoration: _dec(label),
+    ),
+  );
+
+  Widget _multiline(String label, TextEditingController c) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      controller: c,
+      maxLines: 4,
+      style: const TextStyle(color: Colors.white),
+      decoration: _dec(label),
+    ),
+  );
+
+  Widget _dropdown(RxString value) => Obx(
+    () => Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              "Category: ${value.value}",
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          const Icon(Icons.keyboard_arrow_down, color: Colors.white54),
+        ],
+      ),
+    ),
+  );
+
+  InputDecoration _dec(String label) => InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: Colors.white70),
+    filled: true,
+    fillColor: card,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
+    ),
+  );
 }

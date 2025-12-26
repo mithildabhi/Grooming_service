@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:salon_booking/views/admin/employee_screen.dart';
+import 'package:salon_booking/views/admin/services_screen.dart';
+import 'package:salon_booking/views/admin/settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -20,10 +24,12 @@ class ProfileScreen extends StatelessWidget {
           style: TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.settings, color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              Get.to(() => const SettingsScreen());
+            },
           ),
         ],
       ),
@@ -180,22 +186,46 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // ⚡ QUICK ACTIONS (WRAP = SAFE)
+            // ⚡ QUICK ACTIONS
             _sectionTitle("Quick Actions"),
             const SizedBox(height: 12),
 
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: const [
-                _QuickAction(icon: Icons.people, label: "Staff"),
-                _QuickAction(icon: Icons.cut, label: "Services"),
-                _QuickAction(icon: Icons.payments, label: "Billing"),
-                _QuickAction(icon: Icons.settings, label: "Settings"),
+            GridView.count(
+              crossAxisCount: 2, // 🔥 2 items per row
+              shrinkWrap: true, // important inside scroll
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.2, // card shape
+              children: [
+                _QuickAction(
+                  icon: Icons.people,
+                  label: "Staff",
+                  onTap: () {
+                    Get.to(() => const EmployeeScreen());
+                  },
+                ),
+                _QuickAction(
+                  icon: Icons.cut,
+                  label: "Services",
+                  onTap: () {
+                    Get.to(() => const ServicesScreen());
+                  },
+                ),
+                _QuickAction(
+                  icon: Icons.payments,
+                  label: "Billing",
+                  onTap: () {},
+                ),
+                _QuickAction(
+                  icon: Icons.settings,
+                  label: "Settings",
+                  onTap: () {
+                    Get.to(() => const SettingsScreen());
+                  },
+                ),
               ],
             ),
-
-            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -315,25 +345,39 @@ class _SnapshotCard extends StatelessWidget {
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
 
-  const _QuickAction({required this.icon, required this.label});
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: BoxDecoration(
-        color: ProfileScreen.card,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: ProfileScreen.accent),
-          const SizedBox(height: 10),
-          Text(label, style: const TextStyle(color: Colors.white)),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: ProfileScreen.card,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: ProfileScreen.accent, size: 26),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
