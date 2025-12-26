@@ -1,20 +1,25 @@
 from rest_framework.permissions import BasePermission
 
-class IsSuperAdmin(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'SUPER_ADMIN'
-
-
 class IsSalonOwner(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'SALON_OWNER'
+        user = request.user
 
+        if not user:
+            return False
 
-class IsEmployee(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'EMPLOYEE'
-
+        # request.user IS AppUser
+        return user.role == 'SALON_OWNER'
 
 class IsCustomer(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'CUSTOMER'
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'CUSTOMER'
+        )
+
+class IsSuperAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'SUPER_ADMIN'
+        )
