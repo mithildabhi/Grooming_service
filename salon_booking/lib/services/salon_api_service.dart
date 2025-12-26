@@ -5,8 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/salon_profile.dart';
 
 class SalonApiService {
-  static const String baseUrl = 'http://192.168.29.87:8000/api';
-  // static const String baseUrl = 'http://10.94.179.16:8000/api';
+  // static const String baseUrl = 'http://192.168.29.87:8000/api';
+  static const String baseUrl = 'http://10.94.179.16:8000/api';
 
   /// Get auth headers with Firebase token
   static Future<Map<String, String>> _getHeaders() async {
