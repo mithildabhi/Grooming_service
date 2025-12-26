@@ -7,6 +7,8 @@ import 'register_screen.dart';
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
+  get routeName => null;
+
   @override
   Widget build(BuildContext context) {
     final emailController = TextEditingController();

@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:salon_booking/views/admin/edit_profile_screen.dart';
+import 'package:salon_booking/views/login_screen.dart';
 import '../models/booking_model.dart';
 import '../models/salon_profile.dart';
 import '../models/service_model.dart';
@@ -228,7 +230,33 @@ class AdminController extends GetxController {
   // AUTH
   // =========================
 
+  // =========================
+  // PROFILE NAVIGATION
+  // =========================
+
+  void startEditProfile() {
+    Get.to(() => const EditProfileScreen());
+  }
+
+  // =========================
+  // LOGOUT
+  // =========================
+
   Future<void> logout() async {
-    Get.snackbar("Logged out", "Session ended");
+    try {
+      // 🔐 later: call Django logout API if required
+
+      // ❌ DO NOT delete controllers blindly here
+      // Get.deleteAll(force: true);  // <- REMOVE this if you added it
+
+      // ✅ Clear only admin-related state if needed
+      activeSalonId.value = '';
+      salonProfile.value = null;
+
+      // 🚀 Navigate to login & remove all previous routes
+      Get.offAllNamed('/login');
+    } catch (e) {
+      Get.snackbar("Error", "Logout failed");
+    }
   }
 }
