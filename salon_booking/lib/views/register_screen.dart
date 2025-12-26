@@ -9,37 +9,45 @@ class RegisterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final email = TextEditingController();
     final password = TextEditingController();
-    final role = TextEditingController(text: 'user');
+    final role = 'user'.obs;
     final auth = Get.find<AuthController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Account")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Create Account"),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            _input(email, "Email", Icons.email),
+            _input(email, "Email"),
             const SizedBox(height: 16),
-            _input(password, "Password", Icons.lock, obscure: true),
+            _input(password, "Password", obscure: true),
             const SizedBox(height: 16),
 
-            DropdownButtonFormField<String>(
-              value: role.text,
-              decoration: const InputDecoration(
-                labelText: "Account Type",
-                border: OutlineInputBorder(),
+            Obx(
+              () => DropdownButtonFormField<String>(
+                value: role.value,
+                items: const [
+                  DropdownMenuItem(value: 'user', child: Text("Customer")),
+                  DropdownMenuItem(value: 'admin', child: Text("Salon Admin")),
+                ],
+                onChanged: (v) => role.value = v ?? 'user',
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: "Account Type",
+                ),
               ),
-              items: const [
-                DropdownMenuItem(value: 'user', child: Text("Customer")),
-                DropdownMenuItem(value: 'admin', child: Text("Salon Admin")),
-              ],
-              onChanged: (v) => role.text = v ?? 'user',
             ),
 
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 48,
               child: ElevatedButton(
                 onPressed: () {
                   if (email.text.isEmpty || password.text.isEmpty) {
@@ -49,10 +57,10 @@ class RegisterScreen extends StatelessWidget {
                   auth.register(
                     email.text.trim(),
                     password.text.trim(),
-                    role.text,
+                    role.value,
                   );
                 },
-                child: const Text("Create Account"),
+                child: const Text("Register"),
               ),
             ),
           ],
@@ -61,24 +69,13 @@ class RegisterScreen extends StatelessWidget {
     );
   }
 
-  Widget _input(
-    TextEditingController controller,
-    String hint,
-    IconData icon, {
-    bool obscure = false,
-  }) {
+  Widget _input(TextEditingController c, String hint, {bool obscure = false}) {
     return TextField(
-      controller: controller,
+      controller: c,
       obscureText: obscure,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon),
         hintText: hint,
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

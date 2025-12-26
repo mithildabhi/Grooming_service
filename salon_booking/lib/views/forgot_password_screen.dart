@@ -11,35 +11,26 @@ class ForgotPasswordScreen extends StatelessWidget {
     final auth = Get.find<AuthController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Reset Password")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Reset Password"),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const Icon(Icons.lock_reset, size: 80, color: Color(0xFF00C9FF)),
-            const SizedBox(height: 20),
-            const Text(
-              "Forgot Password?",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "We'll send reset instructions to your email",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 30),
+            const Text("Enter your email", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 16),
 
             TextField(
               controller: email,
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.email),
-                hintText: "Enter email",
-                filled: true,
-                fillColor: Colors.grey.shade100,
+                hintText: "Email",
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
@@ -47,7 +38,7 @@ class ForgotPasswordScreen extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 48,
               child: ElevatedButton(
                 onPressed: () {
                   if (!GetUtils.isEmail(email.text)) {

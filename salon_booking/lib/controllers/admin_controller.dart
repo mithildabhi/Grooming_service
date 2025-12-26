@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:salon_booking/views/admin/edit_profile_screen.dart';
-import 'package:salon_booking/views/login_screen.dart';
 import '../models/booking_model.dart';
 import '../models/salon_profile.dart';
 import '../models/service_model.dart';
