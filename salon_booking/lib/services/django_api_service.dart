@@ -2,8 +2,13 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
 class DjangoApiService {
+<<<<<<< Updated upstream
   // static const String baseUrl = "http://10.97.98.16:8000/api";
   static const String baseUrl = 'http://192.168.29.87:8000/api';
+=======
+  static const String baseUrl = "http://10.97.98.16:8000/api";
+  // static const String baseUrl = 'http://192.168.29.87:8000/api';
+>>>>>>> Stashed changes
 
   static Future<void> testAuth() async {
     final user = FirebaseAuth.instance.currentUser;

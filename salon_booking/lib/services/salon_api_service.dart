@@ -2,8 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class SalonApiService {
+<<<<<<< Updated upstream
   static const String baseUrl = 'http://192.168.29.87:8000/api';
   // static const String baseUrl = 'http://10.97.98.16:8000/api';
+=======
+  // static const String baseUrl = 'http://192.168.29.87:8000/api';
+  static const String baseUrl = 'http://10.94.179.16:8000/api';
+>>>>>>> Stashed changes
 
   static Future<List<dynamic>> fetchSalons(String token) async {
     final res = await http.get(
