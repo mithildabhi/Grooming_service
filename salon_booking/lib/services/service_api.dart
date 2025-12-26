@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/service_model.dart';
 
 class ServiceApi {
-  static const String baseUrl = 'http://192.168.29.87:8000/api/services';
+  // static const String baseUrl = 'http://192.168.29.87:8000/api/services';
+  static const String baseUrl = 'http://10.97.98.16:8000/api/services';
 
   static Future<List<ServiceModel>> fetchServices() async {
     final res = await http.get(Uri.parse('$baseUrl/'));
