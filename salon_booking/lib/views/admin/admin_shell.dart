@@ -15,45 +15,60 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    DashboardScreen(),
-    AdminBookingsScreen(salonId: ''),
-    ServicesScreen(),
-    EmployeeScreen(),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardScreen(),
+      AdminBookingsScreen(salonId: '1'), // ✅ safe default
+      ServicesScreen(),
+      EmployeeScreen(),
+      ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0F14),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0B0F14),
 
-      // 🔥 THIS PREVENTS REFRESH
-      body: IndexedStack(index: _currentIndex, children: _pages),
+        // ✅ NO REFRESH, NO REBUILD
+        body: IndexedStack(index: _currentIndex, children: _pages),
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF111827),
-        selectedItemColor: const Color(0xFF19F6E8),
-        unselectedItemColor: Colors.white54,
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: const Color(0xFF111827),
+          selectedItemColor: const Color(0xFF19F6E8),
+          unselectedItemColor: Colors.white54,
 
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+          onTap: (index) {
+            if (index != _currentIndex) {
+              setState(() => _currentIndex = index);
+            }
+          },
 
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Bookings',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.cut), label: 'Services'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Staff'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today),
+              label: 'Bookings',
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.cut), label: 'Services'),
+            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Staff'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          ],
+        ),
       ),
     );
   }

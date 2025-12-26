@@ -1,84 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
-import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
+  static const bg = Color(0xFF0B0F14);
+  static const accent = Color(0xFF19F6E8);
+
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
+    final email = TextEditingController();
+    final password = TextEditingController();
     final auth = Get.find<AuthController>();
 
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFDFBFB), Color(0xFFECECEC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
+      backgroundColor: bg,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: _card(
             child: Column(
               children: [
-                const Icon(Icons.spa, size: 80, color: Color(0xFF00C9FF)),
-                const SizedBox(height: 20),
+                const Icon(Icons.lock, size: 60, color: accent),
+                const SizedBox(height: 16),
                 const Text(
                   "Welcome Back",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                const Text(
-                  "Login to continue",
-                  style: TextStyle(color: Colors.grey),
-                ),
+                const SizedBox(height: 24),
 
-                const SizedBox(height: 30),
-                _input(emailController, "Email", Icons.email),
+                _input(email, "Email", Icons.email),
                 const SizedBox(height: 16),
-                _input(
-                  passwordController,
-                  "Password",
-                  Icons.lock,
-                  obscure: true,
-                ),
+                _input(password, "Password", Icons.lock, obscure: true),
 
+                const SizedBox(height: 12),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Get.to(() => const ForgotPasswordScreen()),
-                    child: const Text("Forgot Password?"),
+                    child: const Text(
+                      "Forgot password?",
+                      style: TextStyle(color: accent),
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 16),
-                _primaryButton("Login", () {
-                  if (emailController.text.isEmpty ||
-                      passwordController.text.isEmpty) {
-                    Get.snackbar("Error", "Enter email & password");
-                    return;
-                  }
-                  auth.login(
-                    emailController.text.trim(),
-                    passwordController.text.trim(),
-                  );
-                }),
+                const SizedBox(height: 12),
+                _button(
+                  text: "Login",
+                  onTap: () {
+                    if (email.text.isEmpty || password.text.isEmpty) {
+                      Get.snackbar("Error", "All fields required");
+                      return;
+                    }
+                    auth.login(email.text.trim(), password.text.trim());
+                  },
+                ),
 
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Don't have an account?"),
-                    TextButton(
-                      onPressed: () => Get.to(() => const RegisterScreen()),
-                      child: const Text("Register"),
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Get.to(() => const RegisterScreen()),
+                  child: const Text(
+                    "Create new account",
+                    style: TextStyle(color: accent),
+                  ),
                 ),
               ],
             ),
@@ -88,41 +76,48 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
+  Widget _card({required Widget child}) => Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: child,
+  );
+
   Widget _input(
-    TextEditingController controller,
-    String hint,
-    IconData icon, {
+    TextEditingController c,
+    String h,
+    IconData i, {
     bool obscure = false,
   }) {
     return TextField(
-      controller: controller,
+      controller: c,
       obscureText: obscure,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon),
-        hintText: hint,
+        prefixIcon: Icon(i),
+        hintText: h,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Colors.grey.shade100,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
       ),
     );
   }
 
-  Widget _primaryButton(String text, VoidCallback onTap) {
+  Widget _button({required String text, required VoidCallback onTap}) {
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 48,
       child: ElevatedButton(
-        onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF00C9FF),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
+          backgroundColor: accent,
+          foregroundColor: Colors.black,
         ),
-        child: Text(text, style: const TextStyle(fontSize: 18)),
+        onPressed: onTap,
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
