@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:salon_booking/views/admin/new_staff_member_screen.dart';
 
 class EmployeeScreen extends StatelessWidget {
