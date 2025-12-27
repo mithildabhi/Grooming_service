@@ -3,12 +3,10 @@ import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'package:salon_booking/theme/app_colors.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
-
-  static const bg = Color(0xFF0B0F14);
-  static const accent = Color(0xFF19F6E8);
 
   @override
   Widget build(BuildContext context) {
@@ -17,40 +15,60 @@ class LoginScreen extends StatelessWidget {
     final auth = Get.find<AuthController>();
 
     return Scaffold(
-      backgroundColor: bg,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: _card(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FEFD), Color(0xFFEFFFFC)],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                const Icon(Icons.lock, size: 60, color: accent),
-                const SizedBox(height: 16),
+                const SizedBox(height: 40),
+
+                // Logo
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: kAccent.withOpacity(0.15),
+                  child: const Icon(Icons.spa, size: 40, color: kAccent),
+                ),
+
+                const SizedBox(height: 24),
                 const Text(
                   "Welcome Back",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: kTextDark,
+                  ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 6),
+                const Text(
+                  "Login to continue",
+                  style: TextStyle(color: kHint),
+                ),
 
-                _input(email, "Email", Icons.email),
+                const SizedBox(height: 32),
+                _input(email, "Email Address", Icons.email),
                 const SizedBox(height: 16),
                 _input(password, "Password", Icons.lock, obscure: true),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Get.to(() => const ForgotPasswordScreen()),
-                    child: const Text(
-                      "Forgot password?",
-                      style: TextStyle(color: accent),
-                    ),
+                    child: const Text("Forgot Password?"),
                   ),
                 ),
 
-                const SizedBox(height: 12),
-                _button(
-                  text: "Login",
+                const SizedBox(height: 20),
+                _primaryButton(
+                  text: "Login →",
                   onTap: () {
                     if (email.text.isEmpty || password.text.isEmpty) {
                       Get.snackbar("Error", "All fields required");
@@ -60,13 +78,19 @@ class LoginScreen extends StatelessWidget {
                   },
                 ),
 
+                const SizedBox(height: 20),
+                const Text("OR", style: TextStyle(color: kHint)),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Get.to(() => const RegisterScreen()),
-                  child: const Text(
-                    "Create new account",
-                    style: TextStyle(color: accent),
+
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
+                  onPressed: () => Get.to(() => const RegisterScreen()),
+                  child: const Text("Create New Account"),
                 ),
               ],
             ),
@@ -76,48 +100,51 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _card({required Widget child}) => Container(
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: child,
-  );
-
   Widget _input(
     TextEditingController c,
-    String h,
-    IconData i, {
+    String hint,
+    IconData icon, {
     bool obscure = false,
   }) {
     return TextField(
       controller: c,
       obscureText: obscure,
       decoration: InputDecoration(
-        prefixIcon: Icon(i),
-        hintText: h,
+        prefixIcon: Icon(icon),
+        hintText: hint,
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
       ),
     );
   }
 
-  Widget _button({required String text, required VoidCallback onTap}) {
+  Widget _primaryButton({
+    required String text,
+    required VoidCallback onTap,
+  }) {
     return SizedBox(
       width: double.infinity,
-      height: 48,
+      height: 54,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: accent,
-          foregroundColor: Colors.black,
+          backgroundColor: kAccent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
         ),
         onPressed: onTap,
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
       ),
     );
   }
