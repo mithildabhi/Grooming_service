@@ -28,7 +28,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: adminCtrl.startEditProfile,
+            onPressed: adminCtrl.openEditProfile,
           ),
         ],
       ),
