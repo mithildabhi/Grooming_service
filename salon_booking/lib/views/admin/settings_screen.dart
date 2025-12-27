@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../controllers/admin_controller.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -10,6 +12,8 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AdminController adminCtrl = Get.find<AdminController>();
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -68,18 +72,21 @@ class SettingsScreen extends StatelessWidget {
                     icon: Icons.store,
                     title: "Salon Profile",
                     subtitle: "Name, address, working hours",
+                    onPressed: () {},
                   ),
                   _divider(),
                   _actionTile(
                     icon: Icons.receipt_long,
                     title: "Business Policies",
                     subtitle: "Taxes, commission, cancellation",
+                    onPressed: () {},
                   ),
                   _divider(),
                   _actionTile(
                     icon: Icons.payment,
                     title: "Payment Settings",
                     subtitle: "UPI, card, bank accounts",
+                    onPressed: () {},
                   ),
                 ],
               ),
@@ -124,6 +131,7 @@ class SettingsScreen extends StatelessWidget {
                     icon: Icons.lock,
                     title: "Change Password",
                     subtitle: "Update admin password",
+                    onPressed: () {},
                   ),
                   _divider(),
                   _actionTile(
@@ -131,6 +139,37 @@ class SettingsScreen extends StatelessWidget {
                     title: "Logout",
                     subtitle: "Sign out from admin panel",
                     danger: true,
+                    onPressed: () {
+                      Get.dialog(
+                        AlertDialog(
+                          backgroundColor: card,
+                          title: const Text(
+                            "Logout",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          content: const Text(
+                            "Are you sure you want to logout?",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: Get.back,
+                              child: const Text("Cancel"),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Get.back(); // close dialog
+                                adminCtrl.logout(); // ✅ WORKING
+                              },
+                              child: const Text(
+                                "Logout",
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -210,33 +249,37 @@ class SettingsScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     bool danger = false,
+    required VoidCallback onPressed,
   }) {
     final Color color = danger ? Colors.redAccent : accent;
 
-    return Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: color.withOpacity(0.2),
-          child: Icon(icon, color: color),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: danger ? Colors.redAccent : Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(subtitle, style: const TextStyle(color: Colors.white70)),
-            ],
+    return InkWell(
+      onTap: onPressed,
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: color.withOpacity(0.2),
+            child: Icon(icon, color: color),
           ),
-        ),
-        const Icon(Icons.chevron_right, color: Colors.white54),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: danger ? Colors.redAccent : Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(subtitle, style: const TextStyle(color: Colors.white70)),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: Colors.white54),
+        ],
+      ),
     );
   }
 }

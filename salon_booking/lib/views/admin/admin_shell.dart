@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:glassmotion_navbar/glassmotion_navbar.dart';
+
 import 'dashboard_screen.dart';
 import 'admin_bookings_screen.dart';
 import 'services_screen.dart';
@@ -17,12 +19,20 @@ class _AdminShellState extends State<AdminShell> {
 
   late final List<Widget> _pages;
 
+  static const _navItems = <GlassNavItem>[
+    GlassNavItem(icon: Icons.home_rounded, label: 'Home'),
+    GlassNavItem(icon: Icons.calendar_month_rounded, label: 'Bookings'),
+    GlassNavItem(icon: Icons.cut_rounded, label: 'Services'),
+    GlassNavItem(icon: Icons.people_rounded, label: 'Staff'),
+    GlassNavItem(icon: Icons.person_rounded, label: 'Profile'),
+  ];
+
   @override
   void initState() {
     super.initState();
-    _pages = [
+    _pages = const [
       DashboardScreen(),
-      AdminBookingsScreen(salonId: '1'), // ✅ safe default
+      AdminBookingsScreen(salonId: '1'),
       ServicesScreen(),
       EmployeeScreen(),
       ProfileScreen(),
@@ -42,32 +52,24 @@ class _AdminShellState extends State<AdminShell> {
       child: Scaffold(
         backgroundColor: const Color(0xFF0B0F14),
 
-        // ✅ NO REFRESH, NO REBUILD
+        // ✅ NO REBUILD
         body: IndexedStack(index: _currentIndex, children: _pages),
 
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF111827),
-          selectedItemColor: const Color(0xFF19F6E8),
-          unselectedItemColor: Colors.white54,
-
-          onTap: (index) {
+        bottomNavigationBar: GlassMotionNavBar(
+          items: _navItems,
+          selectedIndex: _currentIndex,
+          onItemTapped: (index) {
             if (index != _currentIndex) {
               setState(() => _currentIndex = index);
             }
           },
 
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today),
-              label: 'Bookings',
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.cut), label: 'Services'),
-            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Staff'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          ],
+          // optional center tap
+          onCenterTap: () {},
+
+          accentColor: const Color(0xFF19F6E8),
+          inactiveColor: Colors.white54,
+          backgroundColor: Colors.black.withOpacity(0.08),
         ),
       ),
     );

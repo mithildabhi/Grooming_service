@@ -18,7 +18,7 @@ class DashboardScreen extends StatelessWidget {
         backgroundColor: bg,
         elevation: 0,
         title: const Text(
-          "AI Command Center",
+          "Dashboard Screen",
           style: TextStyle(color: Colors.white),
         ),
         actions: [
