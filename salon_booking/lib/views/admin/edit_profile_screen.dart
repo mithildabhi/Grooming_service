@@ -5,6 +5,7 @@ import '../../controllers/admin_controller.dart';
 class EditProfileScreen extends StatelessWidget {
   const EditProfileScreen({super.key});
 
+  // Same admin colors
   static const Color bg = Color(0xFF0B0F14);
   static const Color card = Color(0xFF121A22);
   static const Color accent = Color(0xFF19F6E8);
@@ -18,70 +19,135 @@ class EditProfileScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: Get.back,
+        title: const Text(
+          "Edit Profile",
+          style: TextStyle(color: Colors.white),
         ),
-        title: const Text("Edit Profile"),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
+            // 👤 PROFILE PHOTO
+            _cardBox(
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 46,
+                    backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.edit, color: accent, size: 18),
+                    label: const Text(
+                      "Change Photo",
+                      style: TextStyle(color: accent),
+                    ),
+                  ),
+                ],
+              ),
             ),
+
             const SizedBox(height: 24),
 
-            _input("Full Name", "Sarah Jenkins"),
-            _input("Email", "sarah@salon.com"),
-            _input("Phone", "+91 98765 43210"),
-            _input("Salon Name", "Glow Studio"),
-            _input("Location", "Ahmedabad"),
+            // 🧾 BASIC INFO
+            _sectionTitle("Basic Information"),
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 32),
+            _inputField(label: "Full Name", value: "Sarah Jenkins"),
+            _inputField(label: "Email", value: "sarah@salon.com"),
+            _inputField(label: "Phone Number", value: "+91 98765 43210"),
 
+            const SizedBox(height: 20),
+
+            // 🏢 SALON INFO
+            _sectionTitle("Salon Information"),
+            const SizedBox(height: 12),
+
+            _inputField(label: "Salon Name", value: "Glow Studio"),
+            _inputField(label: "Location", value: "Ahmedabad"),
+
+            const SizedBox(height: 28),
+
+            // ✅ SAVE BUTTON
             SizedBox(
               width: double.infinity,
-              height: 48,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
                 onPressed: () {
-                  // 🔗 Django API later
                   Get.back();
-                  Get.snackbar("Saved", "Profile updated");
+                  Get.snackbar(
+                    "Saved",
+                    "Profile updated successfully",
+                    backgroundColor: card,
+                    colorText: Colors.white,
+                  );
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: accent),
                 child: const Text(
                   "Save Changes",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _input(String label, String value) {
+  // ───────── UI HELPERS (SAME AS NewStaffMemberScreen) ─────────
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _cardBox({required Widget child}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
       ),
+      child: child,
+    );
+  }
+
+  Widget _inputField({required String label, required String value}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         initialValue: value,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.white70),
-          border: InputBorder.none,
+          filled: true,
+          fillColor: card,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );

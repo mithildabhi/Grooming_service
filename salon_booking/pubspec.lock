@@ -240,6 +240,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.7.3"
+  glassmotion_navbar:
+    dependency: "direct main"
+    description:
+      name: glassmotion_navbar
+      sha256: fd0aab4b3938601a723bc5e46294eb078f259f9d835b3337ce703881cbbec845
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.5"
   http:
     dependency: transitive
     description:

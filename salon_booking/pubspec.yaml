@@ -44,6 +44,7 @@ dependencies:
   # firebase_auth: ^4.17.0
   # firebase_messaging: ^14.7.10
 
+  glassmotion_navbar: ^0.1.5
 
   cupertino_icons: ^1.0.8
   font_awesome_flutter: ^10.10.0

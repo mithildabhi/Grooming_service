@@ -1,50 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../app_routes.dart';
+import 'package:glassmotion_navbar/glassmotion_navbar.dart';
 
-class AdminBottomNav extends StatelessWidget {
+import 'dashboard_screen.dart';
+import 'admin_bookings_screen.dart';
+import 'services_screen.dart';
+import 'employee_screen.dart';
+import 'profile_screen.dart';
+
+class AdminBottomNav extends StatefulWidget {
   final int currentIndex;
   const AdminBottomNav({super.key, required this.currentIndex});
 
   @override
+  State<AdminBottomNav> createState() => _AdminBottomNavState();
+}
+
+class _AdminBottomNavState extends State<AdminBottomNav> {
+  late int selected;
+
+  static const adminItems = <GlassNavItem>[
+    GlassNavItem(icon: Icons.home_rounded, label: 'Home'),
+    GlassNavItem(icon: Icons.calendar_month_rounded, label: 'Bookings'),
+    GlassNavItem(icon: Icons.cut_rounded, label: 'Services'),
+    GlassNavItem(icon: Icons.people_rounded, label: 'Staff'),
+    GlassNavItem(icon: Icons.person_rounded, label: 'Profile'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    selected = widget.currentIndex;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: const Color(0xFF111827),
-      selectedItemColor: const Color(0xFF19F6E8),
-      unselectedItemColor: Colors.white54,
+    return GlassMotionNavBar(
+      items: adminItems,
+      selectedIndex: selected,
+      onItemTapped: _onNavigate,
 
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            Get.offNamed(AppRoutes.adminDashboard);
-            break;
-          case 1:
-            Get.offNamed(AppRoutes.adminBookings);
-            break;
-          case 2:
-            Get.offNamed(AppRoutes.adminServices);
-            break;
-          case 3:
-            Get.offNamed(AppRoutes.adminEmployees);
-            break;
-          case 4:
-            Get.offNamed(AppRoutes.adminProfile);
-            break;
-        }
-      },
+      onCenterTap: () {},
 
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Bookings',
-        ),
-        BottomNavigationBarItem(icon: Icon(Icons.cut), label: 'Services'),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Staff'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
+      accentColor: const Color(0xFF19F6E8),
+      inactiveColor: Colors.white54,
+      backgroundColor: Colors.black.withOpacity(0.08),
+    );
+  }
+
+  // ───────────────── NAVIGATION ─────────────────
+
+  void _onNavigate(int index) {
+    if (index == selected) return;
+
+    final pages = [
+      const DashboardScreen(),
+      const AdminBookingsScreen(salonId: ''),
+      const ServicesScreen(),
+      const EmployeeScreen(),
+      const ProfileScreen(),
+    ];
+
+    setState(() => selected = index);
+
+    Get.off(
+      pages[index],
+      transition: Transition.fadeIn,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
     );
   }
 }

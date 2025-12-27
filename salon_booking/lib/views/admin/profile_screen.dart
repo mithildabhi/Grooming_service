@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salon_booking/views/admin/employee_screen.dart';
+import 'package:salon_booking/views/admin/services_screen.dart';
+import 'package:salon_booking/views/admin/settings_screen.dart';
 import '../../controllers/admin_controller.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -71,6 +74,54 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
+            // ⚡ QUICK ACTIONS TITLE
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Quick Actions",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: [
+                _actionCard(
+                  icon: Icons.people,
+                  title: "Staff Management",
+                  onTap: () => Get.to(EmployeeScreen()),
+                ),
+                _actionCard(
+                  icon: Icons.local_florist,
+                  title: "Services",
+                  onTap: () => Get.to(ServicesScreen()),
+                ),
+                _actionCard(
+                  icon: Icons.account_balance_wallet,
+                  title: "Billing & Payouts",
+                  onTap: () => Get.toNamed('/billing'),
+                ),
+                _actionCard(
+                  icon: Icons.settings,
+                  title: "App Settings",
+                  onTap: () => Get.to(SettingsScreen()),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+
             // 🚪 LOGOUT BUTTON
             SizedBox(
               width: double.infinity,
@@ -110,7 +161,7 @@ class ProfileScreen extends StatelessWidget {
                         TextButton(
                           onPressed: () {
                             Get.back();
-                            adminCtrl.logout(); // ✅ SAFE
+                            adminCtrl.logout();
                           },
                           child: const Text(
                             "Logout",
@@ -153,6 +204,40 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _actionCard({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: accent, size: 30),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
