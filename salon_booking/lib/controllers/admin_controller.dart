@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -55,10 +54,12 @@ class AdminController extends GetxController {
   // =========================
   final RxList<Map<String, dynamic>> inventoryList =
       <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> galleryList =
-      <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> reviewsList =
-      <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> galleryList = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> reviewsList = <Map<String, dynamic>>[].obs;
+
+  void openEditProfile() {
+    Get.toNamed('/edit-profile');
+  }
 
   // =========================
   // INIT
@@ -208,10 +209,7 @@ class AdminController extends GetxController {
       filteredEmployees.assignAll(
         employeesList.where(
           (e) =>
-              e['name']
-                  .toString()
-                  .toLowerCase()
-                  .contains(query.toLowerCase()),
+              e['name'].toString().toLowerCase().contains(query.toLowerCase()),
         ),
       );
     }
@@ -255,5 +253,29 @@ class AdminController extends GetxController {
 
   Future<void> logout() async {
     Get.snackbar('Logged out', 'Session ended');
+  }
+
+  // =========================
+  // DELETE BOOKING
+  // =========================
+  Future<void> deleteBooking(dynamic bookingId) async {
+    try {
+      // Optional: call backend later
+      // await SalonApiService.deleteBooking(bookingId.toString());
+
+      bookingsList.removeWhere((b) => b['id'] == bookingId);
+
+      Get.snackbar(
+        'Deleted',
+        'Booking deleted successfully',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to delete booking',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 }
