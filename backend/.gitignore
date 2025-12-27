@@ -66,3 +66,10 @@ staticfiles/
 
 firebase/serviceAccountKey.json
 firebase/*.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+
