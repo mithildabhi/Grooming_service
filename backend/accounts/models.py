@@ -12,7 +12,16 @@ class User(AbstractUser):
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
-        default='CUSTOMER'
+        default='SALON_OWNER'  # Changed default to SALON_OWNER
+    )
+    
+    # ADD THIS FIELD for better Firebase integration
+    firebase_uid = models.CharField(
+        max_length=128,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Firebase UID"
     )
 
     def __str__(self):

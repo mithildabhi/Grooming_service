@@ -54,6 +54,9 @@ def service_create(request):
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    # Print validation errors for debugging
+    print(f"❌ Validation errors: {serializer.errors}")
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -82,10 +85,24 @@ def service_detail(request, pk):
 
     if request.method in ['PUT', 'PATCH']:
         partial = request.method == 'PATCH'
-        serializer = ServiceSerializer(service, data=request.data, partial=partial)
+        
+        # Make a copy of the data
+        data = request.data.copy()
+        
+        # Ensure salon field is set (required for PUT, optional for PATCH)
+        if 'salon' not in data:
+            data['salon'] = service.salon.id
+        
+        print(f"🔄 Update request data: {data}")
+        
+        serializer = ServiceSerializer(service, data=data, partial=partial)
         if serializer.is_valid():
             serializer.save()
+            print(f"✅ Service updated successfully")
             return Response(serializer.data)
+        
+        # Print validation errors
+        print(f"❌ Validation errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     if request.method == 'DELETE':

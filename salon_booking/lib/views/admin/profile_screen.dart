@@ -30,157 +30,209 @@ class ProfileScreen extends StatelessWidget {
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: adminCtrl.openEditProfile,
           ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: adminCtrl.loadSalonProfile,
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // 👤 PROFILE IMAGE
-            const CircleAvatar(
-              radius: 48,
-              backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
-            ),
-            const SizedBox(height: 12),
+      body: Obx(() {
+        if (adminCtrl.isLoadingProfile.value) {
+          return const Center(
+            child: CircularProgressIndicator(color: accent),
+          );
+        }
 
-            const Text(
-              "Sarah Jenkins",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 4),
-
-            const Text(
-              "Salon Owner • AI Active",
-              style: TextStyle(color: accent),
-            ),
-
-            const SizedBox(height: 24),
-
-            _infoCard("Salon Name", "Glow Studio"),
-            _infoCard("Email", "sarah@salon.com"),
-            _infoCard("Phone", "+91 98765 43210"),
-            _infoCard("Location", "Ahmedabad, India"),
-
-            const SizedBox(height: 24),
-
-            _infoCard("Revenue", "₹4.2K / month"),
-            _infoCard("Retention", "88%"),
-            _infoCard("Inventory Alerts", "2 Low Stock"),
-
-            const SizedBox(height: 32),
-
-            // ⚡ QUICK ACTIONS TITLE
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Quick Actions",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.2,
+        if (!adminCtrl.hasProfile) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _actionCard(
-                  icon: Icons.people,
-                  title: "Staff Management",
-                  onTap: () => Get.to(EmployeeScreen()),
+                const Icon(Icons.store_outlined, size: 80, color: Colors.white38),
+                const SizedBox(height: 16),
+                const Text(
+                  'No Profile Found',
+                  style: TextStyle(color: Colors.white, fontSize: 20),
                 ),
-                _actionCard(
-                  icon: Icons.local_florist,
-                  title: "Services",
-                  onTap: () => Get.to(ServicesScreen()),
+                const SizedBox(height: 8),
+                const Text(
+                  'Create your salon profile to get started',
+                  style: TextStyle(color: Colors.white60),
                 ),
-                _actionCard(
-                  icon: Icons.account_balance_wallet,
-                  title: "Billing & Payouts",
-                  onTap: () => Get.toNamed('/billing'),
-                ),
-                _actionCard(
-                  icon: Icons.settings,
-                  title: "App Settings",
-                  onTap: () => Get.to(SettingsScreen()),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Create Profile'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accent,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: adminCtrl.openEditProfile,
                 ),
               ],
             ),
+          );
+        }
 
-            const SizedBox(height: 32),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // 👤 PROFILE IMAGE
+              CircleAvatar(
+                radius: 48,
+                backgroundImage: adminCtrl.imageUrl.isNotEmpty
+                    ? NetworkImage(adminCtrl.imageUrl)
+                    : const NetworkImage("https://i.pravatar.cc/300"),
+              ),
+              const SizedBox(height: 12),
 
-            // 🚪 LOGOUT BUTTON
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.logout, color: Colors.redAccent),
-                label: const Text(
-                  "Logout",
+              Text(
+                adminCtrl.salonName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              const Text(
+                "Salon Owner • AI Active",
+                style: TextStyle(color: accent),
+              ),
+
+              const SizedBox(height: 24),
+
+              _infoCard("Salon Name", adminCtrl.salonName),
+              _infoCard("Email", adminCtrl.ownerEmail),
+              _infoCard("Phone", adminCtrl.phone),
+              _infoCard("Location", adminCtrl.location),
+
+              const SizedBox(height: 24),
+
+              _infoCard("Revenue", "₹4.2K / month"),
+              _infoCard("Retention", "88%"),
+              _infoCard("Inventory Alerts", "2 Low Stock"),
+
+              const SizedBox(height: 32),
+
+              // ⚡ QUICK ACTIONS TITLE
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Quick Actions",
                   style: TextStyle(
-                    color: Colors.redAccent,
+                    color: Colors.white,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                onPressed: () {
-                  Get.dialog(
-                    AlertDialog(
-                      backgroundColor: card,
-                      title: const Text(
-                        "Logout",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      content: const Text(
-                        "Are you sure you want to logout?",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: Get.back,
-                          child: const Text("Cancel"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Get.back();
-                            adminCtrl.logout();
-                          },
-                          child: const Text(
-                            "Logout",
-                            style: TextStyle(color: Colors.redAccent),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
               ),
-            ),
-          ],
-        ),
-      ),
+
+              const SizedBox(height: 16),
+
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1.2,
+                children: [
+                  _actionCard(
+                    icon: Icons.people,
+                    title: "Staff Management",
+                    onTap: () => Get.to(() => const EmployeeScreen()),
+                  ),
+                  _actionCard(
+                    icon: Icons.local_florist,
+                    title: "Services",
+                    onTap: () => Get.to(() => const ServicesScreen()),
+                  ),
+                  _actionCard(
+                    icon: Icons.account_balance_wallet,
+                    title: "Billing & Payouts",
+                    onTap: () => Get.toNamed('/billing'),
+                  ),
+                  _actionCard(
+                    icon: Icons.settings,
+                    title: "App Settings",
+                    onTap: () => Get.to(() => const SettingsScreen()),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 32),
+
+              // 🚪 LOGOUT BUTTON
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.logout, color: Colors.redAccent),
+                  label: const Text(
+                    "Logout",
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.redAccent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    Get.dialog(
+                      AlertDialog(
+                        backgroundColor: card,
+                        title: const Text(
+                          "Logout",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        content: const Text(
+                          "Are you sure you want to logout?",
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: Get.back,
+                            child: const Text("Cancel"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Get.back();
+                              adminCtrl.logout();
+                            },
+                            child: const Text(
+                              "Logout",
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  // ───────── HELPER WIDGET ─────────
+  // ────────── HELPER WIDGET ──────────
   Widget _infoCard(String title, String value) {
     return Container(
       width: double.infinity,

@@ -1,10 +1,11 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from accounts.permissions import IsSalonOwner
+from authentication.firebase_auth import FirebaseAuthentication
 from .models import Salon
 from .serializers import SalonSerializer
+import json
 
 
 @api_view(['GET'])
@@ -16,44 +17,83 @@ def salon_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsSalonOwner])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def my_salon(request):
+    """Get authenticated user's salon"""
     try:
         salon = Salon.objects.get(owner=request.user)
-        return Response(SalonSerializer(salon).data)
+        serializer = SalonSerializer(salon)
+        return Response(serializer.data)
     except Salon.DoesNotExist:
-        return Response({'detail': 'No salon found'}, status=404)
+        return Response(
+            {'detail': 'No salon found for this user'},
+            status=status.HTTP_404_NOT_FOUND
+        )
 
 
 @api_view(['POST'])
-@permission_classes([IsSalonOwner])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def salon_create(request):
     """
-    Create salon if not exists,
-    otherwise update existing salon for this owner
+    Create salon if not exists, otherwise update existing salon
     """
+    print("\n" + "="*60)
+    print("🔥 SALON CREATE/UPDATE REQUEST")
+    print("="*60)
+    print(f"📦 Request Data: {json.dumps(request.data, indent=2)}")
+    print(f"👤 User: {request.user.email}")
+    print(f"🎭 Role: {request.user.role}")
+    print(f"🔑 User ID: {request.user.id}")
+    
     try:
+        # Check if salon already exists for this user
         salon = Salon.objects.get(owner=request.user)
-        # 🔁 UPDATE
+        print(f"✏️ UPDATING existing salon: {salon.name} (ID: {salon.id})")
+        
+        # UPDATE existing salon
         serializer = SalonSerializer(salon, data=request.data, partial=True)
+        
     except Salon.DoesNotExist:
-        # ➕ CREATE
+        print("➕ CREATING new salon")
+        
+        # CREATE new salon
         serializer = SalonSerializer(data=request.data)
 
     if serializer.is_valid():
-        serializer.save(owner=request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        # Save with owner
+        saved_salon = serializer.save(owner=request.user)
+        
+        print(f"✅ SUCCESS! Salon saved: {saved_salon.name}")
+        print(f"📍 ID: {saved_salon.id}")
+        print(f"📞 Phone: {saved_salon.phone}")
+        print(f"🏠 Address: {saved_salon.address}")
+        print(f"🎨 Type: {saved_salon.salon_type}")
+        print("="*60 + "\n")
+        
+        return Response(
+            SalonSerializer(saved_salon).data,
+            status=status.HTTP_201_CREATED
+        )
+    
+    print(f"❌ VALIDATION ERRORS:")
+    print(json.dumps(serializer.errors, indent=2))
+    print("="*60 + "\n")
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PUT', 'PATCH'])
-@permission_classes([IsSalonOwner])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def salon_update(request):
     """Update salon profile"""
+    print(f"\n🔄 UPDATE REQUEST from {request.user.email}")
+    print(f"📦 Data: {request.data}")
+    
     try:
         salon = Salon.objects.get(owner=request.user)
-
     except Salon.DoesNotExist:
         return Response(
             {'detail': 'No salon found. Please create one first.'},
@@ -65,20 +105,26 @@ def salon_update(request):
     
     if serializer.is_valid():
         serializer.save()
+        print(f"✅ Salon updated: {salon.name}")
         return Response(serializer.data)
+    
+    print(f"❌ Validation errors: {serializer.errors}")
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
-@permission_classes([IsSalonOwner])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def salon_delete(request):
     """Delete/deactivate salon"""
     try:
-        django_user = get_django_user_from_firebase(request)
-        salon = Salon.objects.get(owner=django_user)
+        salon = Salon.objects.get(owner=request.user)
         # Soft delete - just mark as closed
         salon.is_open = False
         salon.save()
+        
+        print(f"🗑️ Salon deactivated: {salon.name}")
+        
         return Response(
             {'detail': 'Salon deactivated successfully'},
             status=status.HTTP_200_OK

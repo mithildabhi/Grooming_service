@@ -146,3 +146,4 @@ STATIC_URL = 'static/'
 
 
 import firebase.firebase
+print("🔥 Firebase initialization check complete")

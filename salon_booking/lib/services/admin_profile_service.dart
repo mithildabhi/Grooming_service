@@ -1,19 +1,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/salon_profile.dart';
 import '../config/api_config.dart';
 
-class SalonApiService {
+class AdminProfileService {
 static String get baseUrl => ApiConfig.baseUrl;
 
   /// Get Firebase token and headers
   static Future<Map<String, String>> _getHeaders() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('Not authenticated');
-
+    
     final token = await user.getIdToken();
-
+    
     return {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -21,12 +20,12 @@ static String get baseUrl => ApiConfig.baseUrl;
   }
 
   /// Get my salon profile
-  static Future<SalonProfile?> getMyProfile() async {
+  static Future<Map<String, dynamic>?> getMyProfile() async {
     try {
       final headers = await _getHeaders();
-
+      
       print('📤 GET: $baseUrl/salons/my-salon/');
-
+      
       final response = await http.get(
         Uri.parse('$baseUrl/salons/my-salon/'),
         headers: headers,
@@ -36,8 +35,7 @@ static String get baseUrl => ApiConfig.baseUrl;
       print('📄 Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return SalonProfile.fromJson(data);
+        return jsonDecode(response.body);
       } else if (response.statusCode == 404) {
         print('ℹ️ No salon found yet');
         return null;
@@ -50,21 +48,31 @@ static String get baseUrl => ApiConfig.baseUrl;
     }
   }
 
-  /// Save salon profile (create or update)
-  static Future<SalonProfile> saveProfile(SalonProfile profile) async {
+  /// Save admin profile (create or update salon)
+  /// This endpoint handles BOTH create and update automatically
+  static Future<Map<String, dynamic>> saveProfile({
+    required String salonName,
+    required String phone,
+    required String location,
+    String? about,
+    String? imageUrl,
+    String salonType = 'unisex',
+    Map<String, dynamic>? hours,
+  }) async {
     try {
       final headers = await _getHeaders();
-
-      // Build request body
-      // IMPORTANT: Don't send 'owner' or 'email' - backend handles these
+      
+      // Prepare data matching Django model
+      // DO NOT send 'owner' field - it's set automatically by backend
+      // DO NOT send 'email' field - Salon model doesn't have it
       final body = jsonEncode({
-        'name': profile.name,
-        'salon_type': profile.salonType ?? 'unisex',
-        'address': profile.address,
-        'phone': profile.phone,
-        'about': profile.about ?? '',
-        'image_url': profile.imageUrl ?? '',
-        'hours': profile.hours ?? {
+        'name': salonName,
+        'salon_type': salonType,
+        'address': location,
+        'phone': phone,
+        'about': about ?? '',
+        'image_url': imageUrl ?? '',
+        'hours': hours ?? {
           'Mon': '09:00-19:00',
           'Tue': '09:00-19:00',
           'Wed': '09:00-19:00',
@@ -90,7 +98,7 @@ static String get baseUrl => ApiConfig.baseUrl;
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print('✅ Salon saved successfully!');
-        return SalonProfile.fromJson(data);
+        return data;
       } else {
         final error = jsonDecode(response.body);
         print('❌ Server error: $error');
@@ -102,23 +110,30 @@ static String get baseUrl => ApiConfig.baseUrl;
     }
   }
 
-  /// Update existing profile
-  static Future<SalonProfile> updateProfile(SalonProfile profile) async {
+  /// Update existing profile (alternative method if you prefer separate update)
+  static Future<Map<String, dynamic>> updateProfile({
+    required String salonName,
+    required String phone,
+    required String location,
+    String? about,
+    String? imageUrl,
+    String? salonType,
+    Map<String, dynamic>? hours,
+  }) async {
     try {
       final headers = await _getHeaders();
-
+      
       final bodyMap = <String, dynamic>{
-        'name': profile.name,
-        'address': profile.address,
-        'phone': profile.phone,
+        'name': salonName,
+        'address': location,
+        'phone': phone,
       };
 
-      if (profile.about != null) bodyMap['about'] = profile.about;
-      if (profile.imageUrl != null && profile.imageUrl!.isNotEmpty) {
-        bodyMap['image_url'] = profile.imageUrl;
-      }
-      if (profile.salonType != null) bodyMap['salon_type'] = profile.salonType;
-      if (profile.hours != null) bodyMap['hours'] = profile.hours;
+      // Add optional fields only if provided
+      if (about != null) bodyMap['about'] = about;
+      if (imageUrl != null && imageUrl.isNotEmpty) bodyMap['image_url'] = imageUrl;
+      if (salonType != null) bodyMap['salon_type'] = salonType;
+      if (hours != null) bodyMap['hours'] = hours;
 
       final body = jsonEncode(bodyMap);
 
@@ -137,7 +152,7 @@ static String get baseUrl => ApiConfig.baseUrl;
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print('✅ Profile updated successfully!');
-        return SalonProfile.fromJson(data);
+        return data;
       } else {
         final error = jsonDecode(response.body);
         print('❌ Update error: $error');
@@ -153,7 +168,7 @@ static String get baseUrl => ApiConfig.baseUrl;
   static Future<void> deleteSalon() async {
     try {
       final headers = await _getHeaders();
-
+      
       print('📤 DELETE: $baseUrl/salons/delete/');
 
       final response = await http.delete(

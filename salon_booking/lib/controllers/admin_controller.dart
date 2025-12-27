@@ -57,9 +57,15 @@ class AdminController extends GetxController {
   final RxList<Map<String, dynamic>> galleryList = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> reviewsList = <Map<String, dynamic>>[].obs;
 
-  void openEditProfile() {
-    Get.toNamed('/edit-profile');
-  }
+  // =========================
+  // GETTERS FOR PROFILE DATA
+  // =========================
+  String get salonName => salonProfile.value?.name ?? 'Not Set';
+  String get ownerEmail => salonProfile.value?.ownerEmail ?? 'No email';
+  String get phone => salonProfile.value?.phone ?? 'Not Set';
+  String get location => salonProfile.value?.address ?? 'Not Set';
+  String get imageUrl => salonProfile.value?.imageUrl ?? '';
+  bool get hasProfile => salonProfile.value != null;
 
   // =========================
   // INIT
@@ -80,29 +86,41 @@ class AdminController extends GetxController {
   Future<void> loadSalonProfile() async {
     try {
       isLoadingProfile.value = true;
+      print('📄 Loading salon profile...');
 
       final profile = await SalonApiService.getMyProfile();
 
       if (profile != null) {
         salonProfile.value = profile;
         activeSalonId.value = profile.id;
+        print('✅ Profile loaded: ${profile.name}');
+      } else {
+        print('ℹ️ No profile found - user needs to create one');
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load salon profile');
+      print('❌ Error loading profile: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load salon profile',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoadingProfile.value = false;
     }
   }
 
-  /// Create OR overwrite salon profile
+  /// Create OR update salon profile
   Future<void> saveSalonProfile(SalonProfile profile) async {
     try {
       isLoadingProfile.value = true;
+      print('💾 Saving salon profile...');
 
       final savedProfile = await SalonApiService.saveProfile(profile);
 
       salonProfile.value = savedProfile;
       activeSalonId.value = savedProfile.id;
+
+      print('✅ Profile saved successfully: ${savedProfile.name}');
 
       Get.snackbar(
         'Success',
@@ -111,18 +129,31 @@ class AdminController extends GetxController {
         backgroundColor: const Color(0xFF22E6D3),
         colorText: Colors.black,
       );
+
+      // Return to previous screen
+      Get.back();
     } catch (e) {
+      print('❌ Error saving profile: $e');
       Get.snackbar(
         'Error',
-        'Failed to save profile',
+        'Failed to save profile: $e',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error,
-        colorText: Get.theme.colorScheme.onError,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
       );
       rethrow;
     } finally {
       isLoadingProfile.value = false;
     }
+  }
+
+  /// Open edit profile screen
+  void openEditProfile() {
+    Get.toNamed(
+      '/edit-profile',
+      arguments: salonProfile.value,
+    );
   }
 
   // =========================
@@ -132,43 +163,179 @@ class AdminController extends GetxController {
   Future<void> fetchServices() async {
     try {
       isLoadingServices.value = true;
+      print('📥 Fetching services...');
       servicesList.assignAll(await ServiceApi.fetchServices());
+      print('✅ Loaded ${servicesList.length} services');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load services');
+      print('❌ Error fetching services: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load services',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
     } finally {
       isLoadingServices.value = false;
     }
   }
 
   Future<void> addService({
-    required String token,
     required String name,
     required String description,
     required double price,
     required int duration,
     required String category,
   }) async {
-    await ServiceApi.createService(
-      token: token,
-      name: name,
-      description: description,
-      price: price,
-      duration: duration,
-      category: category,
-    );
+    try {
+      isLoadingServices.value = true;
+      print('➕ Adding service: $name');
 
-    await fetchServices();
-    Get.back();
-    Get.snackbar('Success', 'Service added');
+      await ServiceApi.createService(
+        name: name,
+        description: description,
+        price: price,
+        duration: duration,
+        category: category,
+      );
+
+      await fetchServices();
+      
+      Get.back(); // Close the add screen
+      
+      Get.snackbar(
+        'Success',
+        'Service added successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF22E6D3),
+        colorText: Colors.black,
+      );
+    } catch (e) {
+      print('❌ Error adding service: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add service: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      rethrow;
+    } finally {
+      isLoadingServices.value = false;
+    }
+  }
+
+  Future<void> updateService({
+    required int serviceId,
+    required String name,
+    required String description,
+    required double price,
+    required int duration,
+    required String category,
+    required bool isActive,
+  }) async {
+    try {
+      isLoadingServices.value = true;
+      print('🔄 Updating service: $name');
+
+      await ServiceApi.updateService(
+        serviceId: serviceId,
+        name: name,
+        description: description,
+        price: price,
+        duration: duration,
+        category: category,
+        isActive: isActive,
+      );
+
+      await fetchServices();
+      
+      Get.back(); // Close the edit screen
+      
+      Get.snackbar(
+        'Success',
+        'Service updated successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF22E6D3),
+        colorText: Colors.black,
+      );
+    } catch (e) {
+      print('❌ Error updating service: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update service: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      rethrow;
+    } finally {
+      isLoadingServices.value = false;
+    }
   }
 
   Future<void> deleteService({
-    required String token,
     required int serviceId,
   }) async {
-    await ServiceApi.deleteService(token: token, serviceId: serviceId);
-    servicesList.removeWhere((s) => s.id == serviceId);
-    Get.snackbar('Deleted', 'Service removed');
+    try {
+      isLoadingServices.value = true;
+      print('🗑️ Deleting service ID: $serviceId');
+
+      await ServiceApi.deleteService(serviceId: serviceId);
+      
+      servicesList.removeWhere((s) => s.id == serviceId);
+      
+      Get.back(); // Close the edit screen
+      
+      Get.snackbar(
+        'Deleted',
+        'Service removed successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF22E6D3),
+        colorText: Colors.black,
+      );
+    } catch (e) {
+      print('❌ Error deleting service: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to delete service: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      rethrow;
+    } finally {
+      isLoadingServices.value = false;
+    }
+  }
+
+  Future<void> toggleServiceStatus({
+    required int serviceId,
+    required bool isActive,
+  }) async {
+    try {
+      print('🔄 Toggling service $serviceId status to: $isActive');
+
+      final updatedService = await ServiceApi.toggleServiceStatus(
+        serviceId: serviceId,
+        isActive: isActive,
+      );
+
+      // Update in local list
+      final index = servicesList.indexWhere((s) => s.id == serviceId);
+      if (index != -1) {
+        servicesList[index] = updatedService;
+        servicesList.refresh();
+      }
+
+      print('✅ Service status toggled successfully');
+    } catch (e) {
+      print('❌ Error toggling service status: $e');
+      rethrow;
+    }
   }
 
   // =========================
@@ -190,6 +357,23 @@ class AdminController extends GetxController {
     if (index != -1) {
       bookingsList[index]['status'] = status;
       bookingsList.refresh();
+    }
+  }
+
+  Future<void> deleteBooking(dynamic bookingId) async {
+    try {
+      bookingsList.removeWhere((b) => b['id'] == bookingId);
+      Get.snackbar(
+        'Deleted',
+        'Booking deleted successfully',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to delete booking',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -252,41 +436,17 @@ class AdminController extends GetxController {
   // =========================
 
   Future<void> logout() async {
-    // OPTIONAL: clear admin data
+    // Clear admin data
     salonProfile.value = null;
     activeSalonId.value = '';
     bookingsList.clear();
     employeesList.clear();
     servicesList.clear();
 
-    // OPTIONAL: clear auth token / firebase later
+    // Clear auth token / firebase
     // await FirebaseAuth.instance.signOut();
 
-    // ✅ REMOVE ALL SCREENS & GO TO LOGIN
+    // Remove all screens & go to login
     Get.offAllNamed('/login');
-  }
-
-  // =========================
-  // DELETE BOOKING
-  // =========================
-  Future<void> deleteBooking(dynamic bookingId) async {
-    try {
-      // Optional: call backend later
-      // await SalonApiService.deleteBooking(bookingId.toString());
-
-      bookingsList.removeWhere((b) => b['id'] == bookingId);
-
-      Get.snackbar(
-        'Deleted',
-        'Booking deleted successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete booking',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
   }
 }

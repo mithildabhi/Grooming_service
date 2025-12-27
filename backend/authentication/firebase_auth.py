@@ -19,16 +19,27 @@ class FirebaseAuthentication(BaseAuthentication):
             uid = decoded['uid']
             email = decoded.get('email', '')
 
-            # 🔥 Map Firebase → Django User
+            # 🔥 IMPORTANT: Attach firebase_user to request
+            request.firebase_user = {
+                'uid': uid,
+                'email': email,
+                'email_verified': decoded.get('email_verified', False),
+                'phone_number': decoded.get('phone_number'),
+                'name': decoded.get('name'),
+                'picture': decoded.get('picture'),
+            }
+
+            # Map Firebase → Django User
             user, created = User.objects.get_or_create(
                 username=uid,
                 defaults={
                     'email': email,
-                    'role': 'CUSTOMER'
+                    'role': 'SALON_OWNER'  # Changed from CUSTOMER to SALON_OWNER
                 }
             )
 
             return (user, None)
 
-        except Exception:
+        except Exception as e:
+            print(f"❌ Firebase auth error: {e}")
             raise AuthenticationFailed('Invalid Firebase token')

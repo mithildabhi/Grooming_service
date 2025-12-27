@@ -27,29 +27,30 @@ class Salon(models.Model):
     phone = models.CharField(max_length=15)
     about = models.TextField(blank=True, default='')
     
-    # Image
+    # Image - allow blank URLs
     image_url = models.URLField(blank=True, default='')
-    # OR if you want to store files:
-    # image = models.ImageField(upload_to='salon_images/', blank=True, null=True)
     
     # Working Hours (stored as JSON)
     hours = models.JSONField(default=dict, blank=True)
-    # Example: {
-    #   "Mon": "09:00-19:00",
-    #   "Tue": "09:00-19:00",
-    #   "Sun": "Closed"
-    # }
     
     # Ratings & Status
     rating = models.FloatField(default=0.0)
     is_open = models.BooleanField(default=True)
     
-    # Metadata
-    created_at=models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
+    # Metadata - auto_now for updated_at
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
     
     def __str__(self):
         return f"{self.name} ({self.owner.email})"
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure updated_at is set"""
+        if not self.pk:  # New object
+            if not self.created_at:
+                self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)

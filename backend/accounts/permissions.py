@@ -1,14 +1,15 @@
 from rest_framework.permissions import BasePermission
 
 class IsSalonOwner(BasePermission):
+    """
+    Permission check for salon owners
+    """
     def has_permission(self, request, view):
-        user = request.user
-
-        if not user:
-            return False
-
-        # request.user IS AppUser
-        return user.role == 'SALON_OWNER'
+        return (
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.role in ['SALON_OWNER', 'SUPER_ADMIN']
+        )
 
 class IsCustomer(BasePermission):
     def has_permission(self, request, view):
