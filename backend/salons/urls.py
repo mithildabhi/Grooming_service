@@ -1,8 +1,14 @@
 from django.urls import path
-from .views import salon_list, salon_create, salon_detail
+from . import views
 
 urlpatterns = [
-    path('', salon_list),                 # GET only
-    path('create/', salon_create),        # POST only (JWT required)
-    path('<int:pk>/', salon_detail),      # GET / PUT / DELETE
+    # Public endpoints
+    path('', views.salon_list, name='salon-list'),
+    path('<int:pk>/', views.salon_detail, name='salon-detail'),
+    
+    # Owner endpoints (authenticated)
+    path('my-salon/', views.my_salon, name='my-salon'),
+    path('create/', views.salon_create, name='salon-create'),
+    path('update/', views.salon_update, name='salon-update'),
+    path('delete/', views.salon_delete, name='salon-delete'),
 ]

@@ -21,3 +21,54 @@ STEPS WHEN TERMINAL ASK FOR DATA        admin
 
 
 python manage.py runserver
+
+
+
+
+git checkout -b flutter-mithil
+
+git add .
+
+git checkout develop
+git pull origin develop
+git checkout flutter-mithil
+git merge develop
+
+
+git push origin flutter-mithil
+
+git commit -m "Resolve conflict"
+
+
+🔹 Step 1: Stash your local changes (SAVE THEM)
+
+git stash push -m "my local work before sync"
+git status
+
+🔹 Step 2: Pull your friend’s changes
+
+git pull origin main
+
+🔹 Step 3: Create your own branch (IMPORTANT)
+
+git checkout -b flutter-mithil
+
+🔹 Step 4: Bring back YOUR code
+
+git stash pop
+
+
+🧯 If conflict appears (normal & fixable)
+You’ll see markers like:
+<<<<< HEAD
+your code
+=======
+friend code
+>>>>> main
+
+git add .
+git commit -m "Merge my changes with latest main"
+
+🔹 Step 5: Push YOUR branch
+
+git push origin flutter-mithil
