@@ -12,7 +12,7 @@ class EditProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final adminCtrl = Get.find<AdminController>();
+    Get.find<AdminController>();
 
     return Scaffold(
       backgroundColor: bg,

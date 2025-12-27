@@ -1,6 +1,7 @@
 // lib/app_routes.dart
 import 'package:get/get.dart';
 import 'package:salon_booking/views/admin/admin_shell.dart';
+import 'package:salon_booking/views/admin/edit_profile_screen.dart';
 import 'package:salon_booking/views/splash_screen.dart';
 import 'package:salon_booking/views/login_screen.dart';
 import 'package:salon_booking/views/register_screen.dart';
@@ -62,6 +63,7 @@ class AppRoutes {
     GetPage(name: adminOffers, page: () => const OffersScreen()),
     GetPage(name: adminInventory, page: () => const InventoryScreen()),
     GetPage(name: adminGallery, page: () => const GalleryScreen()),
+    GetPage(name: '/edit-profile', page: () => EditProfileScreen()),
 
     // ✅ USER
     GetPage(name: userHome, page: () => const UserHomeScreen()),
