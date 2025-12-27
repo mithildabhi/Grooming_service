@@ -252,7 +252,18 @@ class AdminController extends GetxController {
   // =========================
 
   Future<void> logout() async {
-    Get.snackbar('Logged out', 'Session ended');
+    // OPTIONAL: clear admin data
+    salonProfile.value = null;
+    activeSalonId.value = '';
+    bookingsList.clear();
+    employeesList.clear();
+    servicesList.clear();
+
+    // OPTIONAL: clear auth token / firebase later
+    // await FirebaseAuth.instance.signOut();
+
+    // ✅ REMOVE ALL SCREENS & GO TO LOGIN
+    Get.offAllNamed('/login');
   }
 
   // =========================
