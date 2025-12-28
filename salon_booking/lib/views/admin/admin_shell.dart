@@ -33,7 +33,7 @@ class _AdminShellState extends State<AdminShell> {
     _pages = const [
       DashboardScreen(),
       AdminBookingsScreen(salonId: '1'),
-      ChatbotScreen(), // ✅ Chatbot instead of Services
+      ChatbotScreen(), 
       EmployeeScreen(),
       ProfileScreen(),
     ];
