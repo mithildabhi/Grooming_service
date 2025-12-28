@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salon_booking/models/employee_model.dart';
+import 'package:salon_booking/services/staff_api.dart';
 
 import '../models/booking_model.dart';
 import '../models/salon_profile.dart';
@@ -77,6 +79,7 @@ class AdminController extends GetxController {
     super.onInit();
     filteredEmployees.assignAll(employeesList);
     fetchServices();
+    fetchStaff();
     loadSalonProfile();
   }
 
@@ -382,6 +385,167 @@ class AdminController extends GetxController {
   // =========================
   // STAFF
   // =========================
+  final RxBool isLoadingStaff = false.obs;
+  final RxList<EmployeeModel> staffList = <EmployeeModel>[].obs;
+
+  Future<void> fetchStaff() async {
+    try {
+      isLoadingStaff.value = true;
+      print('📥 Fetching staff...');
+      staffList.assignAll(await StaffApi.fetchStaff());
+      print('✅ Loaded ${staffList.length} staff members');
+    } catch (e) {
+      print('❌ Error fetching staff: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load staff',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoadingStaff.value = false;
+    }
+  }
+
+  Future<void> addStaff({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String role,
+    required String primarySkill,
+    required List<String> workingDays,
+    required bool isActive,
+  }) async {
+    try {
+      isLoadingStaff.value = true;
+      print('➕ Adding staff: $fullName');
+
+      await StaffApi.createStaff(
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        role: role,
+        primarySkill: primarySkill,
+        workingDays: workingDays,
+        isActive: isActive,
+      );
+
+      await fetchStaff();
+      
+      Get.back(); // Close the add screen
+      
+      Get.snackbar(
+        'Success',
+        'Staff member added successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF22E6D3),
+        colorText: Colors.black,
+      );
+    } catch (e) {
+      print('❌ Error adding staff: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add staff: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      rethrow;
+    } finally {
+      isLoadingStaff.value = false;
+    }
+  }
+
+  Future<void> updateStaff({
+    required int staffId,
+    required String fullName,
+    required String email,
+    required String phone,
+    required String role,
+    required String primarySkill,
+    required List<String> workingDays, 
+    required bool isActive,
+  }) async {
+    try {
+      isLoadingStaff.value = true;
+      print('🔄 Updating staff: $fullName');
+
+      await StaffApi.updateStaff(
+        staffId: staffId,
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        role: role,
+        primarySkill: primarySkill,
+        workingDays: workingDays,
+        isActive: isActive,  // ← ADD THIS LINE
+
+      );
+
+      await fetchStaff();
+      
+      Get.back(); // Close the edit screen
+      
+      Get.snackbar(
+        'Success',
+        'Staff member updated successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF22E6D3),
+        colorText: Colors.black,
+      );
+    } catch (e) {
+      print('❌ Error updating staff: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update staff: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      rethrow;
+    } finally {
+      isLoadingStaff.value = false;
+    }
+  }
+
+  Future<void> deleteStaffMember({
+    required int staffId,
+  }) async {
+    try {
+      isLoadingStaff.value = true;
+      print('🗑️ Deleting staff ID: $staffId');
+
+      await StaffApi.deleteStaff(staffId: staffId);
+      
+      staffList.removeWhere((s) => s.id == staffId);
+      
+      Get.back(); // Close the edit screen
+      
+      Get.snackbar(
+        'Deleted',
+        'Staff member removed successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF22E6D3),
+        colorText: Colors.black,
+      );
+    } catch (e) {
+      print('❌ Error deleting staff: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to delete staff: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      rethrow;
+    } finally {
+      isLoadingStaff.value = false;
+    }
+  }
 
   void deleteStaff(dynamic staff) {
     employeesList.remove(staff);
