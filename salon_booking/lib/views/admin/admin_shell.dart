@@ -3,7 +3,7 @@ import 'package:glassmotion_navbar/glassmotion_navbar.dart';
 
 import 'dashboard_screen.dart';
 import 'admin_bookings_screen.dart';
-import 'services_screen.dart';
+import 'chatbot_screen.dart';
 import 'employee_screen.dart';
 import 'profile_screen.dart';
 
@@ -22,7 +22,7 @@ class _AdminShellState extends State<AdminShell> {
   static const _navItems = <GlassNavItem>[
     GlassNavItem(icon: Icons.home_rounded, label: 'Home'),
     GlassNavItem(icon: Icons.calendar_month_rounded, label: 'Bookings'),
-    GlassNavItem(icon: Icons.cut_rounded, label: 'Services'),
+    GlassNavItem(icon: Icons.psychology_rounded, label: 'AI Assistant'), // Changed from Services
     GlassNavItem(icon: Icons.people_rounded, label: 'Staff'),
     GlassNavItem(icon: Icons.person_rounded, label: 'Profile'),
   ];
@@ -33,7 +33,7 @@ class _AdminShellState extends State<AdminShell> {
     _pages = const [
       DashboardScreen(),
       AdminBookingsScreen(salonId: '1'),
-      ServicesScreen(),
+      ChatbotScreen(), // ✅ Chatbot instead of Services
       EmployeeScreen(),
       ProfileScreen(),
     ];
@@ -64,8 +64,11 @@ class _AdminShellState extends State<AdminShell> {
             }
           },
 
-          // optional center tap
-          onCenterTap: () {},
+          // Center tap can still do something else if needed
+          onCenterTap: () {
+            // Open chatbot on center tap too
+            setState(() => _currentIndex = 2);
+          },
 
           accentColor: const Color(0xFF19F6E8),
           inactiveColor: Colors.white54,
