@@ -22,7 +22,7 @@ class _AdminShellState extends State<AdminShell> {
   static const _navItems = <GlassNavItem>[
     GlassNavItem(icon: Icons.home_rounded, label: 'Home'),
     GlassNavItem(icon: Icons.calendar_month_rounded, label: 'Bookings'),
-    GlassNavItem(icon: Icons.psychology_rounded, label: 'AI Assistant chatbot screeeeen'), // Changed from Services
+    GlassNavItem(icon: Icons.psychology_rounded, label: 'AI Assistant'), // Changed from Services
     GlassNavItem(icon: Icons.people_rounded, label: 'Staff'),
     GlassNavItem(icon: Icons.person_rounded, label: 'Profile'),
   ];

@@ -28,7 +28,15 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '*'
 ]
+# Chatbot settings
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Load .env file
+
+# Then later in the file, you can access:
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Application definition
 
@@ -48,7 +56,7 @@ INSTALLED_APPS = [
     'bookings',
     'reviews',
     'staff',
-    # 'ai_engine',
+    'chatbot',
 
 ]
 AUTH_USER_MODEL = 'accounts.User'

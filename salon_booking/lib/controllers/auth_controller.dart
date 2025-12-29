@@ -85,7 +85,7 @@ Future<void> login(String email, String password) async {
   @override
   void onInit() {
     super.onInit();
-    // restoreSession();
+    restoreSession();
       if (isLoggedIn.value) {
     // 🔥 User already logged in → verify backend
     DjangoApiService.testAuth();
