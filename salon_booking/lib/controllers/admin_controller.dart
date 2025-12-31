@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salon_booking/models/employee_model.dart';
+import 'package:salon_booking/services/auth_service.dart';
 import 'package:salon_booking/services/staff_api.dart';
 
 import '../models/booking_model.dart';
@@ -77,7 +78,19 @@ class AdminController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    filteredEmployees.assignAll(employeesList);
+    _initIfAdmin();
+  }
+
+  Future<void> _initIfAdmin() async {
+    final authService = Get.find<AuthService>();
+    final role = authService.getRole();
+
+    if (role != 'admin') {
+      debugPrint('🟡 AdminController skipped (not admin)');
+      return;
+    }
+
+    debugPrint('🟢 AdminController initializing (admin)');
     fetchServices();
     fetchStaff();
     loadSalonProfile();
@@ -155,10 +168,7 @@ class AdminController extends GetxController {
 
   /// Open edit profile screen
   void openEditProfile() {
-    Get.toNamed(
-      '/edit-profile',
-      arguments: salonProfile.value,
-    );
+    Get.toNamed('/edit-profile', arguments: salonProfile.value);
   }
 
   // =========================
@@ -205,9 +215,9 @@ class AdminController extends GetxController {
       );
 
       await fetchServices();
-      
+
       Get.back(); // Close the add screen
-      
+
       Get.snackbar(
         'Success',
         'Service added successfully',
@@ -255,9 +265,9 @@ class AdminController extends GetxController {
       );
 
       await fetchServices();
-      
+
       Get.back(); // Close the edit screen
-      
+
       Get.snackbar(
         'Success',
         'Service updated successfully',
@@ -281,19 +291,17 @@ class AdminController extends GetxController {
     }
   }
 
-  Future<void> deleteService({
-    required int serviceId,
-  }) async {
+  Future<void> deleteService({required int serviceId}) async {
     try {
       isLoadingServices.value = true;
       print('🗑️ Deleting service ID: $serviceId');
 
       await ServiceApi.deleteService(serviceId: serviceId);
-      
+
       servicesList.removeWhere((s) => s.id == serviceId);
-      
+
       Get.back(); // Close the edit screen
-      
+
       Get.snackbar(
         'Deleted',
         'Service removed successfully',
@@ -432,9 +440,9 @@ class AdminController extends GetxController {
       );
 
       await fetchStaff();
-      
+
       Get.back(); // Close the add screen
-      
+
       Get.snackbar(
         'Success',
         'Staff member added successfully',
@@ -465,7 +473,7 @@ class AdminController extends GetxController {
     required String phone,
     required String role,
     required String primarySkill,
-    required List<String> workingDays, 
+    required List<String> workingDays,
     required bool isActive,
   }) async {
     try {
@@ -480,14 +488,13 @@ class AdminController extends GetxController {
         role: role,
         primarySkill: primarySkill,
         workingDays: workingDays,
-        isActive: isActive,  // ← ADD THIS LINE
-
+        isActive: isActive, // ← ADD THIS LINE
       );
 
       await fetchStaff();
-      
+
       Get.back(); // Close the edit screen
-      
+
       Get.snackbar(
         'Success',
         'Staff member updated successfully',
@@ -511,19 +518,17 @@ class AdminController extends GetxController {
     }
   }
 
-  Future<void> deleteStaffMember({
-    required int staffId,
-  }) async {
+  Future<void> deleteStaffMember({required int staffId}) async {
     try {
       isLoadingStaff.value = true;
       print('🗑️ Deleting staff ID: $staffId');
 
       await StaffApi.deleteStaff(staffId: staffId);
-      
+
       staffList.removeWhere((s) => s.id == staffId);
-      
+
       Get.back(); // Close the edit screen
-      
+
       Get.snackbar(
         'Deleted',
         'Staff member removed successfully',
