@@ -30,7 +30,7 @@ class _AdminShellState extends State<AdminShell> {
   @override
   void initState() {
     super.initState();
-    _pages = const [
+    _pages =  [
       DashboardScreen(),
       AdminBookingsScreen(salonId: '1'),
       ChatbotScreen(), 

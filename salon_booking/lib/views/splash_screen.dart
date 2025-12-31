@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salon_booking/views/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/auth_controller.dart';
-import '../app_routes.dart';
+import '../routes/app_routes.dart';
+import 'package:salon_booking/views/admin/dashboard_screen.dart';
+import 'package:salon_booking/views/user/user_home_screen.dart';
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -28,6 +33,25 @@ class _SplashScreenState extends State<SplashScreen> {
       Get.offAllNamed(AppRoutes.userHome);
     }
   }
+Future<void> checkAuth() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final forceLogin = prefs.getBool('forceLogin') ?? true;
+  final role = prefs.getString('role');
+
+  // 🚫 ABSOLUTE BLOCK
+  if (forceLogin || role == null) {
+    Get.offAll(() => LoginScreen());
+    return;
+  }
+
+  // ✅ Only allowed after manual login
+  if (role == 'admin') {
+    Get.offAll(() => DashboardScreen());
+  } else {
+    Get.offAll(() => UserHomeScreen());
+  }
+}
 
   @override
   Widget build(BuildContext context) {

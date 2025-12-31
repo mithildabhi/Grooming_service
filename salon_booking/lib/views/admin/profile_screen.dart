@@ -5,12 +5,29 @@ import 'package:salon_booking/views/admin/services_screen.dart';
 import 'package:salon_booking/views/admin/settings_screen.dart';
 import '../../controllers/admin_controller.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   static const Color bg = Color(0xFF0B0F14);
   static const Color card = Color(0xFF121A22);
   static const Color accent = Color(0xFF19F6E8);
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Load profile automatically when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final adminCtrl = Get.find<AdminController>();
+      if (!adminCtrl.hasProfile && !adminCtrl.isLoadingProfile.value) {
+        adminCtrl.loadSalonProfile();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,95 +54,114 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        // ✅ Show loading indicator
         if (adminCtrl.isLoadingProfile.value) {
           return const Center(
             child: CircularProgressIndicator(color: accent),
           );
         }
 
-        if (!adminCtrl.hasProfile) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.store_outlined, size: 80, color: Colors.white38),
-                const SizedBox(height: 16),
-                const Text(
-                  'No Profile Found',
-                  style: TextStyle(color: Colors.white, fontSize: 20),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Create your salon profile to get started',
-                  style: TextStyle(color: Colors.white60),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('Create Profile'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accent,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: adminCtrl.openEditProfile,
-                ),
-              ],
-            ),
-          );
-        }
-
+        // ✅ ALWAYS show content with Quick Actions
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // 👤 PROFILE IMAGE
-              CircleAvatar(
-                radius: 48,
-                backgroundImage: adminCtrl.imageUrl.isNotEmpty
-                    ? NetworkImage(adminCtrl.imageUrl)
-                    : const NetworkImage("https://i.pravatar.cc/300"),
-              ),
-              const SizedBox(height: 12),
-
-              Text(
-                adminCtrl.salonName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              // ✅ Profile Section (show if available)
+              if (adminCtrl.hasProfile) ...[
+                // Profile Image
+                CircleAvatar(
+                  radius: 48,
+                  backgroundImage: adminCtrl.imageUrl.isNotEmpty
+                      ? NetworkImage(adminCtrl.imageUrl)
+                      : const NetworkImage("https://i.pravatar.cc/300"),
                 ),
-              ),
+                const SizedBox(height: 12),
 
-              const SizedBox(height: 4),
+                Text(
+                  adminCtrl.salonName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
-              const Text(
-                "Salon Owner • AI Active",
-                style: TextStyle(color: accent),
-              ),
+                const SizedBox(height: 4),
 
-              const SizedBox(height: 24),
+                const Text(
+                  "Salon Owner • AI Active",
+                  style: TextStyle(color: accent),
+                ),
 
-              _infoCard("Salon Name", adminCtrl.salonName),
-              _infoCard("Email", adminCtrl.ownerEmail),
-              _infoCard("Phone", adminCtrl.phone),
-              _infoCard("Location", adminCtrl.location),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
+                // Profile Info Cards
+                _infoCard("Salon Name", adminCtrl.salonName),
+                _infoCard("Email", adminCtrl.ownerEmail),
+                _infoCard("Phone", adminCtrl.phone),
+                _infoCard("Location", adminCtrl.location),
 
-              _infoCard("Revenue", "₹4.2K / month"),
-              _infoCard("Retention", "88%"),
-              _infoCard("Inventory Alerts", "2 Low Stock"),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 32),
+                _infoCard("Revenue", "₹4.2K / month"),
+                _infoCard("Retention", "88%"),
+                _infoCard("Inventory Alerts", "2 Low Stock"),
 
-              // ⚡ QUICK ACTIONS TITLE
+                const SizedBox(height: 32),
+              ] else ...[
+                // ✅ No Profile - Show Simple Message
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: card,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.store_outlined,
+                        size: 64,
+                        color: accent.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No Salon Profile Yet',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Create your salon profile to unlock all features',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white60),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Create Profile'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: accent,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: adminCtrl.openEditProfile,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+
+              // ✅ QUICK ACTIONS - ALWAYS VISIBLE
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -140,6 +176,7 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
+              // ✅ Quick Action Grid - ALWAYS VISIBLE
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -173,7 +210,7 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // 🚪 LOGOUT BUTTON
+              // ✅ LOGOUT BUTTON - ALWAYS VISIBLE
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -232,7 +269,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ────────── HELPER WIDGET ──────────
+  // ════════════ HELPER WIDGETS ════════════
   Widget _infoCard(String title, String value) {
     return Container(
       width: double.infinity,

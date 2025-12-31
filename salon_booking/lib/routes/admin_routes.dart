@@ -13,7 +13,7 @@ import 'package:salon_booking/views/admin/gallery_screen.dart';
 import 'package:salon_booking/views/admin/edit_profile_screen.dart';
 
 class AdminRoutes {
-  static const dashboard = '/admin';
+  static const adminDashboard = '/admin';
   static const bookings = '/admin/bookings';
   static const services = '/admin/services';
   static const employees = '/admin/employees';
@@ -28,7 +28,7 @@ class AdminRoutes {
   static final pages = [
     // ROOT ADMIN SHELL
     GetPage(
-      name: dashboard,
+      name: adminDashboard,
       page: () => const AdminShell(),
     ),
 

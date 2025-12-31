@@ -14,6 +14,9 @@ class RegisterScreen extends StatelessWidget {
     final password = TextEditingController();
     final auth = Get.find<AuthController>();
 
+    // ✅ ROLE STATE (DEFAULT = USER)
+    final RxString selectedRole = 'user'.obs;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -36,6 +39,34 @@ class RegisterScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
+
+            // ✅ ROLE SELECTION (ADDED)
+            const Text(
+              "Register as",
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+
+            Obx(
+              () => Row(
+                children: [
+                  _roleChip(
+                    label: "User",
+                    role: "user",
+                    selectedRole: selectedRole,
+                  ),
+                  const SizedBox(width: 12),
+                  _roleChip(
+                    label: "Admin",
+                    role: "admin",
+                    selectedRole: selectedRole,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
             _input(name, "Full Name", Icons.person),
             const SizedBox(height: 16),
             _input(email, "Email", Icons.email),
@@ -52,10 +83,11 @@ class RegisterScreen extends StatelessWidget {
                   Get.snackbar("Error", "All fields required");
                   return;
                 }
+
                 auth.register(
                   email.text.trim(),
                   password.text.trim(),
-                  'user',
+                  selectedRole.value, // ✅ ROLE PASSED
                 );
               },
             ),
@@ -68,6 +100,36 @@ class RegisterScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // 🔹 ROLE CHIP WIDGET (NEW – SMALL & SAFE)
+  static Widget _roleChip({
+    required String label,
+    required String role,
+    required RxString selectedRole,
+  }) {
+    final bool isSelected = selectedRole.value == role;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => selectedRole.value = role,
+        child: Container(
+          height: 46,
+          decoration: BoxDecoration(
+            color: isSelected ? kAccent : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.black : Colors.black54,
+            ),
+          ),
         ),
       ),
     );
@@ -95,10 +157,7 @@ class RegisterScreen extends StatelessWidget {
     );
   }
 
-  Widget _primaryButton({
-    required String text,
-    required VoidCallback onTap,
-  }) {
+  Widget _primaryButton({required String text, required VoidCallback onTap}) {
     return SizedBox(
       width: double.infinity,
       height: 54,

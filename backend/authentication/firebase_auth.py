@@ -19,7 +19,7 @@ class FirebaseAuthentication(BaseAuthentication):
             uid = decoded['uid']
             email = decoded.get('email', '')
 
-            # 🔥 IMPORTANT: Attach firebase_user to request
+            # Attach firebase_user to request
             request.firebase_user = {
                 'uid': uid,
                 'email': email,
@@ -29,14 +29,18 @@ class FirebaseAuthentication(BaseAuthentication):
                 'picture': decoded.get('picture'),
             }
 
-            # Map Firebase → Django User
-            user, created = User.objects.get_or_create(
-                username=uid,
-                defaults={
-                    'email': email,
-                    'role': 'SALON_OWNER'  # Changed from CUSTOMER to SALON_OWNER
-                }
-            )
+            # ✅ FIXED: Check if user exists first
+            try:
+                user = User.objects.get(username=uid)
+                print(f"✅ Existing user found: {user.email}, Role: {user.role}")
+            except User.DoesNotExist:
+                # ✅ NEW: Create with CUSTOMER as default (will be updated by register endpoint)
+                user = User.objects.create_user(
+                    username=uid,
+                    email=email,
+                    role='CUSTOMER'  # Default to customer, register endpoint will update if needed
+                )
+                print(f"🆕 New user created: {user.email}, Role: {user.role}")
 
             return (user, None)
 
