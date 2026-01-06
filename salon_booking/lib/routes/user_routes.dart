@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:salon_booking/views/user/user_review_booking_screen.dart';
+import 'package:salon_booking/views/user/user_select_datetime_screen.dart';
 import '../views/user/user_main_shell.dart';
 import '../bindings/user_binding.dart';
 import 'package:salon_booking/views/user/user_appointments_screen.dart';
@@ -33,9 +35,22 @@ class UserRoutes {
     GetPage(name: '/user/salon-details', page: () => const UserSalonDetailsScreen()),
     GetPage(name: '/user/payment', page: () => const UserPaymentScreen()),
     GetPage(name: '/user/booking-success', page: () => const UserBookingSuccessScreen()),
-    GetPage(name: '/user/appointments', page: () => const UserAppointmentsScreen()),
+    GetPage(name: '/user/appointments', page: () =>  UserAppointmentsScreen()),
     GetPage(name: '/user/rate-experience', page: () => const UserRateExperienceScreen()),
     GetPage(name: '/user/profile', page: () => const UserProfileScreen()),
+    // Booking Flow Routes
+    GetPage(
+      name: '/user/booking/datetime',
+      page: () => const UserSelectDateTimeScreen(),
+    ),
+    GetPage(
+      name: '/user/booking/review',
+      page: () => const UserReviewBookingScreen(),
+    ),
+    GetPage(
+      name: '/user/booking/success',
+      page: () => const UserBookingSuccessScreen(),
+    ),
   ];
 
   static List<GetPage> get routes => pages; 

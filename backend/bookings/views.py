@@ -161,11 +161,26 @@ def update_booking_status(request, pk):
     except Booking.DoesNotExist:
         return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Check permissions
-    if request.user.role not in ['EMPLOYEE', 'SALON_OWNER', 'SUPER_ADMIN']:
-        return Response({'detail': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
-
     new_status = request.data.get('status', booking.status)
+    
+    # ✅ PERMISSION LOGIC - UPDATED
+    user_role = request.user.role
+    
+    # Customers can only cancel their own bookings
+    if user_role == 'CUSTOMER':
+        if booking.user != request.user:
+            return Response({'error': 'You can only modify your own bookings'}, status=status.HTTP_403_FORBIDDEN)
+        if new_status != 'CANCELLED':
+            return Response({'error': 'Customers can only cancel bookings'}, status=status.HTTP_403_FORBIDDEN)
+    
+    # Staff/Owners can update any booking
+    elif user_role not in ['EMPLOYEE', 'SALON_OWNER', 'SUPER_ADMIN']:
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+    
+    # Prevent cancelling already completed bookings
+    if booking.status == 'COMPLETED' and new_status == 'CANCELLED':
+        return Response({'error': 'Cannot cancel completed bookings'}, status=status.HTTP_400_BAD_REQUEST)
+    
     booking.status = new_status
     booking.save()
     
@@ -173,7 +188,6 @@ def update_booking_status(request, pk):
         'message': f'Booking status updated to {new_status}',
         'booking': BookingSerializer(booking).data
     })
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

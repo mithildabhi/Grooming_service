@@ -1,12 +1,12 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salon_booking/views/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/auth_controller.dart';
 import '../routes/app_routes.dart';
-import 'package:salon_booking/views/admin/dashboard_screen.dart';
-import 'package:salon_booking/views/user/user_home_screen.dart';
-
+import '../routes/admin_routes.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,42 +16,79 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final AuthController auth = Get.find<AuthController>();
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), _navigate);
+    _initialize();
   }
 
-  void _navigate() {
-    if (!auth.isLoggedIn.value) {
-      Get.offAllNamed(AppRoutes.login);
-    } else if (auth.role.value == 'admin') {
-      Get.offAllNamed(AppRoutes.adminDashboard);
-    } else {
-      Get.offAllNamed(AppRoutes.userHome);
+  Future<void> _initialize() async {
+    if (_hasNavigated) return;
+
+    print('🟢 SPLASH: Starting...');
+
+    // Wait 2 seconds for animation
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted || _hasNavigated) return;
+
+    await _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    if (_hasNavigated || !mounted) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final forceLogin = prefs.getBool('forceLogin') ?? true;
+
+      print('🔍 SPLASH: Firebase User: ${firebaseUser?.email}');
+      print('🔍 SPLASH: Force Login: $forceLogin');
+
+      // ❌ No user OR forced logout → Go to login
+      if (firebaseUser == null || forceLogin) {
+        print('➡️ SPLASH: Going to Login');
+        _navigateTo(AppRoutes.login);
+        return;
+      }
+
+      // ✅ User exists → Restore session
+      print('✅ SPLASH: Restoring session...');
+
+      final authController = Get.find<AuthController>();
+
+      // Manually initialize session WITHOUT triggering onInit
+      await authController.initializeUserSession();
+
+      // Navigate based on role
+      if (authController.role.value == 'admin') {
+        print('➡️ SPLASH: Going to Admin Dashboard');
+        _navigateTo(AdminRoutes.adminDashboard);
+      } else {
+        print('➡️ SPLASH: Going to User Home');
+        _navigateTo(AppRoutes.userHome);
+      }
+    } catch (e) {
+      print('❌ SPLASH: Error - $e');
+      _navigateTo(AppRoutes.login);
     }
   }
-Future<void> checkAuth() async {
-  final prefs = await SharedPreferences.getInstance();
 
-  final forceLogin = prefs.getBool('forceLogin') ?? true;
-  final role = prefs.getString('role');
+  void _navigateTo(String route) {
+    if (_hasNavigated || !mounted) return;
+    _hasNavigated = true;
 
-  // 🚫 ABSOLUTE BLOCK
-  if (forceLogin || role == null) {
-    Get.offAll(() => LoginScreen());
-    return;
+    print('🚀 SPLASH: Navigating to $route');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Get.offAllNamed(route);
+      }
+    });
   }
-
-  // ✅ Only allowed after manual login
-  if (role == 'admin') {
-    Get.offAll(() => DashboardScreen());
-  } else {
-    Get.offAll(() => UserHomeScreen());
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +119,10 @@ Future<void> checkAuth() async {
               Text(
                 "Beauty & Wellness, Simplified",
                 style: TextStyle(color: Colors.white70),
+              ),
+              SizedBox(height: 30),
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ],
           ),

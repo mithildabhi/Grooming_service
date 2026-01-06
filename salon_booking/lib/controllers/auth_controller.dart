@@ -6,61 +6,57 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:salon_booking/routes/app_routes.dart';
-import 'package:salon_booking/views/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../services/auth_service.dart';
-import '../routes/admin_routes.dart';  
 import 'admin_controller.dart';
 import '../services/django_api_service.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
-  final FirebaseAuth _auth = FirebaseAuth.instance;  // ✅ ADD THIS LINE
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   RxBool isLoggedIn = false.obs;
   RxString role = 'user'.obs;
+
+  get user => null;
+
+  // ✅ REMOVED onInit() - NO AUTO-INITIALIZATION!
 
   // ---------------- LOGIN ----------------
   Future<void> login(String email, String password) async {
     print("🟡 LOGIN STARTED");
 
     try {
-      // 1. Firebase login
       await _authService.login(email, password);
-
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _auth.currentUser;
       print("🟢 Firebase User: ${user?.email}");
 
-      final token = await user?.getIdToken(true);
-      print("🔥 Firebase Token: ${token?.substring(0, 50)}...");
-
-      // 2. Test auth with Django
       await DjangoApiService.testAuth();
       await DjangoApiService.syncUser();
-
-      // ✅ 3. CRITICAL: Fetch role from Django BEFORE redirecting
       await _fetchRoleFromDjango();
 
-      // 4. Now redirect based on the fetched role
+      // Clear force login flag
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('forceLogin', false);
+
       isLoggedIn.value = true;
       
-      print("🎯 Redirecting based on role: ${role.value}");
+      print("🎯 Login complete, redirecting as: ${role.value}");
       _redirectByRole();
       
     } catch (e) {
       print("❌ LOGIN ERROR: $e");
       Get.snackbar('Login failed', e.toString());
+      rethrow;
     }
   }
-
-  // ✅ NEW: Fetch role from Django
+  
+  // ---------------- FETCH ROLE FROM DJANGO ----------------
   Future<void> _fetchRoleFromDjango() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('No Firebase user');
-      }
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('No Firebase user');
 
       final token = await user.getIdToken();
       
@@ -75,126 +71,114 @@ class AuthController extends GetxController {
       ).timeout(const Duration(seconds: 30));
 
       print('📥 Django /auth/me/ response: ${response.statusCode}');
-      print('📥 Django /auth/me/ body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final djangoRole = data['role']; // 'SALON_OWNER' or 'CUSTOMER'
+        final djangoRole = data['role'];
         
         print('✅ Django role: $djangoRole');
         
-        // ✅ Map Django role to Flutter role
         if (djangoRole == 'SALON_OWNER' || djangoRole == 'SUPER_ADMIN') {
           role.value = 'admin';
         } else {
           role.value = 'user';
         }
         
-        // Save to SharedPreferences
         await saveRole(role.value);
-        
         print('✅ Mapped to Flutter role: ${role.value}');
       } else {
         print('⚠️ Failed to fetch role, defaulting to user');
         role.value = 'user';
+        await saveRole('user');
       }
     } catch (e) {
-      print('❌ Error fetching role from Django: $e');
-      // Default to user if error
-      // role.value = 'user';
+      print('❌ Error fetching role: $e');
+      role.value = 'user';
+      await saveRole('user');
     }
   }
 
-// ---------------- REGISTER ----------------
-Future<void> register(String email, String password, String role) async {
-  try {
-    print('🔐 Registering user: $email, Role: $role');
-    
-    // 1. Create Firebase user
-    UserCredential credential;
+  // ---------------- REGISTER ----------------
+  Future<void> register(String email, String password, String role) async {
     try {
-      credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'email-already-in-use') {
-        print('⚠️ Firebase user already exists, signing in...');
-        credential = await _auth.signInWithEmailAndPassword(
+      print('📝 Registering user: $email, Role: $role');
+      
+      UserCredential credential;
+      try {
+        credential = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
-      } else {
-        rethrow;
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'email-already-in-use') {
+          print('⚠️ Firebase user exists, signing in...');
+          credential = await _auth.signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+        } else {
+          rethrow;
+        }
       }
-    }
 
-    print('✅ Firebase user ready: ${credential.user?.uid}');
+      print('✅ Firebase user ready: ${credential.user?.uid}');
 
-    // 2. Get Firebase ID token
-    final token = await credential.user?.getIdToken();
-    
-    // 3. Sync to Django backend with role
-    if (token != null) {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/auth/register/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-          'role': role,
-          'firebase_uid': credential.user?.uid,
-        }),
-      ).timeout(const Duration(seconds: 30));
+      final token = await credential.user?.getIdToken();
+      
+      if (token != null) {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/auth/register/'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'email': email,
+            'password': password,
+            'role': role,
+            'firebase_uid': credential.user?.uid,
+          }),
+        ).timeout(const Duration(seconds: 30));
 
-      print('📥 Django response status: ${response.statusCode}');
-      print('📥 Django response body: ${response.body}');
+        print('📥 Django response: ${response.statusCode}');
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('✅ Django user ready with role: ${data['role']}');
-        
-        // ✅ CRITICAL: Fetch role from Django BEFORE redirecting
-        await _fetchRoleFromDjango();
-        
-        // ✅ Set login state
-        isLoggedIn.value = true;
-        
-        print('🎯 Registration complete, redirecting as: ${this.role.value}');
-        
-        // ✅ Show success message
-        Get.snackbar(
-          'Success',
-          'Account created successfully!',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
-        );
-        
-        // ✅ Redirect based on role
-        _redirectByRole();
-        
-      } else {
-        throw Exception('Django registration failed: ${response.body}');
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          await _fetchRoleFromDjango();
+          
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('forceLogin', false);
+          
+          isLoggedIn.value = true;
+          
+          print('🎯 Registration complete, redirecting as: ${this.role.value}');
+          
+          Get.snackbar(
+            'Success',
+            'Account created successfully!',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2),
+          );
+          
+          _redirectByRole();
+          
+        } else {
+          throw Exception('Django registration failed: ${response.body}');
+        }
       }
-    }
 
-  } catch (e) {
-    print('❌ Registration error: $e');
-    Get.snackbar(
-      'Registration Failed',
-      e.toString(),
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-    );
-    rethrow;
+    } catch (e) {
+      print('❌ Registration error: $e');
+      Get.snackbar(
+        'Registration Failed',
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      rethrow;
+    }
   }
-}
 
-  // ✅ ADD THIS METHOD
   Future<void> saveRole(String userRole) async {
     try {
       await _authService.saveRole(userRole);
@@ -215,72 +199,80 @@ Future<void> register(String email, String password, String role) async {
     }
   }
 
-  // ---------------- LOGOUT ----------------
-Future<void> logout() async {
-  final prefs = await SharedPreferences.getInstance();
-
-  await prefs.setBool('forceLogin', true);
-  await prefs.remove('role');
-
-  await FirebaseAuth.instance.signOut();
-
-  Get.offAll(() => LoginScreen());
-}
+// ---------------- LOGOUT ----------------
+  Future<void> logout() async {
+    try {
+      print('👋 AUTH: Starting logout...');
+      
+      final prefs = await SharedPreferences.getInstance();
+      
+      // ✅ Set force login flag FIRST
+      await prefs.setBool('forceLogin', true);
+      await prefs.remove('role');
+      await prefs.remove('user_role');
+      
+      print('✅ AUTH: Cleared SharedPrefs');
+      
+      // ✅ Sign out from Firebase
+      await _auth.signOut();
+      await _authService.logout();
+      
+      print('✅ AUTH: Signed out from Firebase');
+      
+      // ✅ Update state
+      isLoggedIn.value = false;
+      role.value = 'user';
+      
+      print('👋 AUTH: User logged out, navigating to login...');
+      
+      // ✅ Navigate to login (close all previous screens)
+      Get.offAllNamed(AppRoutes.login);
+      
+    } catch (e) {
+      print('❌ AUTH: Logout error: $e');
+      // ✅ Force navigation even on error
+      Get.offAllNamed(AppRoutes.login);
+    }
+  }
+  // ---------------- SESSION INITIALIZATION ----------------
+  // ✅ ONLY called manually from SplashScreen
+  Future<void> initializeUserSession() async {
+    try {
+      print('🔄 AUTH: Initializing session...');
+      
+      await DjangoApiService.testAuth().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Backend timeout'),
+      );
+      
+      await DjangoApiService.syncUser();
+      await _fetchRoleFromDjango();
+      
+      isLoggedIn.value = true;
+      
+      print('✅ AUTH: Session initialized with role: ${role.value}');
+    } catch (e) {
+      print('❌ AUTH: Session init error: $e');
+      throw e;
+    }
+  }
 
   // ---------------- REDIRECT ----------------
   void _redirectByRole() {
-    print('🚀 _redirectByRole called with role: ${role.value}');
+    print('🚀 AUTH: Redirecting with role: ${role.value}');
     
     if (role.value == 'admin') {
-      print('➡️ Redirecting to Admin Dashboard');
+      print('➡️ AUTH: Going to Admin Dashboard');
       
-      // ✅ Initialize if not already registered
-      if (!Get.isRegistered<AdminController>()) {
-        Get.put(AdminController());
-      }
+      // ✅ AdminController already exists, just set salon ID
+      final adminCtrl = Get.find<AdminController>();
+      adminCtrl.activeSalonId.value = '1';
       
-      // Now safe to access
-      Get.find<AdminController>().activeSalonId.value = '1';
-      Get.offAllNamed(AdminRoutes.adminDashboard);
+      // ✅ Use the correct route
+      Get.offAllNamed('/admin'); // or AdminRoutes.adminDashboard
     } else {
-      print('➡️ Redirecting to User Home');
+      print('➡️ AUTH: Going to User Home');
       Get.offAllNamed(AppRoutes.userHome);
-    }
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    restoreSession();
-    
-    if (isLoggedIn.value) {
-      // 🔥 User already logged in → verify backend
-      _initializeUserSession();
-    }
-  }
-
-  Future<void> _initializeUserSession() async {
-    try {
-      await DjangoApiService.testAuth();
-      await DjangoApiService.syncUser();
-      
-      // ✅ Fetch role from Django to ensure it's correct
-      await _fetchRoleFromDjango();
-      
-      print('✅ Session initialized with role: ${role.value}');
-    } catch (e) {
-      print('❌ Session initialization error: $e');
-    }
-  }
-
-  void restoreSession() {
-    if (_authService.isUserLoggedIn()) {
-      isLoggedIn.value = true;
-      // Don't set role here - let _fetchRoleFromDjango() do it
-      print('📂 Session restored, will fetch role from Django');
-    } else {
-      isLoggedIn.value = false;
-      role.value = 'user';
     }
   }
 }

@@ -32,7 +32,7 @@ class _AdminShellState extends State<AdminShell> {
     super.initState();
     _pages =  [
       DashboardScreen(),
-      AdminBookingsScreen(salonId: '1'),
+      AdminBookingsScreen(),
       ChatbotScreen(), 
       EmployeeScreen(),
       ProfileScreen(),

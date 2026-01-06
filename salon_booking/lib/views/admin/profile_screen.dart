@@ -243,13 +243,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: Get.back,
-                            child: const Text("Cancel"),
+                            onPressed: () => Get.back(), // Close dialog
+                            child: const Text(
+                              "Cancel",
+                              style: TextStyle(color: Colors.white70),
+                            ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              Get.back();
-                              adminCtrl.logout();
+                            onPressed: () async {
+                              Get.back(); // Close dialog first
+                              
+                              // ✅ Show loading indicator
+                              Get.dialog(
+                                const Center(
+                                  child: CircularProgressIndicator(color: accent),
+                                ),
+                                barrierDismissible: false,
+                              );
+                              
+                              // ✅ Call logout
+                              await adminCtrl.logout();
                             },
                             child: const Text(
                               "Logout",

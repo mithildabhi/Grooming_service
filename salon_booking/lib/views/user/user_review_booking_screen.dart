@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
+import '../../controllers/booking_controller.dart';
 import '../../widgets/user_card.dart';
 import '../../widgets/primary_button.dart';
 
@@ -9,6 +11,8 @@ class UserReviewBookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<BookingController>();
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
@@ -19,51 +23,71 @@ class UserReviewBookingScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            UserCard(
-              child: Column(
-                children: const [
-                  _RowItem('Salon', 'Luxe Studio & Spa'),
-                  _RowItem('Service', 'Men’s Haircut'),
-                  _RowItem('Date', '24 Oct 2025'),
-                  _RowItem('Time', '05:30 PM'),
-                ],
+      body: Obx(() {
+        final salon = controller.selectedSalon.value;
+        final service = controller.selectedService.value;
+        final date = controller.selectedDate.value;
+        final time = controller.selectedTime.value;
+        final staff = controller.selectedStaff.value;
+
+        // Show loading if data is being fetched
+        if (salon == null || service == null || date == null || time.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              UserCard(
+                child: Column(
+                  children: [
+                    _RowItem('Salon', salon.name),
+                    _RowItem('Service', service.name),
+                    _RowItem(
+                      'Date',
+                      DateFormat('dd MMM yyyy').format(date),
+                    ),
+                    _RowItem('Time', time),
+                    if (staff != null) _RowItem('Staff', staff.fullName),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            UserCard(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'Total Amount',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '₹299',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                ],
+              UserCard(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total Amount',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '₹${service.price.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const Spacer(),
+              const Spacer(),
 
-            PrimaryButton(
-              text: 'Confirm & Pay',
-              onTap: () {
-                Get.toNamed('/user/payment');
-              },
-            ),
-          ],
-        ),
-      ),
+              // ✅ GO TO PAYMENT SCREEN
+              PrimaryButton(
+                text: 'Confirm & Pay',
+                onTap: () {
+                  Get.toNamed('/user/payment');
+                },
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

@@ -55,7 +55,7 @@ class _AdminBottomNavState extends State<AdminBottomNav> {
 
     final pages = [
       const DashboardScreen(),
-      AdminBookingsScreen(salonId: '1'),
+      AdminBookingsScreen(),
       const ServicesScreen(),
       const EmployeeScreen(),
       const ProfileScreen(),

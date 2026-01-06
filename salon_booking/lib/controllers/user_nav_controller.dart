@@ -9,12 +9,12 @@ import '../views/user/user_profile_screen.dart';
 class UserNavController extends GetxController {
   final RxInt currentIndex = 0.obs;
 
-  final pages = const [
-    UserHomeScreen(),
-    UserExploreScreen(),
+  final pages = [
+    const UserHomeScreen(),
+    const UserExploreScreen(),
     UserAppointmentsScreen(),
-    UserAIAssistantScreen(),
-    UserProfileScreen(),
+    const UserAIAssistantScreen(),
+    const UserProfileScreen(),
   ];
 
   void changeIndex(int index) {

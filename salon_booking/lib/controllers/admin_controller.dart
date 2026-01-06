@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salon_booking/controllers/auth_controller.dart';
 import 'package:salon_booking/models/employee_model.dart';
 import 'package:salon_booking/services/auth_service.dart';
 import 'package:salon_booking/services/staff_api.dart';
@@ -75,27 +76,57 @@ class AdminController extends GetxController {
   // =========================
   // INIT
   // =========================
-  @override
-  void onInit() {
-    super.onInit();
-    _initIfAdmin();
-  }
+// ✅ REPLACE ONLY THE onInit AND _initIfAdmin METHODS IN YOUR ADMIN_CONTROLLER.DART
 
-  Future<void> _initIfAdmin() async {
-    final authService = Get.find<AuthService>();
-    final role = authService.getRole();
+@override
+void onInit() {
+  super.onInit();
+  
+  // ✅ No delay needed - initialize immediately
+  _initIfAdmin();
+}
 
-    if (role != 'admin') {
-      debugPrint('🟡 AdminController skipped (not admin)');
+Future<void> _initIfAdmin() async {
+  try {
+    // ✅ Check if AuthService is registered
+    if (!Get.isRegistered<AuthService>()) {
+      print('⚠️ AuthService not registered yet, skipping init');
       return;
     }
 
-    debugPrint('🟢 AdminController initializing (admin)');
-    fetchServices();
-    fetchStaff();
-    loadSalonProfile();
-  }
+    final authService = Get.find<AuthService>();
+    
+    // ✅ Restore role from storage
+    final role = await authService.restoreRole();
 
+    print('🔍 AdminController: Role = $role');
+
+    if (role != 'admin') {
+      print('🟡 AdminController skipped (not admin)');
+      return;
+    }
+
+    print('🟢 AdminController initializing (admin)');
+    
+    // ✅ Load data with proper error handling
+    await Future.wait([
+      loadSalonProfile().catchError((e) {
+        print('⚠️ Profile load failed: $e');
+      }),
+      fetchServices().catchError((e) {
+        print('⚠️ Services load failed: $e');
+      }),
+      fetchStaff().catchError((e) {
+        print('⚠️ Staff load failed: $e');
+      }),
+    ]);
+    
+    print('✅ AdminController initialization complete');
+    
+  } catch (e) {
+    print('❌ AdminController init error: $e');
+  }
+}
   // =========================
   // SALON PROFILE (DJANGO)
   // =========================
@@ -168,7 +199,7 @@ class AdminController extends GetxController {
 
   /// Open edit profile screen
   void openEditProfile() {
-    Get.toNamed('/edit-profile', arguments: salonProfile.value);
+    Get.toNamed('/admin/edit-profile', arguments: salonProfile.value);
   }
 
   // =========================
@@ -607,17 +638,29 @@ class AdminController extends GetxController {
   // =========================
 
   Future<void> logout() async {
-    // Clear admin data
-    salonProfile.value = null;
-    activeSalonId.value = '';
-    bookingsList.clear();
-    employeesList.clear();
-    servicesList.clear();
-
-    // Clear auth token / firebase
-    // await FirebaseAuth.instance.signOut();
-
-    // Remove all screens & go to login
-    Get.offAllNamed('/login');
+    try {
+      print('👋 ADMIN: Logging out...');
+      
+      // ✅ Clear admin data first
+      salonProfile.value = null;
+      activeSalonId.value = '';
+      bookingsList.clear();
+      employeesList.clear();
+      servicesList.clear();
+      staffList.clear();
+      
+      print('✅ ADMIN: Admin data cleared');
+      
+      // ✅ Call AuthController logout (which handles Firebase + SharedPrefs)
+      final authController = Get.find<AuthController>();
+      await authController.logout();
+      
+      print('✅ ADMIN: Logout complete');
+      
+    } catch (e) {
+      print('❌ ADMIN: Logout error: $e');
+      // ✅ Force navigation to login even if error
+      Get.offAllNamed('/login');
+    }
   }
 }

@@ -1,6 +1,8 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import '../../controllers/auth_controller.dart';  // ✅ ADD THIS
 import '../../widgets/user_card.dart';
 import '../../widgets/primary_button.dart';
 
@@ -9,6 +11,8 @@ class UserProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();  // ✅ ADD THIS
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
@@ -77,10 +81,48 @@ class UserProfileScreen extends StatelessWidget {
 
             const Spacer(),
 
+            // ✅ FIXED LOGOUT BUTTON
             PrimaryButton(
               text: 'Logout',
-              onTap: () {
-                Get.offAllNamed('/login');
+              onTap: () async {
+                print('🔴 USER PROFILE: Logout button pressed!');
+                
+                // ✅ Show confirmation dialog
+                final confirm = await Get.dialog<bool>(
+                  AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Are you sure you want to logout?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Get.back(result: false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.back(result: true),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                // ✅ If confirmed, logout
+                if (confirm == true) {
+                  print('🔴 USER PROFILE: Logging out...');
+                  
+                  // Show loading indicator
+                  Get.dialog(
+                    const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    barrierDismissible: false,
+                  );
+
+                  // ✅ Call AuthController logout (properly clears session)
+                  await authController.logout();
+                }
               },
             ),
           ],

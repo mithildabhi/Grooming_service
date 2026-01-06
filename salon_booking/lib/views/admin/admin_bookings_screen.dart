@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../controllers/booking_controller.dart';
+import '../../models/booking_model.dart';
 
 class AdminBookingsScreen extends StatelessWidget {
-  final String salonId;  // Add this line
-
-  AdminBookingsScreen({super.key, required this.salonId});  // Add salonId here
-
+  AdminBookingsScreen({super.key});
 
   static const Color bg = Color(0xFF0B0F14);
   static const Color card = Color(0xFF121A22);
   static const Color accent = Color(0xFF19F6E8);
 
   final BookingController controller = Get.put(BookingController());
+  final RxInt selectedFilter = 0.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +23,10 @@ class AdminBookingsScreen extends StatelessWidget {
         elevation: 0,
         title: const Text('Bookings', style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => controller.fetchBookings(),
+            onPressed: controller.fetchBookings,
           ),
         ],
       ),
@@ -38,108 +37,417 @@ class AdminBookingsScreen extends StatelessWidget {
           );
         }
 
-        if (controller.bookings.isEmpty) {
+        final bookings = _getFilteredBookings();
+
+        if (bookings.isEmpty) {
           return _emptyState();
         }
 
         return RefreshIndicator(
-          onRefresh: () => controller.fetchBookings(),
-          child: SingleChildScrollView(
+          onRefresh: controller.fetchBookings,
+          child: ListView(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _statisticsCard(),
-                const SizedBox(height: 24),
-                _sectionTitle('Today\'s Bookings'),
-                const SizedBox(height: 12),
-                ...controller.todayBookings.map((booking) => _bookingTile(booking)),
-                if (controller.todayBookings.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'No bookings for today',
-                      style: TextStyle(color: Colors.white54),
-                    ),
-                  ),
-                const SizedBox(height: 24),
-                _sectionTitle('All Bookings'),
-                const SizedBox(height: 12),
-                ...controller.bookings.map((booking) => _bookingTile(booking)),
-              ],
-            ),
+            children: [
+              _statisticsCard(),
+              const SizedBox(height: 16),
+              _filterTabs(),
+              const SizedBox(height: 20),
+              ...bookings.map((b) => _bookingTile(b)),
+            ],
           ),
         );
       }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to create booking screen
-          Get.toNamed('/create-booking');
-        },
-        backgroundColor: accent,
-        child: const Icon(Icons.add, color: Colors.black),
+    );
+  }
+
+  // ===========================
+  // GET FILTERED BOOKINGS
+  // ===========================
+  List<BookingModel> _getFilteredBookings() {
+    switch (selectedFilter.value) {
+      case 1: // Remaining
+        return controller.remainingBookings;
+      case 2: // Completed
+        return controller.completedBookings;
+      case 3: // Cancelled
+        return controller.cancelledBookings;
+      default: // All
+        return controller.bookings;
+    }
+  }
+
+  // ===========================
+  // FILTER TABS
+  // ===========================
+  Widget _filterTabs() {
+    return Obx(() {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _filterChip('All', 0, controller.totalBookingsCount),
+            const SizedBox(width: 8),
+            _filterChip('Remaining', 1, controller.remainingBookings.length),
+            const SizedBox(width: 8),
+            _filterChip('Completed', 2, controller.completedCount),
+            const SizedBox(width: 8),
+            _filterChip('Cancelled', 3, controller.cancelledCount),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _filterChip(String label, int index, int count) {
+    final isSelected = selectedFilter.value == index;
+    return ChoiceChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.black26 : Colors.white24,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              count.toString(),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.black87 : Colors.white70,
+              ),
+            ),
+          ),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: (_) => selectedFilter.value = index,
+      selectedColor: accent,
+      backgroundColor: card,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.black : Colors.white,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
 
-  Widget _emptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.event_busy, size: 80, color: Colors.white30),
-          const SizedBox(height: 16),
-          const Text(
-            'No bookings yet',
-            style: TextStyle(color: Colors.white54, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
+  // ===========================
+  // BOOKING TILE
+  // ===========================
+  Widget _bookingTile(BookingModel booking) {
+    final statusColor = _getStatusColor(booking.status);
+    final dateTime = _formatDateTime(booking.date, booking.time);
+    final isPast = controller.isBookingPast(booking);
+
+    return GestureDetector(
+      onTap: () => _showDetails(booking),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(18),
+          border: isPast && booking.status == 'CONFIRMED'
+              ? Border.all(color: Colors.orange, width: 2)
+              : booking.status == 'CANCELLED'
+                  ? Border.all(color: Colors.red.withOpacity(0.5), width: 1.5)
+                  : null,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: statusColor.withOpacity(0.2),
+              child: Icon(
+                _getStatusIcon(booking.status),
+                color: statusColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    booking.serviceName,
+                    style: TextStyle(
+                      color: booking.status == 'CANCELLED'
+                          ? Colors.white54
+                          : Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      decoration: booking.status == 'CANCELLED'
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    dateTime,
+                    style: TextStyle(
+                      color: booking.status == 'CANCELLED'
+                          ? Colors.white38
+                          : Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Customer: ${booking.customerName}',
+                    style: TextStyle(
+                      color: booking.status == 'CANCELLED'
+                          ? Colors.white38
+                          : Colors.white60,
+                    ),
+                  ),
+                  Text(
+                    'Staff: ${booking.staffName ?? 'Unassigned'}',
+                    style: TextStyle(
+                      color: booking.status == 'CANCELLED'
+                          ? Colors.white38
+                          : Colors.white60,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '#${booking.id.toString()}',
+                    style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                  if (isPast && booking.status == 'CONFIRMED')
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning, color: Colors.orange, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Service time passed',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                _statusChip(booking.status, statusColor),
+                const SizedBox(height: 8),
+                _buildActionMenu(booking, isPast),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================
+  // ACTION MENU
+  // ===========================
+  Widget _buildActionMenu(BookingModel booking, bool isPast) {
+    if (booking.status == 'COMPLETED' || booking.status == 'CANCELLED') {
+      return const SizedBox.shrink();
+    }
+
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, color: Colors.white54),
+      color: card,
+      onSelected: (value) {
+        // Ensure ID is int
+        final bookingId = booking.id is int ? booking.id : int.parse(booking.id.toString());
+        
+        if (value == 'COMPLETED') {
+          _confirmAction(
+            title: 'Mark as Completed?',
+            message: 'This will mark the booking as completed and add ₹${booking.price.toStringAsFixed(0)} to revenue.',
+            onConfirm: () => controller.updateStatus(bookingId!, 'COMPLETED'),
+          );
+        } else if (value == 'CANCELLED') {
+          _confirmAction(
+            title: 'Cancel Booking?',
+            message: 'This action cannot be undone.',
+            onConfirm: () => controller.updateStatus(bookingId!, 'CANCELLED'),
+            isDestructive: true,
+          );
+        } else {
+          controller.updateStatus(bookingId!, value);
+        }
+      },
+      itemBuilder: (_) {
+        if (booking.status == 'PENDING') {
+          return [
+            const PopupMenuItem(
+              value: 'CONFIRMED',
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green, size: 20),
+                  SizedBox(width: 8),
+                  Text('Confirm', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'CANCELLED',
+              child: Row(
+                children: [
+                  Icon(Icons.cancel, color: Colors.red, size: 20),
+                  SizedBox(width: 8),
+                  Text('Cancel', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+          ];
+        }
+
+        if (booking.status == 'CONFIRMED') {
+          return [
+            const PopupMenuItem(
+              value: 'COMPLETED',
+              child: Row(
+                children: [
+                  Icon(Icons.done_all, color: Colors.purple, size: 20),
+                  SizedBox(width: 8),
+                  Text('Mark Completed', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'CANCELLED',
+              child: Row(
+                children: [
+                  Icon(Icons.cancel, color: Colors.red, size: 20),
+                  SizedBox(width: 8),
+                  Text('Cancel', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+          ];
+        }
+
+        return [];
+      },
+    );
+  }
+
+  // ===========================
+  // CONFIRMATION DIALOG
+  // ===========================
+  void _confirmAction({
+    required String title,
+    required String message,
+    required VoidCallback onConfirm,
+    bool isDestructive = false,
+  }) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: card,
+        title: Text(title, style: const TextStyle(color: Colors.white)),
+        content: Text(message, style: const TextStyle(color: Colors.white70)),
+        actions: [
           TextButton(
-            onPressed: () => controller.fetchBookings(),
-            child: const Text('Refresh', style: TextStyle(color: accent)),
+            onPressed: () => Get.back(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              onConfirm();
+            },
+            child: Text(
+              'Confirm',
+              style: TextStyle(
+                color: isDestructive ? Colors.red : accent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ===========================
+  // DETAILS BOTTOM SHEET
+  // ===========================
+  void _showDetails(BookingModel booking) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    booking.serviceName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                _statusChip(booking.status, _getStatusColor(booking.status)),
+              ],
+            ),
+            const Divider(height: 24, color: Colors.white24),
+            _detail('Customer', booking.customerName),
+            _detail('Phone', booking.userPhone),
+            _detail('Staff', booking.staffName ?? 'Unassigned'),
+            _detail('Date & Time', _formatDateTime(booking.date, booking.time)),
+            _detail('Duration', '${booking.durationMinutes} min'),
+            _detail('Amount', '₹${booking.price.toStringAsFixed(0)}'),
+            _detail('Booking ID', '#${booking.id}'),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================
+  // STATISTICS CARD
+  // ===========================
   Widget _statisticsCard() {
     return Obx(() {
-      final stats = controller.statistics['today'] ?? {};
-      final total = stats['total'] ?? 0;
-      final confirmed = stats['confirmed'] ?? 0;
-      final completed = stats['completed'] ?? 0;
-
       return Container(
-        width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: card,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
-              children: [
-                Icon(Icons.analytics, color: accent),
-                SizedBox(width: 8),
-                Text(
-                  'Today\'s Statistics',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _statItem('Total', total.toString(), Colors.blueAccent),
-                _statItem('Confirmed', confirmed.toString(), Colors.greenAccent),
-                _statItem('Completed', completed.toString(), Colors.purpleAccent),
+                _stat('Total', controller.totalBookingsCount, Colors.blue),
+                _stat('Confirmed', controller.confirmedCount, Colors.green),
+                _stat('Completed', controller.completedCount, Colors.purple),
+                _stat('Cancelled', controller.cancelledCount, Colors.red),
+              ],
+            ),
+            const Divider(height: 24, color: Colors.white24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _revenueStat('Today', controller.todayRevenue),
+                _revenueStat('Total', controller.totalRevenue),
               ],
             ),
           ],
@@ -148,139 +456,160 @@ class AdminBookingsScreen extends StatelessWidget {
     });
   }
 
-  Widget _statItem(String label, String value, Color color) {
+  Widget _stat(String label, int value, Color color) {
     return Column(
       children: [
         Text(
-          value,
+          value.toString(),
           style: TextStyle(
             color: color,
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 4),
         Text(
           label,
+          style: const TextStyle(color: Colors.white54, fontSize: 11),
+        ),
+      ],
+    );
+  }
+
+  Widget _revenueStat(String label, double value) {
+    return Column(
+      children: [
+        Text(
+          '₹${value.toStringAsFixed(0)}',
+          style: const TextStyle(
+            color: accent,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          '$label Revenue',
           style: const TextStyle(color: Colors.white54, fontSize: 12),
         ),
       ],
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
+  // ===========================
+  // HELPERS
+  // ===========================
+  Widget _statusChip(String status, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
       ),
     );
   }
 
-  Widget _bookingTile(Map<String, dynamic> booking) {
-    final status = booking['status'] ?? 'PENDING';
-    final statusColor = _getStatusColor(status);
-    final time = booking['booking_time'] ?? '';
-    final date = booking['booking_date'] ?? '';
-
+  Widget _detail(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: card,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              backgroundColor: statusColor.withOpacity(0.2),
-              child: Icon(Icons.event, color: statusColor),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white54),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${booking['service_name'] ?? 'Service'} • $time',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Customer: ${booking['customer_name'] ?? 'N/A'}',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  Text(
-                    'Staff: ${booking['staff_name'] ?? 'Unassigned'}',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  Text(
-                    'Date: $date',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '#${booking['id']}',
-                    style: const TextStyle(color: Colors.white38),
-                  ),
-                ],
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    booking['status_display'] ?? status,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                if (status == 'PENDING') ...[
-                  const SizedBox(height: 8),
-                  IconButton(
-                    icon: const Icon(Icons.check_circle, color: Colors.greenAccent),
-                    onPressed: () {
-                      controller.updateStatus(booking['id'], 'CONFIRMED');
-                    },
-                    iconSize: 20,
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyState() {
+    String message = 'No bookings found';
+    IconData icon = Icons.event_busy;
+
+    switch (selectedFilter.value) {
+      case 1:
+        message = 'No remaining bookings';
+        icon = Icons.event_available;
+        break;
+      case 2:
+        message = 'No completed bookings';
+        icon = Icons.check_circle_outline;
+        break;
+      case 3:
+        message = 'No cancelled bookings';
+        icon = Icons.cancel_outlined;
+        break;
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 64, color: Colors.white24),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.white54, fontSize: 16),
+          ),
+        ],
       ),
     );
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'COMPLETED':
-        return Colors.greenAccent;
+    switch (status) {
       case 'CONFIRMED':
         return Colors.blueAccent;
-      case 'PENDING':
-        return Colors.orangeAccent;
+      case 'COMPLETED':
+        return Colors.greenAccent;
       case 'CANCELLED':
         return Colors.redAccent;
       default:
-        return Colors.grey;
+        return Colors.orangeAccent;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status) {
+      case 'CONFIRMED':
+        return Icons.check_circle;
+      case 'COMPLETED':
+        return Icons.done_all;
+      case 'CANCELLED':
+        return Icons.cancel;
+      default:
+        return Icons.event;
+    }
+  }
+
+  String _formatDateTime(String date, String time) {
+    try {
+      final d = DateTime.parse(date);
+      final t = time.split(':');
+      final dt = DateTime(d.year, d.month, d.day, int.parse(t[0]), int.parse(t[1]));
+      return DateFormat('dd MMM yyyy • hh:mm a').format(dt);
+    } catch (_) {
+      return '$date $time';
     }
   }
 }

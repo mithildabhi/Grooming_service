@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-
 import 'package:salon_booking/views/admin/admin_shell.dart';
 import 'package:salon_booking/views/admin/admin_bookings_screen.dart';
 import 'package:salon_booking/views/admin/services_screen.dart';
@@ -26,7 +25,7 @@ class AdminRoutes {
   static const gallery = '/admin/gallery';
 
   static final pages = [
-    // ROOT ADMIN SHELL
+    // ✅ No binding needed - AdminController already initialized
     GetPage(
       name: adminDashboard,
       page: () => const AdminShell(),
@@ -35,9 +34,7 @@ class AdminRoutes {
     GetPage(
       name: bookings,
       page: () {
-        final args = Get.arguments as Map<String, dynamic>?;
-        final salonId = args?['salonId'] ?? '';
-        return AdminBookingsScreen(salonId: salonId);
+        return AdminBookingsScreen();
       },
     ),
 
