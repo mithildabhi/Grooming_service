@@ -5,300 +5,431 @@ import '../../controllers/booking_controller.dart';
 import '../../widgets/user_card.dart';
 import '../../widgets/primary_button.dart';
 import '../../models/salon_model.dart';
+import '../../theme/user_colors.dart';
 
 class UserSalonDetailsScreen extends StatelessWidget {
   const UserSalonDetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Get salon from arguments or controller
     final SalonModel? salon = Get.arguments as SalonModel?;
     final controller = Get.find<UserHomeController>();
-    
-    // Initialize booking controller
-    final bookingController = Get.put(BookingController());
+    final bookingController = Get.find<BookingController>();
     
     final displaySalon = salon ?? controller.selectedSalon.value;
     
     if (displaySalon == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Salon Details')),
-        body: const Center(child: Text('No salon selected')),
+        backgroundColor: userBg,
+        appBar: AppBar(
+          backgroundColor: userBg,
+          elevation: 0,
+          title: const Text(
+            'Salon Details',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 20,
+              color: userCard,
+            ),
+          ),
+        ),
+        body: const Center(
+          child: Text(
+            'No salon selected',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: userBg,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: userBg,
+        scrolledUnderElevation: 0,
         elevation: 0,
         title: const Text(
           'Salon Details',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            color: Colors.white,
+            letterSpacing: -0.4,
+          ),
         ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Obx(() {
         final isLoadingServices = controller.isLoadingServices.value;
         final services = controller.salonServices;
 
-        return AnimatedSlide(
-          offset: Offset.zero,
-          duration: const Duration(milliseconds: 250),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 🏬 Salon Header Card
-                UserCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Salon Image
-                      if (displaySalon.imageUrl.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            displaySalon.displayImage,
-                            width: double.infinity,
-                            height: 180,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 180,
-                              color: Colors.purple.shade50,
-                              child: Icon(
-                                Icons.store,
-                                size: 64,
-                                color: Colors.purple.shade300,
-                              ),
-                            ),
-                          ),
-                        ),
-                      
-                      if (displaySalon.imageUrl.isNotEmpty) 
-                        const SizedBox(height: 16),
-
-                      // Salon Name
-                      Text(
-                        displaySalon.name,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Rating & Distance
-                      Row(
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 20),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${displaySalon.rating.toStringAsFixed(1)} • ${controller.getDistance(displaySalon)}',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: displaySalon.isOpen
-                                  ? Colors.green.shade50
-                                  : Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              displaySalon.isOpen ? 'OPEN' : 'CLOSED',
-                              style: TextStyle(
-                                color: displaySalon.isOpen 
-                                    ? Colors.green 
-                                    : Colors.red,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 12),
-                      
-                      // Salon Type
-                      Row(
-                        children: [
-                          Icon(Icons.home, size: 16, color: Colors.grey.shade600),
-                          const SizedBox(width: 6),
-                          Text(
-                            displaySalon.salonTypeDisplay,
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Address
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              displaySalon.address,
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Phone
-                      Row(
-                        children: [
-                          Icon(Icons.phone, size: 16, color: Colors.grey.shade600),
-                          const SizedBox(width: 6),
-                          Text(
-                            displaySalon.phone,
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                      
-                      if (displaySalon.about.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        const Divider(),
-                        const SizedBox(height: 8),
-                        Text(
-                          displaySalon.about,
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // ✂️ Services Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Services',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (isLoadingServices)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
+                    _buildSalonHeader(displaySalon, controller),
+                    const SizedBox(height: 24),
+                    _buildServicesHeader(isLoadingServices),
+                    const SizedBox(height: 16),
                   ],
                 ),
-                const SizedBox(height: 12),
-
-                // Services List
-                if (isLoadingServices)
-                  ...List.generate(
-                    3,
-                    (_) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Container(
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            if (isLoadingServices)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: List.generate(
+                      3,
+                      (_) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: userCard,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  )
-                else if (services.isEmpty)
-                  UserCard(
+                  ),
+                ),
+              )
+            else if (services.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: UserCard(
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.content_cut,
-                          size: 48,
-                          color: Colors.grey.shade400,
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: userCard,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.content_cut_rounded,
+                            size: 48,
+                            color: Colors.white54,
+                          ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         Text(
                           'No services available yet',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
                           'Check back later for updates',
                           style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 13,
+                            color: Colors.white54,
+                            fontSize: 14,
                           ),
                         ),
                       ],
                     ),
-                  )
-                else
-                  ...services.map((service) {
-                    return Column(
-                      children: [
-                        _buildServiceTile(
-                          name: service.name,
-                          description: service.description,
-                          duration: '${service.duration} mins',
-                          price: '₹${service.price.toStringAsFixed(0)}',
-                          onTap: () {
-                            // Initialize booking with selected service
-                            bookingController.initializeBooking(
-                              salon: displaySalon,
-                              service: service,
-                            );
-                            
-                            // Navigate to date & time selection
-                            Get.toNamed('/user/booking/datetime');
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                  ),
+                ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final service = services[index];
+                    return Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        0,
+                        20,
+                        index == services.length - 1 ? 0 : 16,
+                      ),
+                      child: _buildServiceTile(
+                        name: service.name,
+                        description: service.description,
+                        duration: '${service.duration} mins',
+                        price: '₹${service.price.toStringAsFixed(0)}',
+                        onTap: () {
+                          bookingController.initializeBooking(
+                            salon: displaySalon,
+                            service: service,
+                          );
+                          Get.toNamed('/user/booking/datetime');
+                        },
+                      ),
                     );
-                  }).toList(),
-
-                const SizedBox(height: 30),
-
-                // 📅 Quick Book CTA (Optional - goes to first service)
-                if (services.isNotEmpty)
-                  PrimaryButton(
+                  },
+                  childCount: services.length,
+                ),
+              ),
+            if (services.isNotEmpty && !isLoadingServices)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                  child: PrimaryButton(
                     text: 'Book Appointment',
                     onTap: () {
-                      // Initialize with first service
                       bookingController.initializeBooking(
                         salon: displaySalon,
                         service: services.first,
                       );
-                      
                       Get.toNamed('/user/booking/datetime');
                     },
                   ),
-              ],
-            ),
-          ),
+                ),
+              ),
+          ],
         );
       }),
+    );
+  }
+
+  Widget _buildSalonHeader(SalonModel salon, UserHomeController controller) {
+    return UserCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (salon.imageUrl.isNotEmpty)
+            Hero(
+              tag: 'salon_${salon.id}',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  salon.displayImage,
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 200,
+                    color: userPrimary.withOpacity(0.1),
+                    child: Icon(
+                      Icons.store_rounded,
+                      size: 64,
+                      color: userPrimary,
+                    ),
+                  ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 200,
+                      color: userCard,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: userPrimary,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          if (salon.imageUrl.isNotEmpty) const SizedBox(height: 20),
+          Text(
+            salon.name,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: -0.6,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.star_rounded, size: 20, color: Colors.amber.shade600),
+              const SizedBox(width: 6),
+              Text(
+                '${salon.rating.toStringAsFixed(1)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: const BoxDecoration(
+                  color: Colors.white54,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.location_on_rounded, size: 18, color: Colors.white70),
+              const SizedBox(width: 4),
+              Text(
+                controller.getDistance(salon),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: salon.isOpen
+                      ? Colors.green.shade50
+                      : Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: salon.isOpen
+                        ? Colors.green.shade200
+                        : Colors.red.shade200,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: salon.isOpen ? Colors.green : Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      salon.isOpen ? 'OPEN' : 'CLOSED',
+                      style: TextStyle(
+                        color: salon.isOpen ? Colors.green.shade700 : Colors.red.shade700,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Icon(Icons.home_rounded, size: 18, color: Colors.white70),
+              const SizedBox(width: 8),
+              Text(
+                salon.salonTypeDisplay,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_rounded, size: 18, color: Colors.white70),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  salon.address,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.phone_rounded, size: 18, color: Colors.white70),
+              const SizedBox(width: 8),
+              Text(
+                salon.phone,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          if (salon.about.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: Colors.white12),
+            const SizedBox(height: 16),
+            Text(
+              'About',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              salon.about,
+              style: TextStyle(
+                color: Colors.white70,
+                height: 1.6,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServicesHeader(bool isLoading) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Text(
+          'Services',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
+        ),
+        if (isLoading)
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+      ],
     );
   }
 
@@ -309,100 +440,131 @@ class UserSalonDetailsScreen extends StatelessWidget {
     required String price,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.purple.shade50,
-                borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: userCard,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+                spreadRadius: 0,
               ),
-              child: Icon(
-                Icons.content_cut,
-                color: Colors.purple.shade400,
-                size: 24,
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: userPrimary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.content_cut_rounded,
+                  color: userPrimary,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: Colors.white,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.timer_outlined,
+                          size: 14,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          duration,
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (description.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    duration,
+                    price,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: userPrimary,
+                      letterSpacing: -0.4,
                     ),
                   ),
-                  if (description.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                  ],
+                    decoration: BoxDecoration(
+                      color: userPrimary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Book',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: userPrimary,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  price,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF6C63FF),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6C63FF).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Book',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF6C63FF),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

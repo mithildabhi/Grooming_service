@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-
 import '../../controllers/booking_controller.dart';
 import '../../widgets/user_card.dart';
 import '../../widgets/primary_button.dart';
+import '../../theme/user_colors.dart';
 
 class UserReviewBookingScreen extends StatelessWidget {
   const UserReviewBookingScreen({super.key});
@@ -14,75 +14,95 @@ class UserReviewBookingScreen extends StatelessWidget {
     final controller = Get.find<BookingController>();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: userBg,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: userBg,
         elevation: 0,
+        leading: const BackButton(color: Colors.white),
         title: const Text(
           'Review Booking',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            color: Colors.white,
+          ),
         ),
       ),
       body: Obx(() {
-        final salon = controller.selectedSalon.value;
-        final service = controller.selectedService.value;
-        final date = controller.selectedDate.value;
+        if (!controller.isBookingReady) {
+          return _invalidState();
+        }
+
+        final salon = controller.selectedSalon.value!;
+        final service = controller.selectedService.value!;
+        final date = controller.selectedDate.value!;
         final time = controller.selectedTime.value;
         final staff = controller.selectedStaff.value;
 
-        // Show loading if data is being fetched
-        if (salon == null || service == null || date == null || time.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              UserCard(
-                child: Column(
-                  children: [
-                    _RowItem('Salon', salon.name),
-                    _RowItem('Service', service.name),
-                    _RowItem(
-                      'Date',
-                      DateFormat('dd MMM yyyy').format(date),
-                    ),
-                    _RowItem('Time', time),
-                    if (staff != null) _RowItem('Staff', staff.fullName),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              UserCard(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Amount',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '₹${service.price.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      UserCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Booking Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            _row(Icons.store, 'Salon', salon.name),
+                            _row(Icons.content_cut, 'Service', service.name),
+                            _row(
+                              Icons.calendar_today,
+                              'Date',
+                              DateFormat('EEE, dd MMM yyyy').format(date),
+                            ),
+                            _row(Icons.access_time, 'Time', time),
+                            if (staff != null)
+                              _row(Icons.person, 'Staff', staff.fullName),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+                      UserCard(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total Amount',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              '₹${service.price.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 22,
+                                color: userPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-
-              const Spacer(),
-
-              // ✅ GO TO PAYMENT SCREEN
               PrimaryButton(
                 text: 'Confirm & Pay',
-                onTap: () {
-                  Get.toNamed('/user/payment');
-                },
+                onTap: () => Get.toNamed('/user/payment'),
               ),
             ],
           ),
@@ -90,23 +110,53 @@ class UserReviewBookingScreen extends StatelessWidget {
       }),
     );
   }
-}
 
-class _RowItem extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const _RowItem(this.title, this.value);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _row(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Icon(icon, color: userPrimary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _invalidState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+          const SizedBox(height: 12),
+          const Text(
+            'Booking data missing',
+            style: TextStyle(color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => Get.back(),
+            child: const Text('Go Back'),
+          ),
         ],
       ),
     );

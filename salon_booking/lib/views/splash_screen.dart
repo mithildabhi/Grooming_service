@@ -92,6 +92,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+     Future.microtask(() {
+      // ✅ Navigate immediately
+      Get.offAllNamed('/user');
+
+      // ❌ Do NOT block navigation
+      // API calls can run later
+    });
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(

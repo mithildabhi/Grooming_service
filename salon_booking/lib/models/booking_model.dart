@@ -21,6 +21,7 @@ class BookingModel {
   final String? notes;
   final String? createdAt;
   final String? updatedAt;
+  final bool isRated;
 
   BookingModel({
     this.id,
@@ -45,6 +46,7 @@ class BookingModel {
     this.notes,
     this.createdAt,
     this.updatedAt,
+    this.isRated = false,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -71,6 +73,7 @@ class BookingModel {
       notes: json['notes'] as String?,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
+      isRated: json['is_rated'] == true,
     );
   }
 
@@ -141,7 +144,7 @@ class BookingModel {
     String? customerEmail,
     String? notes,
     String? createdAt,
-    String? updatedAt,
+    String? updatedAt, required bool isRated,
   }) {
     return BookingModel(
       id: id ?? this.id,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/user_colors.dart';
 
 class UserCard extends StatelessWidget {
   final Widget child;
@@ -17,12 +18,12 @@ class UserCard extends StatelessWidget {
     final card = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: userCard,
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -32,7 +33,7 @@ class UserCard extends StatelessWidget {
 
     if (onTap != null) {
       return InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: card,
       );

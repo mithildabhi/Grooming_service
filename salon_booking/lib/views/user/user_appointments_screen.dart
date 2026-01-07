@@ -4,35 +4,60 @@ import 'package:intl/intl.dart';
 
 import '../../controllers/booking_controller.dart';
 import '../../models/booking_model.dart';
+import '../../theme/user_colors.dart';
 
-class UserAppointmentsScreen extends StatelessWidget {
-  UserAppointmentsScreen({super.key});
+class UserAppointmentsScreen extends StatefulWidget {
+  const UserAppointmentsScreen({super.key});
+    @override
+  State<UserAppointmentsScreen> createState() =>
+      _UserAppointmentsScreenState();
+}
 
-  final BookingController controller = Get.put(BookingController());
+class _UserAppointmentsScreenState extends State<UserAppointmentsScreen> { 
+  final BookingController controller = Get.find<BookingController>();
   final RxInt selectedTab = 0.obs;
-
-  static const Color primaryColor = Color(0xFF6C63FF);
-  static const Color bgColor = Color(0xFFF5F7FA);
-  static const Color cardColor = Colors.white;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgColor,
+        return Scaffold(
+      backgroundColor: userBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: userBg,
+        scrolledUnderElevation: 0,
         elevation: 0,
         title: const Text(
           'My Appointments',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            fontWeight: FontWeight.w700,
+            fontSize: 24,
+            color: Colors.white,
+            letterSpacing: -0.5,
           ),
         ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-            onPressed: controller.fetchUserBookings,
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: userCard,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh_rounded,
+                color: userPrimary,
+                size: 22,
+              ),
+              onPressed: controller.fetchUserBookings,
+              tooltip: 'Refresh',
+            ),
           ),
         ],
       ),
@@ -43,7 +68,7 @@ class UserAppointmentsScreen extends StatelessWidget {
             child: Obx(() {
               if (controller.isLoading.value) {
                 return const Center(
-                  child: CircularProgressIndicator(color: primaryColor),
+                  child: CircularProgressIndicator(),
                 );
               }
 
@@ -57,11 +82,17 @@ class UserAppointmentsScreen extends StatelessWidget {
 
               return RefreshIndicator(
                 onRefresh: controller.fetchUserBookings,
+                color: userPrimary,
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   itemCount: bookings.length,
                   itemBuilder: (context, index) {
-                    return _appointmentCard(bookings[index]);
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: index == bookings.length - 1 ? 0 : 16,
+                      ),
+                      child: _appointmentCard(bookings[index]),
+                    );
                   },
                 ),
               );
@@ -72,18 +103,15 @@ class UserAppointmentsScreen extends StatelessWidget {
     );
   }
 
-  // ===========================
-  // TAB BAR
-  // ===========================
   Widget _buildTabBar() {
-    return Container(
-      margin: const EdgeInsets.all(16),
+      return Container(
+      margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: userCard,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -114,51 +142,54 @@ class UserAppointmentsScreen extends StatelessWidget {
 
   Widget _tabButton(String label, int index, int count) {
     final isSelected = selectedTab.value == index;
-    return GestureDetector(
-      onTap: () => selectedTab.value = index,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected ? primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black54,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.3)
-                    : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                count.toString(),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => selectedTab.value = index,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? userPrimary : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Text(
+                label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black54,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : Colors.white70,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  letterSpacing: -0.3,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withOpacity(0.25)
+                      : userCard,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  count.toString(),
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ===========================
-  // APPOINTMENT CARD
-  // ===========================
   Widget _appointmentCard(BookingModel booking) {
     final isUpcoming = selectedTab.value == 0;
     final statusColor = _getStatusColor(booking.status);
@@ -167,39 +198,41 @@ class UserAppointmentsScreen extends StatelessWidget {
         isUpcoming;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: userCard,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
+            blurRadius: 12,
             offset: const Offset(0, 4),
+            spreadRadius: 0,
           ),
         ],
       ),
       child: Column(
         children: [
-          // Header with salon name and status
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.1),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: statusColor.withOpacity(0.2),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
                     _getStatusIcon(booking.status),
                     color: statusColor,
-                    size: 20,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,16 +240,19 @@ class UserAppointmentsScreen extends StatelessWidget {
                       Text(
                         booking.salonName,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           fontSize: 16,
+                          color: Colors.white,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         booking.serviceName,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
+                        style: const TextStyle(
+                          color: Colors.white70,
                           fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -226,41 +262,37 @@ class UserAppointmentsScreen extends StatelessWidget {
               ],
             ),
           ),
-
-          // Details
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
                 _detailRow(
-                  Icons.calendar_today,
+                  Icons.calendar_today_rounded,
                   _formatDate(booking.date),
                 ),
                 const SizedBox(height: 12),
                 _detailRow(
-                  Icons.access_time,
+                  Icons.access_time_rounded,
                   _formatTime(booking.time),
                 ),
                 const SizedBox(height: 12),
                 _detailRow(
-                  Icons.timer,
+                  Icons.timer_outlined,
                   '${booking.durationMinutes} minutes',
                 ),
                 if (booking.staffName != null) ...[
                   const SizedBox(height: 12),
                   _detailRow(
-                    Icons.person,
+                    Icons.person_rounded,
                     booking.staffName!,
                   ),
                 ],
                 const SizedBox(height: 12),
                 _detailRow(
-                  Icons.payment,
+                  Icons.payment_rounded,
                   '₹${booking.price.toStringAsFixed(0)}',
                   isPrice: true,
                 ),
-                
-                // Action buttons
                 if (canCancel || booking.status == 'COMPLETED') ...[
                   const Divider(height: 24),
                   Row(
@@ -270,13 +302,13 @@ class UserAppointmentsScreen extends StatelessWidget {
                           child: OutlinedButton.icon(
                             onPressed: () => _confirmCancellation(booking),
                             icon: const Icon(Icons.cancel_outlined, size: 18),
-                            label: const Text('Cancel Booking'),
+                            label: const Text('Cancel'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red,
-                              side: const BorderSide(color: Colors.red),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              side: const BorderSide(color: Colors.red, width: 2),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
@@ -288,14 +320,15 @@ class UserAppointmentsScreen extends StatelessWidget {
                           child: ElevatedButton.icon(
                             onPressed: () => _rateExperience(booking),
                             icon: const Icon(Icons.star_outline, size: 18),
-                            label: const Text('Rate Experience'),
+                            label: const Text('Rate'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              backgroundColor: userPrimary,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(12),
                               ),
+                              elevation: 0,
                             ),
                           ),
                         ),
@@ -310,21 +343,25 @@ class UserAppointmentsScreen extends StatelessWidget {
     );
   }
 
-  // ===========================
-  // DETAIL ROW
-  // ===========================
   Widget _detailRow(IconData icon, String text, {bool isPrice = false}) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey.shade600),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: userPrimary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18, color: userPrimary),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               fontSize: 15,
-              color: isPrice ? primaryColor : Colors.black87,
-              fontWeight: isPrice ? FontWeight.bold : FontWeight.normal,
+              color: isPrice ? userPrimary : Colors.white,
+              fontWeight: isPrice ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
         ),
@@ -332,40 +369,43 @@ class UserAppointmentsScreen extends StatelessWidget {
     );
   }
 
-  // ===========================
-  // STATUS CHIP
-  // ===========================
   Widget _statusChip(String status, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         status,
         style: TextStyle(
           color: color,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
           fontSize: 12,
+          letterSpacing: 0.3,
         ),
       ),
     );
   }
 
-  // ===========================
-  // CANCEL CONFIRMATION
-  // ===========================
   void _confirmCancellation(BookingModel booking) {
-    Get.dialog(
+      Get.dialog(
       AlertDialog(
+        backgroundColor: userCard,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         title: const Text(
           'Cancel Booking?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            color: Colors.white,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -373,25 +413,29 @@ class UserAppointmentsScreen extends StatelessWidget {
           children: [
             Text(
               'Are you sure you want to cancel this booking?',
-              style: TextStyle(color: Colors.grey.shade700),
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 15,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
                   Icon(Icons.info_outline, color: Colors.red.shade700, size: 20),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'This action cannot be undone',
                       style: TextStyle(
                         color: Colors.red.shade700,
                         fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -405,7 +449,10 @@ class UserAppointmentsScreen extends StatelessWidget {
             onPressed: () => Get.back(),
             child: Text(
               'No, Keep It',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           ElevatedButton(
@@ -416,67 +463,93 @@ class UserAppointmentsScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Yes, Cancel'),
+            child: const Text(
+              'Yes, Cancel',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ===========================
-  // RATE EXPERIENCE
-  // ===========================
   void _rateExperience(BookingModel booking) {
     Get.toNamed('/user/rate-experience', arguments: booking);
   }
 
-  // ===========================
-  // EMPTY STATE
-  // ===========================
   Widget _emptyState() {
     final isUpcoming = selectedTab.value == 0;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            isUpcoming ? Icons.event_available : Icons.history,
-            size: 80,
-            color: Colors.grey.shade300,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isUpcoming ? 'No Upcoming Appointments' : 'No Past Appointments',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade600,
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: userCard,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Icon(
+              isUpcoming ? Icons.event_available_rounded : Icons.history_rounded,
+              size: 64,
+              color: Colors.white54,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 32),
+          Text(
+            isUpcoming ? 'No Upcoming Appointments' : 'No Past Appointments',
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
             isUpcoming
                 ? 'Book a service to see your appointments here'
                 : 'Your completed appointments will appear here',
-            style: TextStyle(color: Colors.grey.shade500),
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+            ),
             textAlign: TextAlign.center,
           ),
           if (isUpcoming) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () => Get.toNamed('/user/home'),
-              icon: const Icon(Icons.add),
-              label: const Text('Book Now'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text(
+                'Book Now',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
                 ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: userPrimary,
+                foregroundColor: const Color(0xFF0F172A),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
               ),
             ),
           ],
@@ -485,9 +558,6 @@ class UserAppointmentsScreen extends StatelessWidget {
     );
   }
 
-  // ===========================
-  // HELPERS
-  // ===========================
   Color _getStatusColor(String status) {
     switch (status) {
       case 'CONFIRMED':
@@ -506,15 +576,15 @@ class UserAppointmentsScreen extends StatelessWidget {
   IconData _getStatusIcon(String status) {
     switch (status) {
       case 'CONFIRMED':
-        return Icons.check_circle;
+        return Icons.check_circle_rounded;
       case 'COMPLETED':
-        return Icons.done_all;
+        return Icons.done_all_rounded;
       case 'CANCELLED':
-        return Icons.cancel;
+        return Icons.cancel_rounded;
       case 'PENDING':
-        return Icons.schedule;
+        return Icons.schedule_rounded;
       default:
-        return Icons.event;
+        return Icons.event_rounded;
     }
   }
 

@@ -41,11 +41,12 @@ class BookingController extends GetxController {
   // ========================
   // COMPUTED PROPERTIES
   // ========================
-  
+
   /// Today's bookings
   List<BookingModel> get todayBookings {
     final today = DateTime.now();
-    final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     return bookings.where((b) => b.date == todayStr).toList();
   }
 
@@ -56,7 +57,7 @@ class BookingController extends GetxController {
       if (b.status == 'COMPLETED' || b.status == 'CANCELLED') {
         return false;
       }
-      
+
       try {
         final bookingDate = DateTime.parse(b.date);
         final timeParts = b.time.split(':');
@@ -67,10 +68,12 @@ class BookingController extends GetxController {
           int.parse(timeParts[0]),
           int.parse(timeParts[1]),
         );
-        
+
         // Add duration to get end time
-        final endTime = bookingDateTime.add(Duration(minutes: b.durationMinutes));
-        
+        final endTime = bookingDateTime.add(
+          Duration(minutes: b.durationMinutes),
+        );
+
         // Only show if not past
         return endTime.isAfter(now);
       } catch (e) {
@@ -103,14 +106,16 @@ class BookingController extends GetxController {
     return userBookings.where((b) {
       final d = DateTime.tryParse(b.date);
       return d != null &&
-          (d.isBefore(now) || b.status == 'CANCELLED' || b.status == 'COMPLETED');
+          (d.isBefore(now) ||
+              b.status == 'CANCELLED' ||
+              b.status == 'COMPLETED');
     }).toList();
   }
 
   // ========================
   // 💰 REVENUE CALCULATIONS
   // ========================
-  
+
   /// Total revenue from all completed bookings
   double get totalRevenue {
     return completedBookings.fold(0.0, (sum, b) => sum + b.price);
@@ -119,8 +124,9 @@ class BookingController extends GetxController {
   /// Today's revenue from completed bookings
   double get todayRevenue {
     final today = DateTime.now();
-    final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
     return bookings
         .where((b) => b.date == todayStr && b.status == 'COMPLETED')
         .fold(0.0, (sum, b) => sum + b.price);
@@ -130,7 +136,7 @@ class BookingController extends GetxController {
   double get monthRevenue {
     final now = DateTime.now();
     final monthStr = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-    
+
     return bookings
         .where((b) => b.date.startsWith(monthStr) && b.status == 'COMPLETED')
         .fold(0.0, (sum, b) => sum + b.price);
@@ -146,11 +152,14 @@ class BookingController extends GetxController {
   // ========================
   // STATISTICS
   // ========================
-  
+
   int get totalBookingsCount => bookings.length;
-  int get confirmedCount => bookings.where((b) => b.status == 'CONFIRMED').length;
-  int get completedCount => bookings.where((b) => b.status == 'COMPLETED').length;
-  int get cancelledCount => bookings.where((b) => b.status == 'CANCELLED').length;
+  int get confirmedCount =>
+      bookings.where((b) => b.status == 'CONFIRMED').length;
+  int get completedCount =>
+      bookings.where((b) => b.status == 'COMPLETED').length;
+  int get cancelledCount =>
+      bookings.where((b) => b.status == 'CANCELLED').length;
   int get pendingCount => bookings.where((b) => b.status == 'PENDING').length;
 
   @override
@@ -158,7 +167,7 @@ class BookingController extends GetxController {
     super.onInit();
     fetchBookings();
     fetchUserBookings();
-    
+
     // Auto-refresh every 60 seconds to update time-based filters
     _startAutoRefresh();
   }
@@ -171,9 +180,11 @@ class BookingController extends GetxController {
 
   // Auto-refresh timer
   var _autoRefreshTimer;
-  
+
   void _startAutoRefresh() {
-    _autoRefreshTimer = Stream.periodic(const Duration(seconds: 60)).listen((_) {
+    _autoRefreshTimer = Stream.periodic(const Duration(seconds: 60)).listen((
+      _,
+    ) {
       // Silently refresh bookings
       fetchBookings();
     });
@@ -211,9 +222,11 @@ class BookingController extends GetxController {
 
   void selectStaff(EmployeeModel? staff) {
     selectedStaff.value = staff;
-    print(staff != null
-        ? '👤 Staff selected: ${staff.fullName}'
-        : '👤 No staff selected');
+    print(
+      staff != null
+          ? '👤 Staff selected: ${staff.fullName}'
+          : '👤 No staff selected',
+    );
   }
 
   // ========================
@@ -226,7 +239,8 @@ class BookingController extends GetxController {
     for (int h = 9; h <= 21; h++) {
       for (int m = 0; m < 60; m += 30) {
         availableTimeSlots.add(
-            '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}');
+          '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}',
+        );
       }
     }
 
@@ -302,7 +316,7 @@ class BookingController extends GetxController {
       isLoading.value = true;
       final data = await BookingApi.getBookings();
       bookings.value = data.map((e) => BookingModel.fromJson(e)).toList();
-      
+
       print('📋 Fetched ${bookings.length} bookings');
       print('✅ Completed: ${completedCount}');
       print('⏳ Remaining: ${remainingBookings.length}');
@@ -317,16 +331,23 @@ class BookingController extends GetxController {
   Future<void> fetchUserBookings() async {
     try {
       isLoading.value = true;
+
       final data = await BookingApi.getBookings();
-      userBookings.value = data.map((e) => BookingModel.fromJson(e)).toList();
+
+      final parsed = data
+          .map<BookingModel>((e) => BookingModel.fromJson(e))
+          .toList();
+
+      userBookings.assignAll(parsed);
     } catch (e) {
       print('❌ Fetch user bookings error: $e');
+      userBookings.clear();
     } finally {
       isLoading.value = false;
     }
   }
 
-// Replace the STATUS UPDATES section in your BookingController with this:
+  // Replace the STATUS UPDATES section in your BookingController with this:
 
   // ========================
   // STATUS UPDATES - FIXED
@@ -337,7 +358,7 @@ class BookingController extends GetxController {
     print('   Booking ID: $id (${id.runtimeType})');
     print('   New Status: $status');
     print('═══════════════════════════════════════');
-    
+
     try {
       // Validate booking ID
       if (id == null) {
@@ -349,13 +370,11 @@ class BookingController extends GetxController {
       print('🔵 CONTROLLER: Converting ID...');
       final int bookingId = id is int ? id : int.parse(id.toString());
       print('✅ CONTROLLER: ID converted to $bookingId');
-      
+
       print('🔵 CONTROLLER: Showing loading dialog...');
       // Show loading dialog
       Get.dialog(
-        const Center(
-          child: CircularProgressIndicator(),
-        ),
+        const Center(child: CircularProgressIndicator()),
         barrierDismissible: false,
       );
       print('✅ CONTROLLER: Loading dialog shown');
@@ -392,7 +411,7 @@ class BookingController extends GetxController {
         backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.1),
         duration: const Duration(seconds: 2),
       );
-      
+
       print('═══════════════════════════════════════');
       print('✅ CONTROLLER: updateStatus completed successfully');
       print('═══════════════════════════════════════');
@@ -404,14 +423,14 @@ class BookingController extends GetxController {
       print('   Stack trace:');
       print(stackTrace);
       print('═══════════════════════════════════════');
-      
+
       // Close loading dialog if still open
       if (Get.isDialogOpen == true) {
         Get.back();
       }
 
       print('❌ CONTROLLER: Update status error: $e');
-      
+
       // Show error message
       Get.snackbar(
         'Error',
@@ -426,27 +445,33 @@ class BookingController extends GetxController {
   }
 
   /// Update booking status in local state without API call
-  void _updateLocalBookingStatus(int bookingId, String status) {
-    try {
-      // Update in bookings list
-      final bookingIndex = bookings.indexWhere((b) => b.id == bookingId);
-      if (bookingIndex != -1) {
-        bookings[bookingIndex] = bookings[bookingIndex].copyWith(status: status);
-        bookings.refresh();
-        print('✅ Updated booking $bookingId in bookings list');
-      }
-
-      // Update in userBookings list
-      final userBookingIndex = userBookings.indexWhere((b) => b.id == bookingId);
-      if (userBookingIndex != -1) {
-        userBookings[userBookingIndex] = userBookings[userBookingIndex].copyWith(status: status);
-        userBookings.refresh();
-        print('✅ Updated booking $bookingId in userBookings list');
-      }
-    } catch (e) {
-      print('⚠️ Error updating local booking status: $e');
+ void _updateLocalBookingStatus(int bookingId, String status) {
+  try {
+    final bookingIndex = bookings.indexWhere((b) => b.id == bookingId);
+    if (bookingIndex != -1) {
+      final booking = bookings[bookingIndex];
+      bookings[bookingIndex] = booking.copyWith(
+        status: status,
+        isRated: status == 'COMPLETED' ? false : booking.isRated,
+      );
+      bookings.refresh();
     }
+
+    final userBookingIndex =
+        userBookings.indexWhere((b) => b.id == bookingId);
+    if (userBookingIndex != -1) {
+      final booking = userBookings[userBookingIndex];
+      userBookings[userBookingIndex] = booking.copyWith(
+        status: status,
+        isRated: status == 'COMPLETED' ? false : booking.isRated,
+      );
+      userBookings.refresh();
+    }
+  } catch (e) {
+    debugPrint('⚠️ Error updating local booking status: $e');
   }
+}
+
 
   Future<void> cancelBooking(dynamic id) async {
     print('🚫 CONTROLLER: Cancelling booking $id');
@@ -462,8 +487,7 @@ class BookingController extends GetxController {
     print('✔️ CONTROLLER: Confirming booking $id');
     await updateStatus(id, 'CONFIRMED');
   }
-  
-  
+
   // ========================
   // HELPER: Check if booking is past
   // ========================
@@ -478,11 +502,61 @@ class BookingController extends GetxController {
         int.parse(timeParts[0]),
         int.parse(timeParts[1]),
       );
-      
-      final endTime = bookingDateTime.add(Duration(minutes: booking.durationMinutes));
+
+      final endTime = bookingDateTime.add(
+        Duration(minutes: booking.durationMinutes),
+      );
       return endTime.isBefore(DateTime.now());
     } catch (e) {
       return false;
+    }
+  }
+
+  bool get isBookingReady =>
+      selectedSalon.value != null &&
+      selectedService.value != null &&
+      selectedDate.value != null &&
+      selectedTime.value.isNotEmpty;
+
+  // ========================
+  // ⭐ USER REVIEW (UI ONLY)
+  // ========================
+  Future<void> submitReview({
+    required int bookingId,
+    required int rating,
+    required String feedback,
+  }) async {
+    try {
+      debugPrint('═══════════════════════════════════════');
+      debugPrint('⭐ REVIEW SUBMITTED');
+      debugPrint('Booking ID: $bookingId');
+      debugPrint('Rating: $rating');
+      debugPrint('Feedback: $feedback');
+      debugPrint('═══════════════════════════════════════');
+
+      // Update local booking as rated (frontend only)
+      final index = userBookings.indexWhere((b) => b.id == bookingId);
+      if (index != -1) {
+        userBookings[index] = userBookings[index].copyWith(isRated: true);
+        userBookings.refresh();
+      }
+
+      Get.snackbar(
+        'Thank you!',
+        'Your review has been submitted',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade50,
+        colorText: Colors.green.shade700,
+      );
+    } catch (e) {
+      debugPrint('❌ submitReview error: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to submit review',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade700,
+      );
     }
   }
 }
