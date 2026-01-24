@@ -1,7 +1,7 @@
 # bookings/urls.py - ENHANCED VERSION
 
 from django.urls import path
-from . import views
+from . import views, revenue_views
 
 urlpatterns = [
     # Booking CRUD
@@ -24,4 +24,15 @@ urlpatterns = [
     path('blockouts/', views.blockout_list, name='blockout-list'),  # GET
     path('blockouts/create/', views.blockout_create, name='blockout-create'),  # POST
     path('blockouts/<int:pk>/', views.blockout_detail, name='blockout-detail'),  # GET/PUT/DELETE
+        
+    # 💰 REVENUE ENDPOINTS - NEW
+    path('revenue/', revenue_views.revenue_overview, name='revenue-overview'),
+    path('revenue/daily/', revenue_views.daily_revenue, name='daily-revenue'),
+    path('revenue/weekly/', revenue_views.weekly_revenue, name='weekly-revenue'),
+    path('revenue/monthly/', revenue_views.monthly_revenue, name='monthly-revenue'),
+    path('revenue/services/', revenue_views.service_revenue, name='service-revenue'),
+    path('revenue/staff/', revenue_views.staff_performance, name='staff-performance'),
+    path('revenue/categories/', revenue_views.revenue_by_category, name='category-revenue'),
+    path('revenue/peak-hours/', revenue_views.peak_hours_revenue, name='peak-hours'),
+
 ]

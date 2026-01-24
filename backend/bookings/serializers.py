@@ -37,6 +37,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'booking_date',
             'booking_time',
             'end_time',
+            'price',  # ✅ ADD PRICE FIELD
             'status',
             'status_display',
             'customer_name',

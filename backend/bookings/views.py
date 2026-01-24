@@ -59,18 +59,16 @@ def booking_list(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_booking(request):
-    """
-    Create a new booking with automatic validation
-    ✅ Auto-accepts bookings
-    ✅ Prevents time overlaps
-    ✅ Assigns available staff
-    """
+    """Create a new booking with automatic validation"""
     try:
         data = request.data.copy()
         
-        # Get service to calculate duration
+        # Get service to calculate duration and price
         service = Service.objects.get(id=data['service'])
         salon = service.salon
+        
+        # ✅ AUTO-SET PRICE FROM SERVICE
+        data['price'] = str(service.price)
         
         # Parse booking date and time
         booking_date = datetime.strptime(data['booking_date'], '%Y-%m-%d').date()
@@ -81,10 +79,9 @@ def create_booking(request):
         end_datetime = start_datetime + timedelta(minutes=service.duration)
         end_time = end_datetime.time()
         
-        # ✅ Find available staff for this slot
+        # Find available staff
         staff_id = data.get('staff')
         if not staff_id:
-            # Auto-assign available staff
             staff_id = find_available_staff(
                 salon, 
                 booking_date, 
@@ -99,7 +96,6 @@ def create_booking(request):
                 }, status=status.HTTP_400_BAD_REQUEST)
             data['staff'] = staff_id
         else:
-            # Validate chosen staff is available
             is_available = check_staff_availability(
                 staff_id,
                 booking_date,
@@ -116,9 +112,9 @@ def create_booking(request):
         data['user'] = request.user.id
         data['salon'] = salon.id
         data['end_time'] = end_time.strftime('%H:%M:%S')
-        data['status'] = 'CONFIRMED'  # ✅ Auto-accept
+        data['status'] = 'CONFIRMED'
         
-        # Set customer details from user if not provided
+        # Set customer details
         if not data.get('customer_name'):
             data['customer_name'] = request.user.get_full_name() or request.user.email
         if not data.get('customer_phone'):
@@ -127,9 +123,6 @@ def create_booking(request):
         serializer = BookingSerializer(data=data)
         if serializer.is_valid():
             booking = serializer.save()
-            
-            # TODO: Send confirmation SMS/Email
-            # send_booking_confirmation(booking)
             
             return Response({
                 'message': 'Booking confirmed successfully! ✅',
@@ -142,10 +135,6 @@ def create_booking(request):
         return Response({
             'error': 'Service not found'
         }, status=status.HTTP_404_NOT_FOUND)
-    except ValidationError as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({
             'error': f'Booking failed: {str(e)}'

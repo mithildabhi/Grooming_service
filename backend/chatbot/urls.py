@@ -1,4 +1,5 @@
 # chatbot/urls.py
+# ✅ OPTIMIZED URL Configuration
 
 from django.urls import path
 from . import views
@@ -6,10 +7,8 @@ from . import views
 app_name = 'chatbot'
 
 urlpatterns = [
-    # ✅ Root endpoint - what your Flutter app calls
+    # Main chatbot endpoint
     path('', views.admin_chatbot, name='chatbot-root'),
-    
-    # Alternative admin endpoint (keeps old path working too)
     path('admin/', views.admin_chatbot, name='admin-chatbot'),
     
     # Quick suggestions
@@ -17,4 +16,7 @@ urlpatterns = [
     
     # Clear chat history
     path('clear/', views.clear_chat_history, name='clear-chat'),
+    
+    # Comprehensive analytics summary
+    path('analytics/', views.get_salon_analytics_summary, name='salon-analytics'),
 ]

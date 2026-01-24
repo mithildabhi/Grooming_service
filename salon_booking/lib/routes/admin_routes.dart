@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:salon_booking/views/admin/admin_revenue_screen.dart';
 import 'package:salon_booking/views/admin/admin_shell.dart';
 import 'package:salon_booking/views/admin/admin_bookings_screen.dart';
 import 'package:salon_booking/views/admin/services_screen.dart';
@@ -23,6 +24,7 @@ class AdminRoutes {
   static const offers = '/admin/offers';
   static const inventory = '/admin/inventory';
   static const gallery = '/admin/gallery';
+  
 
   static final pages = [
     // ✅ No binding needed - AdminController already initialized
@@ -47,5 +49,7 @@ class AdminRoutes {
     GetPage(name: offers, page: () => const OffersScreen()),
     GetPage(name: inventory, page: () => const InventoryScreen()),
     GetPage(name: gallery, page: () => const GalleryScreen()),
+    GetPage(name: '/admin/revenue', page: () => AdminRevenueScreen()),
+  
   ];
 }

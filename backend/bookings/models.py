@@ -1,5 +1,3 @@
-# bookings/models.py - ENHANCED VERSION
-
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -36,7 +34,6 @@ class Booking(models.Model):
         related_name='bookings'
     )
     
-    # ✅ NEW: Staff assignment
     staff = models.ForeignKey(
         Employee,
         on_delete=models.SET_NULL,
@@ -48,21 +45,22 @@ class Booking(models.Model):
 
     booking_date = models.DateField()
     booking_time = models.TimeField()
-    
-    # ✅ NEW: End time calculation
-    end_time = models.TimeField(
-        null=True,
-        blank=True,
-        help_text="Auto-calculated based on service duration"
+    end_time = models.TimeField(null=True, blank=True)
+
+    # ✅ NEW: Store the price at booking time
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Service price at booking time"
     )
 
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='CONFIRMED'  # ✅ CHANGED: Auto-accept bookings
+        default='CONFIRMED'
     )
     
-    # ✅ NEW: Additional fields
     customer_name = models.CharField(max_length=100, blank=True)
     customer_phone = models.CharField(max_length=20, blank=True)
     notes = models.TextField(blank=True)
@@ -77,7 +75,6 @@ class Booking(models.Model):
             models.Index(fields=['staff', 'booking_date']),
             models.Index(fields=['user', 'booking_date']),
         ]
-        # ✅ NEW: Prevent double booking same slot
         constraints = [
             models.UniqueConstraint(
                 fields=['staff', 'booking_date', 'booking_time'],
@@ -87,10 +84,14 @@ class Booking(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user} - {self.service} on {self.booking_date} at {self.booking_time}"
+        return f"{self.user} - {self.service} on {self.booking_date} at {self.booking_time} - ₹{self.price}"
 
     def save(self, *args, **kwargs):
-        # ✅ Auto-calculate end time based on service duration
+        # ✅ Auto-set price from service if not already set
+        if not self.price and self.service:
+            self.price = self.service.price
+        
+        # Auto-calculate end time
         if not self.end_time and self.service:
             start_datetime = datetime.combine(
                 datetime.today(),
@@ -99,7 +100,6 @@ class Booking(models.Model):
             end_datetime = start_datetime + timedelta(minutes=self.service.duration)
             self.end_time = end_datetime.time()
         
-        # ✅ Validate before saving
         self.clean()
         super().save(*args, **kwargs)
 
@@ -108,13 +108,11 @@ class Booking(models.Model):
         if not self.booking_date or not self.booking_time or not self.service:
             return
         
-        # Calculate end time if not set
         if not self.end_time:
             start_datetime = datetime.combine(datetime.today(), self.booking_time)
             end_datetime = start_datetime + timedelta(minutes=self.service.duration)
             self.end_time = end_datetime.time()
         
-        # Check for overlapping bookings for the same staff
         if self.staff:
             overlapping = Booking.objects.filter(
                 staff=self.staff,
@@ -123,7 +121,6 @@ class Booking(models.Model):
             ).exclude(pk=self.pk if self.pk else None)
             
             for booking in overlapping:
-                # Check if times overlap
                 if self._times_overlap(
                     self.booking_time, self.end_time,
                     booking.booking_time, booking.end_time
@@ -150,9 +147,7 @@ class Booking(models.Model):
 
 
 class TimeSlot(models.Model):
-    """
-    Define available time slots for the salon
-    """
+    """Define available time slots for the salon"""
     salon = models.ForeignKey(
         Salon,
         on_delete=models.CASCADE,
@@ -174,7 +169,6 @@ class TimeSlot(models.Model):
     
     start_time = models.TimeField()
     end_time = models.TimeField()
-    
     is_active = models.BooleanField(default=True)
     
     class Meta:
@@ -186,10 +180,7 @@ class TimeSlot(models.Model):
 
 
 class BookingBlockout(models.Model):
-    """
-    Block specific dates/times when bookings are not available
-    For holidays, staff leave, etc.
-    """
+    """Block specific dates/times when bookings are not available"""
     salon = models.ForeignKey(
         Salon,
         on_delete=models.CASCADE,
@@ -207,10 +198,8 @@ class BookingBlockout(models.Model):
     
     start_date = models.DateField()
     end_date = models.DateField()
-    
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
-    
     reason = models.CharField(max_length=200)
     is_active = models.BooleanField(default=True)
     

@@ -31,7 +31,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     controller.sendMessage(message);
     _messageController.clear();
     
-    // Scroll to bottom after message is added
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -63,125 +62,48 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               child: const Icon(Icons.psychology, color: accent, size: 24),
             ),
             const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'SalonCare AI',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+            Obx(() {
+              final analytics = controller.analytics.value;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'SalonCare AI',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  'Management Assistant',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
+                  Text(
+                    analytics != null ? analytics.salonName : 'Loading...',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white54),
-            onPressed: () => controller.clearChat(),
+            onPressed: () {
+              controller.clearChat();
+              controller.loadAnalytics();
+            },
           ),
         ],
       ),
       body: Column(
         children: [
-          // Quick Actions - FIXED HEIGHT
-          Container(
-            height: 100, // Fixed height instead of letting it overflow
-            color: card,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: 5,
-              itemBuilder: (context, index) {
-                final actions = [
-                  {
-                    'icon': Icons.calendar_today,
-                    'text': 'Today\'s\nBookings',
-                    'action': () => controller.askTodayBookings(),
-                  },
-                  {
-                    'icon': Icons.attach_money,
-                    'text': 'Weekly\nRevenue',
-                    'action': () => controller.askWeeklyRevenue(),
-                  },
-                  {
-                    'icon': Icons.people,
-                    'text': 'Staff\nAvailable',
-                    'action': () => controller.askStaffAvailability(),
-                  },
-                  {
-                    'icon': Icons.trending_up,
-                    'text': 'Popular\nServices',
-                    'action': () => controller.askPopularServices(),
-                  },
-                  {
-                    'icon': Icons.lightbulb,
-                    'text': 'Smart\nTips',
-                    'action': () => controller.askRecommendations(),
-                  },
-                ];
-                
-                final action = actions[index];
-                return GestureDetector(
-                  onTap: action['action'] as VoidCallback,
-                  child: Container(
-                    width: 85,
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          accent.withOpacity(0.15),
-                          accent.withOpacity(0.05),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: accent.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          action['icon'] as IconData,
-                          color: accent,
-                          size: 24,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          action['text'] as String,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          // Analytics Cards
+          _buildAnalyticsCards(controller),
+          
+          // Quick Actions
+          _buildQuickActions(controller),
           
           // Chat Messages
           Expanded(
@@ -219,7 +141,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     ),
                     const SizedBox(width: 12),
                     const Text(
-                      'Analyzing your salon data...',
+                      'Analyzing your complete salon data...',
                       style: TextStyle(color: Colors.white54, fontSize: 13),
                     ),
                   ],
@@ -236,6 +158,254 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     );
   }
 
+  Widget _buildAnalyticsCards(ChatbotController controller) {
+    return Obx(() {
+      final analytics = controller.analytics.value;
+      
+      if (analytics == null) {
+        return Container(
+          height: 80,
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: accent,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Loading your salon analytics...',
+                  style: TextStyle(color: Colors.white54, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      
+      return Container(
+        height: 110,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          children: [
+            _buildAnalyticsCard(
+              icon: Icons.calendar_today,
+              title: 'Today',
+              value: '${analytics.todayBookings}',
+              subtitle: '₹${analytics.todayRevenue.toStringAsFixed(0)}',
+              color: Colors.blue,
+            ),
+            _buildAnalyticsCard(
+              icon: Icons.trending_up,
+              title: 'This Week',
+              value: '${analytics.weekBookings}',
+              subtitle: '₹${analytics.weekRevenue.toStringAsFixed(0)}',
+              color: Colors.green,
+            ),
+            _buildAnalyticsCard(
+              icon: Icons.show_chart,
+              title: 'Growth',
+              value: '${analytics.revenueGrowth.toStringAsFixed(1)}%',
+              subtitle: 'vs last month',
+              color: analytics.revenueGrowth > 0 ? Colors.green : Colors.red,
+            ),
+            _buildAnalyticsCard(
+              icon: Icons.people,
+              title: 'Team',
+              value: '${analytics.totalStaff}',
+              subtitle: 'members',
+              color: Colors.purple,
+            ),
+            _buildAnalyticsCard(
+              icon: Icons.person,
+              title: 'Customers',
+              value: '${analytics.uniqueCustomers}',
+              subtitle: '${analytics.repeatCustomerRate.toStringAsFixed(0)}% repeat',
+              color: Colors.orange,
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildAnalyticsCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+  }) {
+    return Container(
+      width: 130,
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.2),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: color, size: 20),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 10,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(ChatbotController controller) {
+    return Container(
+      height: 90,
+      color: card,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: [
+          _buildQuickActionButton(
+            icon: Icons.today,
+            label: 'Today\'s\nReport',
+            onTap: () => controller.askTodayBookings(),
+          ),
+          _buildQuickActionButton(
+            icon: Icons.bar_chart,
+            label: 'Weekly\nAnalysis',
+            onTap: () => controller.askWeeklyRevenue(),
+          ),
+          _buildQuickActionButton(
+            icon: Icons.stars,
+            label: 'Top\nStaff',
+            onTap: () => controller.askStaffPerformance(),
+          ),
+          _buildQuickActionButton(
+            icon: Icons.content_cut,
+            label: 'Popular\nServices',
+            onTap: () => controller.askPopularServices(),
+          ),
+          _buildQuickActionButton(
+            icon: Icons.people_outline,
+            label: 'Customer\nInsights',
+            onTap: () => controller.askCustomerInsights(),
+          ),
+          _buildQuickActionButton(
+            icon: Icons.lightbulb,
+            label: 'AI\nRecommend',
+            onTap: () => controller.askRecommendations(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 75,
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              accent.withOpacity(0.15),
+              accent.withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: accent.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: accent, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.isUser;
     
@@ -245,7 +415,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
         ),
         decoration: BoxDecoration(
           color: isUser ? accent : card,
@@ -290,20 +460,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     accent.withOpacity(0.2),
                     accent.withOpacity(0.05),
                   ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.psychology,
-                size: 56,
-                color: accent,
-              ),
+              child: const Icon(Icons.psychology, size: 56, color: accent),
             ),
             const SizedBox(height: 20),
             const Text(
-              'Hi! I\'m SalonCare AI',
+              'SalonCare AI Assistant',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 22,
@@ -312,12 +476,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Your intelligent salon management assistant',
+              'Powered by comprehensive salon analytics',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.white54, fontSize: 13),
             ),
             const SizedBox(height: 24),
             Container(
@@ -330,7 +491,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'I can help you with:',
+                    'I can provide insights on:',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,
@@ -339,12 +500,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   ),
                   const SizedBox(height: 10),
                   ...[
-                    '📊 Business analytics & insights',
-                    '💰 Revenue & earnings tracking',
-                    '📅 Booking management',
-                    '👥 Staff scheduling',
-                    '✂️ Service performance',
-                    '💡 Smart recommendations'
+                    '📊 Real-time booking analytics',
+                    '💰 Revenue tracking & growth',
+                    '👥 Staff performance metrics',
+                    '✂️ Service popularity trends',
+                    '👤 Customer retention insights',
+                    '⏰ Peak hours & busy periods',
+                    '💡 Data-driven recommendations'
                   ].map((item) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
                         child: Text(
@@ -360,7 +522,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Try the quick actions above or ask me anything!',
+              'Your data is private and secure - only you can see it!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: accent,
@@ -396,7 +558,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               maxLines: null,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Ask about your salon...',
+                hintText: 'Ask about your salon data...',
                 hintStyle: const TextStyle(color: Colors.white38, fontSize: 14),
                 filled: true,
                 fillColor: bg,
@@ -421,11 +583,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 color: accent,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.send_rounded,
-                color: Colors.black,
-                size: 20,
-              ),
+              child: const Icon(Icons.send_rounded, color: Colors.black, size: 20),
             ),
           ),
         ],

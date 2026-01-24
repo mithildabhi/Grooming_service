@@ -39,10 +39,6 @@ class AdminBookingsScreen extends StatelessWidget {
 
         final bookings = _getFilteredBookings();
 
-        if (bookings.isEmpty) {
-          return _emptyState();
-        }
-
         return RefreshIndicator(
           onRefresh: controller.fetchBookings,
           child: ListView(
@@ -52,7 +48,10 @@ class AdminBookingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _filterTabs(),
               const SizedBox(height: 20),
-              ...bookings.map((b) => _bookingTile(b)),
+              if (bookings.isEmpty)
+                _emptyState()
+              else
+                ...bookings.map((b) => _bookingTile(b)),
             ],
           ),
         );
@@ -65,71 +64,104 @@ class AdminBookingsScreen extends StatelessWidget {
   // ===========================
   List<BookingModel> _getFilteredBookings() {
     switch (selectedFilter.value) {
-      case 1: // Remaining
+      case 1: // Remaining (Confirmed only)
         return controller.remainingBookings;
       case 2: // Completed
         return controller.completedBookings;
       case 3: // Cancelled
         return controller.cancelledBookings;
+      case 4: // Service Time Passed (NEW)
+        return controller.bookings.where((booking) {
+          return booking.status == 'CONFIRMED' && 
+                 controller.isBookingPast(booking);
+        }).toList();
       default: // All
         return controller.bookings;
     }
   }
 
   // ===========================
-  // FILTER TABS
+  // FILTER TABS (UPDATED)
   // ===========================
   Widget _filterTabs() {
     return Obx(() {
+      // Calculate service time passed count
+      final passedCount = controller.bookings.where((booking) {
+        return booking.status == 'CONFIRMED' && controller.isBookingPast(booking);
+      }).length;
+
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _filterChip('All', 0, controller.totalBookingsCount),
+            _filterChip('All', 0, controller.totalBookingsCount, Icons.apps),
             const SizedBox(width: 8),
-            _filterChip('Remaining', 1, controller.remainingBookings.length),
+            _filterChip('Remaining', 1, controller.remainingBookings.length, Icons.schedule),
             const SizedBox(width: 8),
-            _filterChip('Completed', 2, controller.completedCount),
+            _filterChip('Completed', 2, controller.completedCount, Icons.check_circle),
             const SizedBox(width: 8),
-            _filterChip('Cancelled', 3, controller.cancelledCount),
+            _filterChip('Cancelled', 3, controller.cancelledCount, Icons.cancel),
+            const SizedBox(width: 8),
+            // ✅ NEW: Service Time Passed Filter
+            _filterChip('Time Passed', 4, passedCount, Icons.warning, 
+                        color: Colors.orange),
           ],
         ),
       );
     });
   }
 
-  Widget _filterChip(String label, int index, int count) {
+  Widget _filterChip(String label, int index, int count, IconData icon, {Color? color}) {
     final isSelected = selectedFilter.value == index;
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.black26 : Colors.white24,
-              borderRadius: BorderRadius.circular(10),
+    final chipColor = color ?? accent;
+    
+    return GestureDetector(
+      onTap: () => selectedFilter.value = index,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? chipColor : card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? chipColor : Colors.white24,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.black : chipColor,
             ),
-            child: Text(
-              count.toString(),
+            const SizedBox(width: 6),
+            Text(
+              label,
               style: TextStyle(
-                fontSize: 11,
+                color: isSelected ? Colors.black : Colors.white,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.black87 : Colors.white70,
+                fontSize: 13,
               ),
             ),
-          ),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (_) => selectedFilter.value = index,
-      selectedColor: accent,
-      backgroundColor: card,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.black : Colors.white,
-        fontWeight: FontWeight.bold,
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.black26 : chipColor.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.black87 : Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -215,28 +247,42 @@ class AdminBookingsScreen extends StatelessWidget {
                     '#${booking.id.toString()}',
                     style: const TextStyle(color: Colors.white38, fontSize: 12),
                   ),
-                  if (isPast && booking.status == 'CONFIRMED')
-                    const Padding(
-                      padding: EdgeInsets.only(top: 6),
-                      child: Row(
-                        children: [
-                          Icon(Icons.warning, color: Colors.orange, size: 16),
-                          SizedBox(width: 4),
-                          Text(
-                            'Service time passed',
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // ✅ IMPROVED: Service time passed warning
+if (isPast && booking.status == 'CONFIRMED')
+  Container(
+    margin: const EdgeInsets.only(top: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.orange.withOpacity(0.2),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: Colors.orange.withOpacity(0.5)),
+    ),
+    child: Row(
+      children: const [
+        Icon(Icons.warning_amber, color: Colors.orange, size: 16),
+        SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'Service time passed - Update status',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.orange,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+
+
                 ],
               ),
             ),
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _statusChip(booking.status, statusColor),
                 const SizedBox(height: 8),
@@ -261,24 +307,31 @@ class AdminBookingsScreen extends StatelessWidget {
       icon: const Icon(Icons.more_vert, color: Colors.white54),
       color: card,
       onSelected: (value) {
-        // Ensure ID is int
-        final bookingId = booking.id is int ? booking.id : int.parse(booking.id.toString());
+      final bookingId = int.tryParse(booking.id.toString());
+      if (bookingId == null) return;
         
         if (value == 'COMPLETED') {
           _confirmAction(
             title: 'Mark as Completed?',
             message: 'This will mark the booking as completed and add ₹${booking.price.toStringAsFixed(0)} to revenue.',
-            onConfirm: () => controller.updateStatus(bookingId!, 'COMPLETED'),
+            onConfirm: () => controller.updateStatus(bookingId, 'COMPLETED'),
           );
         } else if (value == 'CANCELLED') {
           _confirmAction(
             title: 'Cancel Booking?',
             message: 'This action cannot be undone.',
-            onConfirm: () => controller.updateStatus(bookingId!, 'CANCELLED'),
+            onConfirm: () => controller.updateStatus(bookingId, 'CANCELLED'),
+            isDestructive: true,
+          );
+        } else if (value == 'NO_SHOW') {
+          _confirmAction(
+            title: 'Mark as No Show?',
+            message: 'Customer did not show up for the appointment.',
+            onConfirm: () => controller.updateStatus(bookingId, 'NO_SHOW'),
             isDestructive: true,
           );
         } else {
-          controller.updateStatus(bookingId!, value);
+          controller.updateStatus(bookingId, value);
         }
       },
       itemBuilder: (_) {
@@ -316,6 +369,16 @@ class AdminBookingsScreen extends StatelessWidget {
                   Icon(Icons.done_all, color: Colors.purple, size: 20),
                   SizedBox(width: 8),
                   Text('Mark Completed', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'NO_SHOW',
+              child: Row(
+                children: [
+                  Icon(Icons.person_off, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Text('Mark No Show', style: TextStyle(color: Colors.white)),
                 ],
               ),
             ),
@@ -378,6 +441,8 @@ class AdminBookingsScreen extends StatelessWidget {
   // DETAILS BOTTOM SHEET
   // ===========================
   void _showDetails(BookingModel booking) {
+    final isPast = controller.isBookingPast(booking);
+    
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
@@ -405,6 +470,33 @@ class AdminBookingsScreen extends StatelessWidget {
                 _statusChip(booking.status, _getStatusColor(booking.status)),
               ],
             ),
+            // ✅ Show warning in details if time passed
+            if (isPast && booking.status == 'CONFIRMED')
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Service time has passed. Please update the booking status.',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const Divider(height: 24, color: Colors.white24),
             _detail('Customer', booking.customerName),
             _detail('Phone', booking.userPhone),
@@ -421,10 +513,15 @@ class AdminBookingsScreen extends StatelessWidget {
   }
 
   // ===========================
-  // STATISTICS CARD
+  // STATISTICS CARD (UPDATED)
   // ===========================
   Widget _statisticsCard() {
     return Obx(() {
+      // Calculate service time passed count
+      final passedCount = controller.bookings.where((booking) {
+        return booking.status == 'CONFIRMED' && controller.isBookingPast(booking);
+      }).length;
+
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -442,6 +539,33 @@ class AdminBookingsScreen extends StatelessWidget {
                 _stat('Cancelled', controller.cancelledCount, Colors.red),
               ],
             ),
+            // ✅ Add Time Passed count
+            if (passedCount > 0) ...[
+              const Divider(height: 20, color: Colors.white24),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$passedCount booking${passedCount > 1 ? 's' : ''} time passed',
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const Divider(height: 24, color: Colors.white24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -559,6 +683,10 @@ class AdminBookingsScreen extends StatelessWidget {
         message = 'No cancelled bookings';
         icon = Icons.cancel_outlined;
         break;
+      case 4:
+        message = 'No bookings with passed service time';
+        icon = Icons.warning_amber_outlined;
+        break;
     }
 
     return Center(
@@ -584,6 +712,8 @@ class AdminBookingsScreen extends StatelessWidget {
         return Colors.greenAccent;
       case 'CANCELLED':
         return Colors.redAccent;
+      case 'NO_SHOW':
+        return Colors.orange;
       default:
         return Colors.orangeAccent;
     }
@@ -597,6 +727,8 @@ class AdminBookingsScreen extends StatelessWidget {
         return Icons.done_all;
       case 'CANCELLED':
         return Icons.cancel;
+      case 'NO_SHOW':
+        return Icons.person_off;
       default:
         return Icons.event;
     }

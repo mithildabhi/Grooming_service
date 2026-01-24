@@ -1,3 +1,6 @@
+// lib/views/admin/profile_screen.dart
+// ✅ UPDATED: Billing & Payouts now opens Revenue Dashboard
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salon_booking/views/admin/employee_screen.dart';
@@ -20,7 +23,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // ✅ Load profile automatically when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final adminCtrl = Get.find<AdminController>();
       if (!adminCtrl.hasProfile && !adminCtrl.isLoadingProfile.value) {
@@ -54,21 +56,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: Obx(() {
-        // ✅ Show loading indicator
         if (adminCtrl.isLoadingProfile.value) {
           return const Center(
             child: CircularProgressIndicator(color: accent),
           );
         }
 
-        // ✅ ALWAYS show content with Quick Actions
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // ✅ Profile Section (show if available)
+              // Profile Section
               if (adminCtrl.hasProfile) ...[
-                // Profile Image
                 CircleAvatar(
                   radius: 48,
                   backgroundImage: adminCtrl.imageUrl.isNotEmpty
@@ -95,7 +94,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 24),
 
-                // Profile Info Cards
                 _infoCard("Salon Name", adminCtrl.salonName),
                 _infoCard("Email", adminCtrl.ownerEmail),
                 _infoCard("Phone", adminCtrl.phone),
@@ -109,7 +107,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 32),
               ] else ...[
-                // ✅ No Profile - Show Simple Message
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -161,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 32),
               ],
 
-              // ✅ QUICK ACTIONS - ALWAYS VISIBLE
+              // QUICK ACTIONS
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -176,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 16),
 
-              // ✅ Quick Action Grid - ALWAYS VISIBLE
+              // ✅ UPDATED: Revenue Dashboard Navigation
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -195,10 +192,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: "Services",
                     onTap: () => Get.to(() => const ServicesScreen()),
                   ),
+                  // 💰 UPDATED: Now opens Revenue Dashboard
                   _actionCard(
                     icon: Icons.account_balance_wallet,
-                    title: "Billing & Payouts",
-                    onTap: () => Get.toNamed('/billing'),
+                    title: "Revenue Analytics",
+                    subtitle: "Track earnings",
+                    onTap: () => Get.toNamed('/admin/revenue'),
                   ),
                   _actionCard(
                     icon: Icons.settings,
@@ -210,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 32),
 
-              // ✅ LOGOUT BUTTON - ALWAYS VISIBLE
+              // LOGOUT BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -243,7 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Get.back(), // Close dialog
+                            onPressed: () => Get.back(),
                             child: const Text(
                               "Cancel",
                               style: TextStyle(color: Colors.white70),
@@ -251,17 +250,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           TextButton(
                             onPressed: () async {
-                              Get.back(); // Close dialog first
-                              
-                              // ✅ Show loading indicator
+                              Get.back();
                               Get.dialog(
                                 const Center(
                                   child: CircularProgressIndicator(color: accent),
                                 ),
                                 barrierDismissible: false,
                               );
-                              
-                              // ✅ Call logout
                               await adminCtrl.logout();
                             },
                             child: const Text(
@@ -310,9 +305,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ✅ UPDATED: Added optional subtitle parameter
   Widget _actionCard({
     required IconData icon,
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -336,8 +333,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ],
         ),
       ),
