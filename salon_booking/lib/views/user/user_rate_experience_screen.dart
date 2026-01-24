@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../models/booking_model.dart';
-import '../../widgets/user_card.dart';
-import '../../widgets/primary_button.dart';
-import '../../theme/user_colors.dart';
+import '../../controllers/booking_controller.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+import '../../widgets/ui/primary_button.dart';
+import '../../widgets/ui/glass_card.dart';
 
 class UserRateExperienceScreen extends StatefulWidget {
   const UserRateExperienceScreen({super.key});
@@ -13,19 +18,16 @@ class UserRateExperienceScreen extends StatefulWidget {
       _UserRateExperienceScreenState();
 }
 
-class _UserRateExperienceScreenState
-    extends State<UserRateExperienceScreen> {
-  int rating = 5;
+class _UserRateExperienceScreenState extends State<UserRateExperienceScreen> {
+  final BookingController bookingController = Get.find<BookingController>();
   final TextEditingController feedbackController = TextEditingController();
-
-  late final BookingModel booking;
+  int selectedRating = 0;
+  BookingModel? booking;
 
   @override
   void initState() {
     super.initState();
-
-    /// ✅ Read booking safely
-    booking = Get.arguments as BookingModel;
+    booking = Get.arguments as BookingModel?;
   }
 
   @override
@@ -34,101 +36,213 @@ class _UserRateExperienceScreenState
     super.dispose();
   }
 
-  void _submitReview() {
-    Get.back();
-
-    Get.snackbar(
-      'Thank you!',
-      'Your review has been submitted',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.shade50,
-      colorText: Colors.green.shade800,
-      borderRadius: 12,
-      margin: const EdgeInsets.all(16),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: userBg,
-      appBar: AppBar(
-        backgroundColor: userBg,
-        elevation: 0,
-        title: const Text(
-          'Rate Experience',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
+    if (booking == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Rate Experience'),
+          backgroundColor: AppColors.background,
+          elevation: 0,
         ),
+        body: const Center(
+          child: Text('No booking found'),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Rate Experience'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            UserCard(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    booking.salonName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                  /// ───────────── BOOKING INFO ─────────────
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.spa,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                booking!.salonName,
+                                style: AppTextStyles.subHeading.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                booking!.serviceName,
+                                style: AppTextStyles.caption,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 6),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  /// ───────────── RATING ─────────────
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          'How was your experience?',
+                          style: AppTextStyles.heading.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _Stars(
+                          selectedRating: selectedRating,
+                          onRatingChanged: (rating) {
+                            setState(() => selectedRating = rating);
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        if (selectedRating > 0)
+                          Text(
+                            _getRatingText(selectedRating),
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  /// ───────────── FEEDBACK ─────────────
                   Text(
-                    booking.serviceName,
-                    style: const TextStyle(color: Colors.white70),
+                    'Share your feedback (Optional)',
+                    style: AppTextStyles.subHeading.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  GlassCard(
+                    padding: EdgeInsets.zero,
+                    child: TextField(
+                      controller: feedbackController,
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        hintText: 'Tell us about your experience...',
+                        hintStyle: AppTextStyles.body.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(AppSpacing.md),
+                      ),
+                      style: AppTextStyles.body,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+          ),
 
-            /// ⭐ Rating
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) {
-                return IconButton(
-                  iconSize: 42,
-                  onPressed: () => setState(() => rating = index + 1),
-                  icon: Icon(
-                    index < rating
-                        ? Icons.star_rounded
-                        : Icons.star_border_rounded,
-                    color: Colors.amber,
-                  ),
+          /// ───────────── SUBMIT BUTTON ─────────────
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              border: Border(top: BorderSide(color: AppColors.divider)),
+            ),
+            child: PrimaryButton(
+              label: 'Submit Review',
+              enabled: selectedRating > 0 && (booking?.id != null) == true,
+              onPressed: () async {
+                if (booking?.id == null) return;
+                await bookingController.submitReview(
+                  bookingId: booking!.id!,
+                  rating: selectedRating,
+                  feedback: feedbackController.text.trim(),
                 );
-              }),
+                Get.back();
+              },
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 20),
+  String _getRatingText(int rating) {
+    switch (rating) {
+      case 1:
+        return 'Poor';
+      case 2:
+        return 'Fair';
+      case 3:
+        return 'Good';
+      case 4:
+        return 'Very Good';
+      case 5:
+        return 'Excellent';
+      default:
+        return '';
+    }
+  }
+}
 
-            /// ✍ Feedback
-            UserCard(
-              child: TextField(
-                controller: feedbackController,
-                maxLines: 4,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Write your feedback...',
-                  hintStyle: TextStyle(color: Colors.white54),
-                  border: InputBorder.none,
-                ),
-              ),
+/* ───────────────── STARS ───────────────── */
+
+class _Stars extends StatelessWidget {
+  final int selectedRating;
+  final Function(int) onRatingChanged;
+
+  const _Stars({
+    required this.selectedRating,
+    required this.onRatingChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        5,
+        (index) => GestureDetector(
+          onTap: () => onRatingChanged(index + 1),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            child: Icon(
+              Icons.star,
+              color: index < selectedRating
+                  ? Colors.amber
+                  : Colors.grey.withOpacity(0.3),
+              size: 48,
             ),
-
-            const Spacer(),
-
-            PrimaryButton(
-              text: 'Submit Review',
-              onTap: _submitReview,
-            ),
-          ],
+          ),
         ),
       ),
     );

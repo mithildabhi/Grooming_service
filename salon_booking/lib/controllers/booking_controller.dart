@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:salon_booking/controllers/auth_controller.dart';
 import '../models/booking_model.dart';
 import '../models/salon_model.dart';
 import '../models/service_model.dart';
@@ -162,15 +163,21 @@ class BookingController extends GetxController {
       bookings.where((b) => b.status == 'CANCELLED').length;
   int get pendingCount => bookings.where((b) => b.status == 'PENDING').length;
 
-  @override
-  void onInit() {
-    super.onInit();
-    fetchBookings();
-    fetchUserBookings();
+ @override
+void onInit() {
+  super.onInit();
 
-    // Auto-refresh every 60 seconds to update time-based filters
-    _startAutoRefresh();
-  }
+  final auth = Get.find<AuthController>();
+
+  ever(auth.isLoggedIn, (loggedIn) {
+    if (loggedIn == true) {
+      fetchBookings();
+      fetchUserBookings();
+      _startAutoRefresh();
+    }
+  });
+}
+
 
   @override
   void onClose() {
@@ -318,7 +325,7 @@ class BookingController extends GetxController {
       bookings.value = data.map((e) => BookingModel.fromJson(e)).toList();
 
       print('📋 Fetched ${bookings.length} bookings');
-      print('✅ Completed: ${completedCount}');
+      print('✅ Completed: $completedCount');
       print('⏳ Remaining: ${remainingBookings.length}');
     } catch (e) {
       print('❌ Fetch bookings error: $e');

@@ -1,164 +1,305 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+
+import '../../models/salon_model.dart';
 import '../../controllers/booking_controller.dart';
-import '../../widgets/user_card.dart';
-import '../../widgets/primary_button.dart';
-import '../../theme/user_colors.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+
+import '../../widgets/ui/glass_card.dart';
+import '../../widgets/ui/primary_button.dart';
 
 class UserReviewBookingScreen extends StatelessWidget {
   const UserReviewBookingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<BookingController>();
+    final raw = Get.arguments;
+    if (raw == null || raw is! Map<String, dynamic>) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Review'), backgroundColor: AppColors.background),
+        body: const Center(child: Text('Invalid data')),
+      );
+    }
+    final args = raw;
+    final BookingController bookingController = Get.find<BookingController>();
+
+    final SalonModel? salon = args['salon'] is SalonModel ? args['salon'] as SalonModel : null;
+    final String? date = args['date'] as String?;
+    final String? dateDisplay = args['dateDisplay'] as String?;
+    final String? time = args['time'] as String?;
+
+    if (salon == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Review'), backgroundColor: AppColors.background),
+        body: const Center(child: Text('Salon not found')),
+      );
+    }
+
+    final service = bookingController.selectedService.value;
+    final serviceName = service?.name ?? 'Service';
+    final servicePrice = service?.price ?? 0.0;
+    final duration = service?.durationMinutes ?? 30;
 
     return Scaffold(
-      backgroundColor: userBg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: userBg,
+        title: const Text('Review Booking'),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: const Text(
-          'Review Booking',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            color: Colors.white,
-          ),
-        ),
       ),
-      body: Obx(() {
-        if (!controller.isBookingReady) {
-          return _invalidState();
-        }
-
-        final salon = controller.selectedSalon.value!;
-        final service = controller.selectedService.value!;
-        final date = controller.selectedDate.value!;
-        final time = controller.selectedTime.value;
-        final staff = controller.selectedStaff.value;
-
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      UserCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Booking Details',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            _row(Icons.store, 'Salon', salon.name),
-                            _row(Icons.content_cut, 'Service', service.name),
-                            _row(
-                              Icons.calendar_today,
-                              'Date',
-                              DateFormat('EEE, dd MMM yyyy').format(date),
-                            ),
-                            _row(Icons.access_time, 'Time', time),
-                            if (staff != null)
-                              _row(Icons.person, 'Staff', staff.fullName),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      UserCard(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Total Amount',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              '₹${service.price.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 22,
-                                color: userPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              PrimaryButton(
-                text: 'Confirm & Pay',
-                onTap: () => Get.toNamed('/user/payment'),
-              ),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _row(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
+      body: Column(
         children: [
-          Icon(icon, color: userPrimary, size: 20),
-          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /// ───────────── SALON SUMMARY ─────────────
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            salon.imageUrl.isNotEmpty ? salon.imageUrl : 'https://via.placeholder.com/80',
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 80,
+                              height: 80,
+                              color: AppColors.surface,
+                              child: const Icon(Icons.spa, size: 40, color: AppColors.primary),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                salon.name,
+                                style: AppTextStyles.subHeading.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      salon.address,
+                                      style: AppTextStyles.caption,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: AppSpacing.lg),
+
+                  /// ───────────── BOOKING DETAILS ─────────────
+                  Text(
+                    'Booking Details',
+                    style: AppTextStyles.subHeading.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      children: [
+                        _DetailRow(
+                          icon: Icons.spa,
+                          label: 'Service',
+                          value: serviceName,
+                        ),
+                        const Divider(height: 24),
+                        if (dateDisplay != null)
+                          _DetailRow(
+                            icon: Icons.calendar_today,
+                            label: 'Date',
+                            value: dateDisplay,
+                          ),
+                        if (dateDisplay != null) const Divider(height: 24),
+                        if (time != null)
+                          _DetailRow(
+                            icon: Icons.access_time,
+                            label: 'Time',
+                            value: time,
+                          ),
+                        if (time != null) const Divider(height: 24),
+                        _DetailRow(
+                          icon: Icons.timer,
+                          label: 'Duration',
+                          value: '$duration minutes',
+                        ),
+                        const Divider(height: 24),
+                        _DetailRow(
+                          icon: Icons.person,
+                          label: 'Stylist',
+                          value: bookingController.selectedStaff.value?.fullName ??
+                              'Any Available',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+
+                  /// ───────────── PRICE BREAKDOWN ─────────────
+                  Text(
+                    'Price Breakdown',
+                    style: AppTextStyles.subHeading.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      children: [
+                        _PriceRow(label: 'Service', value: '₹${servicePrice.toStringAsFixed(0)}'),
+                        const SizedBox(height: 8),
+                        _PriceRow(label: 'Tax', value: '₹0'),
+                        const Divider(height: 24),
+                        _PriceRow(
+                          label: 'Total',
+                          value: '₹${servicePrice.toStringAsFixed(0)}',
+                          isTotal: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          /// ───────────── CTA BAR ─────────────
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              border: Border(top: BorderSide(color: AppColors.divider)),
+            ),
+            child: PrimaryButton(
+              label: 'Proceed to Payment',
+              onPressed: () {
+                Get.toNamed('/payment', arguments: {
+                  'salon': salon,
+                  'date': date,
+                  'dateDisplay': dateDisplay,
+                  'time': time,
+                  'amount': servicePrice,
+                });
+              },
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _invalidState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
-          const SizedBox(height: 12),
-          const Text(
-            'Booking data missing',
-            style: TextStyle(color: Colors.white),
+/* ───────────────── DETAIL ROW ───────────────── */
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => Get.back(),
-            child: const Text('Go Back'),
+          child: Icon(icon, size: 18, color: AppColors.primary),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(label, style: AppTextStyles.body),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.body.copyWith(
+            fontWeight: FontWeight.bold,
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+/* ───────────────── PRICE ROW ───────────────── */
+
+class _PriceRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isTotal;
+
+  const _PriceRow({
+    required this.label,
+    required this.value,
+    this.isTotal = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: isTotal
+                ? AppTextStyles.subHeading.copyWith(
+                    fontWeight: FontWeight.bold,
+                  )
+                : AppTextStyles.body,
+          ),
+        ),
+        Text(
+          value,
+          style: isTotal
+              ? AppTextStyles.heading.copyWith(
+                  color: AppColors.primary,
+                )
+              : AppTextStyles.subHeading,
+        ),
+      ],
     );
   }
 }

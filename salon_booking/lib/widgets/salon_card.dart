@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/user_colors.dart';
 
 class SalonCard extends StatelessWidget {
   final String name;
@@ -16,6 +15,10 @@ class SalonCard extends StatelessWidget {
     required this.isOpen,
     required this.onTap,
   });
+  
+  Color? get userPrimary => null;
+  
+  Color? get userCard => null;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +52,7 @@ class SalonCard extends StatelessWidget {
                 width: 70,
                 height: 70,
                 decoration: BoxDecoration(
-                  color: userPrimary.withOpacity(0.1),
+                  color: userPrimary?.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(

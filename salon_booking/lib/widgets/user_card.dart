@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/user_colors.dart';
 
 class UserCard extends StatelessWidget {
   final Widget child;
@@ -12,6 +11,8 @@ class UserCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
     this.onTap,
   });
+  
+  Color? get userCard => null;
 
   @override
   Widget build(BuildContext context) {

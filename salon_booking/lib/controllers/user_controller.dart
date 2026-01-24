@@ -1,23 +1,36 @@
 // ignore_for_file: avoid_print
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+
 import 'auth_controller.dart';
 import 'booking_controller.dart';
 
 class UserController extends GetxController {
-  // User profile state
+  // ========================
+  // USER PROFILE STATE
+  // ========================
   final RxString userName = ''.obs;
   final RxString userEmail = ''.obs;
   final RxString userPhone = ''.obs;
-  
-  // Statistics
+
+  // ========================
+  // USER STATISTICS
+  // ========================
   final RxInt totalBookings = 0.obs;
   final RxInt completedBookings = 0.obs;
   final RxDouble totalSpent = 0.0.obs;
-  
+
   @override
   void onInit() {
     super.onInit();
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('⚠️ USER: Skipping init (not logged in)');
+      return;
+    }
+
     loadUserData();
     loadUserStatistics();
   }
@@ -27,16 +40,18 @@ class UserController extends GetxController {
   // ========================
   void loadUserData() {
     try {
-      final authController = Get.find<AuthController>();
-      final user = authController.user.value;
-      
-      if (user != null) {
-        userName.value = user.fullName;
-        userEmail.value = user.email;
-        userPhone.value = user.phone ?? '';
-        
-        print('✅ USER: Data loaded for ${user.fullName}');
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+
+      if (firebaseUser == null) {
+        print('⚠️ USER: No Firebase user found');
+        return;
       }
+
+      userName.value = firebaseUser.displayName ?? 'Guest User';
+      userEmail.value = firebaseUser.email ?? '';
+      userPhone.value = firebaseUser.phoneNumber ?? '';
+
+      print('✅ USER: Data loaded for ${userEmail.value}');
     } catch (e) {
       print('❌ USER: Error loading user data: $e');
     }
@@ -48,18 +63,20 @@ class UserController extends GetxController {
   Future<void> loadUserStatistics() async {
     try {
       final bookingController = Get.find<BookingController>();
+
       await bookingController.fetchUserBookings();
-      
+
       final bookings = bookingController.userBookings;
-      
+
       totalBookings.value = bookings.length;
       completedBookings.value = bookings
           .where((b) => b.status == 'COMPLETED')
           .length;
+
       totalSpent.value = bookings
           .where((b) => b.status == 'COMPLETED')
           .fold(0.0, (sum, b) => sum + b.price);
-      
+
       print('✅ USER: Statistics loaded');
       print('   Total bookings: ${totalBookings.value}');
       print('   Completed: ${completedBookings.value}');
@@ -78,28 +95,19 @@ class UserController extends GetxController {
   }
 
   // ========================
-  // UPDATE PROFILE
+  // UPDATE PROFILE (UI ONLY)
   // ========================
-  Future<bool> updateProfile({
-    String? name,
-    String? phone,
-  }) async {
+  Future<bool> updateProfile({String? name, String? phone}) async {
     try {
-      print('📝 USER: Updating profile...');
-      
-      // TODO: Call your API to update profile
-      // final response = await UserApi.updateProfile(name, phone);
-      
       if (name != null) userName.value = name;
       if (phone != null) userPhone.value = phone;
-      
+
       Get.snackbar(
         'Success',
         'Profile updated successfully',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
-      print('✅ USER: Profile updated');
+
       return true;
     } catch (e) {
       print('❌ USER: Update profile error: $e');
@@ -118,33 +126,20 @@ class UserController extends GetxController {
   Future<void> logout() async {
     try {
       print('👋 USER: Logging out...');
-      
-      // Clear user-specific data
+
       userName.value = '';
       userEmail.value = '';
       userPhone.value = '';
       totalBookings.value = 0;
       completedBookings.value = 0;
       totalSpent.value = 0.0;
-      
-      print('✅ USER: User data cleared');
-      
-      // Clear booking controller data
-      try {
-        final bookingController = Get.find<BookingController>();
-        bookingController.userBookings.clear();
-        bookingController.bookings.clear();
-        print('✅ USER: Booking data cleared');
-      } catch (e) {
-        print('⚠️ USER: Booking controller not found: $e');
-      }
-      
-      // Logout from auth
+
+      final bookingController = Get.find<BookingController>();
+      bookingController.userBookings.clear();
+      bookingController.bookings.clear();
+
       final authController = Get.find<AuthController>();
       await authController.logout();
-      
-      print('✅ USER: Logout complete');
-      
     } catch (e) {
       print('❌ USER: Logout error: $e');
       Get.offAllNamed('/login');

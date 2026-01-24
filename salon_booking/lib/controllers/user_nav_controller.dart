@@ -1,26 +1,21 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salon_booking/views/user/user_appointments_screen.dart';
+import 'package:salon_booking/views/user/user_explore_screen.dart';
+import 'package:salon_booking/views/user/user_home_screen.dart';
+import 'package:salon_booking/views/user/user_profile_screen.dart';
 
-import '../views/user/user_home_screen.dart';
-import '../views/user/user_explore_screen.dart';
-import '../views/user/user_appointments_screen.dart';
-import '../views/user/user_ai_assistant_screen.dart';
-import '../views/user/user_profile_screen.dart';
 
 class UserNavController extends GetxController {
-  final RxInt currentIndex = 0.obs;
+  final currentIndex = 0.obs;
 
-  /// IMPORTANT:
-  /// Pages must be LAZY and NOT created in onInit
-  List<Widget> get pages => [
-        const UserHomeScreen(),
-        const UserExploreScreen(),
-        const UserAppointmentsScreen(),
-        const UserAIAssistantScreen(),
-        const UserProfileScreen(),
-      ];
+  final pages = const [
+    UserHomeScreen(),
+    UserExploreScreen(),
+    UserAppointmentsScreen(),
+    UserProfileScreen(),
+  ];
 
-  void changeIndex(int index) {
+  void changeTab(int index) {
     currentIndex.value = index;
   }
 }

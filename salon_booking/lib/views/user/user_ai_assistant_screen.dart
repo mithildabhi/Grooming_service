@@ -1,162 +1,283 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/user_card.dart';
-import '../../theme/user_colors.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
 
-class UserAIAssistantScreen extends StatelessWidget {
-  const UserAIAssistantScreen({super.key});
+import '../../widgets/ui/glass_card.dart';
+import '../../widgets/ui/chip_pill.dart';
+
+class UserAiAssistantScreen extends StatefulWidget {
+  const UserAiAssistantScreen({super.key});
+
+  @override
+  State<UserAiAssistantScreen> createState() => _UserAiAssistantScreenState();
+}
+
+class _UserAiAssistantScreenState extends State<UserAiAssistantScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
+  final List<_AiMessage> _messages = [
+    _AiMessage(
+      text: 'Hi 👋 I\'m your AI stylist assistant. How can I help you today?',
+      isUser: false,
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _sendMessage() {
+    if (_controller.text.trim().isEmpty) return;
+
+    setState(() {
+      _messages.add(
+        _AiMessage(
+          text: _controller.text.trim(),
+          isUser: true,
+        ),
+      );
+    });
+
+    _controller.clear();
+
+    // Auto scroll
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+
+    // Simulate AI response
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        _messages.add(
+          const _AiMessage(
+            text:
+                '🤖 I\'m analyzing your request and will suggest the best options!',
+            isUser: false,
+          ),
+        );
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: userBg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: userBg,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        title: const Text(
-          'AI Assistant',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 24,
-            color: Colors.white,
-            letterSpacing: -0.5,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-        child: Column(
+        title: Row(
           children: [
-            _buildAICard(
-              icon: Icons.auto_awesome_rounded,
-              title: 'Smart Tip',
-              description: 'Evening slots have 25% less waiting time today.',
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  userPrimary.withOpacity(0.15),
-                  userPrimary.withOpacity(0.05),
-                ],
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: AppColors.primary,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 16),
-            _buildAICard(
-              icon: Icons.trending_up_rounded,
-              title: 'Recommended Service',
-              description: 'Hair Spa + Trim combo is trending near you.',
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.purple.withOpacity(0.15),
-                  Colors.purple.withOpacity(0.05),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildAICard(
-              icon: Icons.schedule_rounded,
-              title: 'Best Time to Book',
-              description: 'Weekday mornings typically have more availability.',
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.blue.withOpacity(0.15),
-                  Colors.blue.withOpacity(0.05),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildAICard(
-              icon: Icons.local_offer_rounded,
-              title: 'Special Offers',
-              description: 'New customers get 20% off on first booking.',
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.orange.withOpacity(0.15),
-                  Colors.orange.withOpacity(0.05),
-                ],
-              ),
-            ),
+            const SizedBox(width: AppSpacing.sm),
+            const Text('AI Assistant'),
           ],
         ),
+        backgroundColor: AppColors.background,
+        elevation: 0,
       ),
-    );
-  }
+      body: Column(
+        children: [
+          /// ───────────── CHAT LIST ─────────────
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              itemCount: _messages.length,
+              itemBuilder: (_, index) {
+                final msg = _messages[index];
+                return _MessageBubble(message: msg);
+              },
+            ),
+          ),
 
-  Widget _buildAICard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required Gradient gradient,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: gradient,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+          /// ───────────── SUGGESTIONS ─────────────
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ChipPill(
+                    label: 'Best time to book',
+                    selected: false,
+                    onTap: () {
+                      _controller.text = 'What is the best time to book?';
+                      _sendMessage();
+                    },
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  ChipPill(
+                    label: 'Nearby salons',
+                    selected: false,
+                    onTap: () {
+                      _controller.text = 'Show me nearby salons';
+                      _sendMessage();
+                    },
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  ChipPill(
+                    label: 'Haircare tips',
+                    selected: false,
+                    onTap: () {
+                      _controller.text = 'Give me haircare tips';
+                      _sendMessage();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          /// ───────────── INPUT BAR ─────────────
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              border: Border(top: BorderSide(color: AppColors.divider)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GlassCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(
+                        hintText: 'Ask me anything about salons or bookings…',
+                        hintStyle: AppTextStyles.body.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                        border: InputBorder.none,
+                      ),
+                      style: AppTextStyles.body,
+                      maxLines: null,
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.primary.withOpacity(0.7),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send_rounded, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
-      child: UserCard(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: userPrimary.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
+    );
+  }
+}
+
+/* ───────────────── MESSAGE MODEL ───────────────── */
+
+class _AiMessage {
+  final String text;
+  final bool isUser;
+
+  const _AiMessage({
+    required this.text,
+    required this.isUser,
+  });
+}
+
+/* ───────────────── MESSAGE BUBBLE ───────────────── */
+
+class _MessageBubble extends StatelessWidget {
+  final _AiMessage message;
+
+  const _MessageBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final alignment =
+        message.isUser ? Alignment.centerRight : Alignment.centerLeft;
+
+    return Align(
+      alignment: alignment,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        constraints: const BoxConstraints(maxWidth: 280),
+        child: GlassCard(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          color: message.isUser
+              ? AppColors.primary.withOpacity(0.15)
+              : AppColors.surface,
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: userPrimary.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(14),
+              if (!message.isUser)
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: userPrimary,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
+              if (!message.isUser) const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: Colors.white,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  message.text,
+                  style: AppTextStyles.body.copyWith(
+                    color: message.isUser
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],

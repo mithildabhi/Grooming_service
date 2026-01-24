@@ -7,7 +7,8 @@ class AppointmentController extends GetxController {
   void loadAppointments() {
     appointments.assignAll([
       {
-        'salon': 'Luxe Studio & Spa',
+        'salonName': 'Luxe Studio & Spa',
+        'serviceName': 'Haircut',
         'date': '24 Oct 2025',
         'time': '05:30 PM',
         'completed': false,

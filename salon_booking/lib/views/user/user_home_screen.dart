@@ -1,631 +1,592 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../controllers/user_home_controller.dart';
-import '../../widgets/primary_button.dart';
-import '../../theme/user_colors.dart';
+import '../../controllers/user_controller.dart';
+import '../../controllers/booking_controller.dart';
+import '../../models/salon_model.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+
+import '../../widgets/ui/glass_card.dart';
+import '../../widgets/ui/ai_badge.dart';
+import '../../widgets/ui/primary_button.dart';
+import '../../widgets/ui/chip_pill.dart';
+import '../../widgets/ui/section_header.dart';
 
 class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final UserHomeController controller = Get.find();
+    final controller = Get.find<UserHomeController>();
+    final bookingController = Get.find<BookingController>();
 
     return Scaffold(
-      backgroundColor: userBg,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: userBg,
-        scrolledUnderElevation: 0,
-        title: const Text(
-          'Home',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 24,
-            color: Colors.white,
-            letterSpacing: -0.5,
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: userCard,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: Icon(Icons.refresh_rounded, color: userPrimary, size: 22),
-              onPressed: controller.refreshSalons,
-              tooltip: 'Refresh',
-            ),
-          ),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return _buildShimmer();
-        }
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => controller.refreshSalons(),
+          color: AppColors.primary,
+          child: Obx(() {
+            if (controller.isLoading.value) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              );
+            }
 
-        if (controller.nearbySalons.isEmpty) {
-          return _buildEmptyState(controller);
-        }
-
-        return RefreshIndicator(
-          onRefresh: controller.refreshSalons,
-          color: userPrimary,
-          backgroundColor: userCard,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: Column(
+            return ListView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                const _Header(),
+                const SizedBox(height: AppSpacing.lg),
+                const _SearchBar(),
+                const SizedBox(height: AppSpacing.lg),
+                Obx(() {
+                  final up = bookingController.upcomingBookings;
+                  if (up.isNotEmpty) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SectionHeader(title: 'Upcoming Appointments'),
+                        const SizedBox(height: AppSpacing.sm),
+                        _UpcomingAppointmentCard(booking: up.first),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+                const _AiPickCard(),
+                const SizedBox(height: AppSpacing.lg),
+                const _CategoryRow(),
+                const SizedBox(height: AppSpacing.lg),
+                const SectionHeader(title: 'Nearby Salons'),
+                const SizedBox(height: AppSpacing.sm),
+                Obx(() {
+                  final list = controller.nearbySalons;
+                  if (list.isEmpty) {
+                    return const _NearbyEmptyState();
+                  }
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildGreeting(),
-                      const SizedBox(height: 24),
-                      _buildAICard(controller),
-                      const SizedBox(height: 32),
-                      _buildSectionHeader(controller),
-                      const SizedBox(height: 16),
+                      ...list.map((salon) => _NearbySalonCard(salon: salon)),
                     ],
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final salon = controller.nearbySalons[index];
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: index == controller.nearbySalons.length - 1
-                            ? 0
-                            : 16,
-                      ),
-                      child: _buildSalonCard(
-                        context: context,
-                        salon: salon,
-                        distance: controller.getDistance(salon),
-                        onTap: () => controller.selectSalon(salon),
-                      ),
-                    );
-                  }, childCount: controller.nearbySalons.length),
-                ),
-              ),
-            ],
-          ),
-        );
-      }),
+                  );
+                }),
+                const SizedBox(height: AppSpacing.xl),
+              ],
+            );
+          }),
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildGreeting() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+/* ───────────────── HEADER ───────────────── */
+
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    final UserController userController = Get.find<UserController>();
+    
+    return Row(
       children: [
-        // const Text(
-        //   'Good Morning 👋',
-        //   style: TextStyle(
-        //     fontSize: 28,
-        //     fontWeight: FontWeight.w700,
-        //     color: userCard,
-        //     letterSpacing: -0.8,
-        //     height: 1.2,
-        //   ),
-        // ),
-        const SizedBox(height: 8),
-        Text(
-          'Find the best salon near you',
-          style: TextStyle(
-            fontSize: 15,
-            color: Colors.white70,
-            fontWeight: FontWeight.w400,
-            letterSpacing: -0.2,
+        Obx(() => CircleAvatar(
+          radius: 28,
+          backgroundColor: AppColors.primary.withOpacity(0.15),
+          child: userController.userName.value.isNotEmpty
+              ? Text(
+                  userController.userName.value[0].toUpperCase(),
+                  style: AppTextStyles.subHeading.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : const Icon(Icons.person, color: AppColors.primary, size: 24),
+        )),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _getGreeting(),
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Obx(() => Text(
+                userController.userName.value.isNotEmpty
+                    ? userController.userName.value
+                    : 'Welcome 👋',
+                style: AppTextStyles.subHeading.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              )),
+            ],
+          ),
+        ),
+        GlassCard(
+          width: 48,
+          height: 48,
+          padding: EdgeInsets.zero,
+          child: const Icon(
+            Icons.notifications_none,
+            color: AppColors.textPrimary,
+            size: 22,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAICard(UserHomeController controller) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            userPrimary.withOpacity(0.12),
-            userPrimary.withOpacity(0.06),
-            userCard,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: userPrimary.withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: 0,
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+}
+
+/* ───────────────── SEARCH ───────────────── */
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, color: AppColors.textMuted, size: 22),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Find services, stylists, or salons…',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
           ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.mic, color: AppColors.primary, size: 18),
           ),
         ],
       ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: userPrimary.withOpacity(0.2), width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: userPrimary.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: userPrimary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'AI Pick for You',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: userCard,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'We found ${controller.nearbySalons.length} salons near you. Evening slots are less crowded today.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-                fontWeight: FontWeight.w400,
-                height: 1.5,
-                letterSpacing: -0.1,
-              ),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              text: 'Explore All',
-              onTap: () => Get.toNamed('/user/explore'),
-            ),
-          ],
-        ),
-      ),
     );
   }
+}
 
-  Widget _buildSectionHeader(UserHomeController controller) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Text(
-          'Nearby Salons',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            letterSpacing: -0.5,
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: userCard,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '${controller.nearbySalons.length} found',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
-              letterSpacing: -0.2,
+/* ───────────────── AI PICK ───────────────── */
+
+class _AiPickCard extends StatelessWidget {
+  const _AiPickCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      color: AppColors.primary.withOpacity(0.05),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AiBadge('AI Pick'),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Premium Hair Treatment',
+            style: AppTextStyles.subHeading.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSalonCard({
-    required BuildContext context,
-    required dynamic salon,
-    required String distance,
-    required VoidCallback onTap,
-  }) {
-    final isOpen = salon.isOpen;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: userCard,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: 0,
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            'Recommended based on your preferences',
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textMuted,
+            ),
           ),
-          child: Row(
+          const SizedBox(height: AppSpacing.md),
+          Row(
             children: [
-              Hero(
-                tag: 'salon_${salon.id}',
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: userPrimary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '₹899',
+                    style: AppTextStyles.heading.copyWith(
+                      color: AppColors.primary,
+                    ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: salon.imageUrl.isNotEmpty
-                        ? Image.network(
-                            salon.displayImage,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: userPrimary.withOpacity(0.1),
-                              child: Icon(
-                                Icons.store_rounded,
-                                color: userPrimary,
-                                size: 36,
-                              ),
-                            ),
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: userCard,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress
-                                                  .cumulativeBytesLoaded /
-                                              loadingProgress
-                                                  .expectedTotalBytes!
-                                        : null,
-                                    color: userPrimary,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : Container(
-                            color: userPrimary.withOpacity(0.1),
-                            child: Icon(
-                              Icons.store_rounded,
-                              color: userPrimary,
-                              size: 36,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      salon.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -0.3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.star_rounded,
-                          size: 16,
-                          color: Colors.amber.shade600,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${salon.rating.toStringAsFixed(1)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.white54,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(
-                          Icons.location_on_rounded,
-                          size: 14,
-                          color: Colors.white70,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          distance,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      salon.salonTypeDisplay,
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isOpen ? Colors.green.shade50 : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isOpen ? Colors.green.shade200 : Colors.red.shade200,
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: isOpen ? Colors.green : Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isOpen ? 'OPEN' : 'CLOSED',
-                      style: TextStyle(
-                        color: isOpen
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(UserHomeController controller) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: userCard,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                  Text(
+                    'Special Price',
+                    style: AppTextStyles.caption,
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.store_outlined,
-                size: 64,
-                color: Colors.white54,
-              ),
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              'No salons found nearby',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Try refreshing or check back later',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.white70,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: controller.refreshSalons,
-              icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: const Text(
-                'Refresh',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: userPrimary,
-                foregroundColor: const Color(0xFF0F172A),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+              const Spacer(),
+              SizedBox(
+                width: 120,
+                child: PrimaryButton(
+                  label: 'View Deal',
+                  onPressed: () {},
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildShimmer() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: index == 4 ? 0 : 16),
-          child: Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: userCard,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+/* ───────────────── CATEGORIES ───────────────── */
+
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = [
+      {'name': 'Haircut', 'icon': Icons.content_cut},
+      {'name': 'Spa', 'icon': Icons.spa},
+      {'name': 'Makeup', 'icon': Icons.face},
+      {'name': 'Nails', 'icon': Icons.brush},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: categories.asMap().entries.map((entry) {
+          final index = entry.key;
+          final category = entry.value;
+          final isSelected = index == 0;
+          
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: ChipPill(
+              label: category['name'] as String,
+              selected: isSelected,
+              onTap: () {},
             ),
-            child: Row(
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+/* ───────────────── UPCOMING ───────────────── */
+
+class _UpcomingAppointmentCard extends StatelessWidget {
+  final dynamic booking;
+
+  const _UpcomingAppointmentCard({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      onTap: () {
+        Get.toNamed('/appointment-details', arguments: booking);
+      },
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withOpacity(0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
               children: [
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: userCard,
-                    borderRadius: BorderRadius.circular(16),
+                Text(
+                  _getMonth(booking.date),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 8,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: userCard,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          width: 120,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: userCard,
-                            borderRadius: BorderRadius.circular(7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: 80,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: userCard,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  width: 70,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: userCard,
-                    borderRadius: BorderRadius.circular(10),
+                Text(
+                  _getDay(booking.date),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-        );
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  booking.salonName,
+                  style: AppTextStyles.subHeading.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  booking.serviceName,
+                  style: AppTextStyles.body,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatTime(booking.time),
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getMonth(String date) {
+    try {
+      final d = DateTime.parse(date);
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+                      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      return months[d.month - 1];
+    } catch (e) {
+      return 'OCT';
+    }
+  }
+
+  String _getDay(String date) {
+    try {
+      final d = DateTime.parse(date);
+      return d.day.toString();
+    } catch (e) {
+      return '24';
+    }
+  }
+
+  static String _formatTime(String t) {
+    if (t.isEmpty) return '--:--';
+    if (t.length >= 5) return t.substring(0, 5);
+    return t;
+  }
+}
+
+/* ───────────────── NEARBY EMPTY ───────────────── */
+
+class _NearbyEmptyState extends StatelessWidget {
+  const _NearbyEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off, size: 48, color: AppColors.textMuted),
+          const SizedBox(height: AppSpacing.sm),
+          Text('No salons in your area', style: AppTextStyles.subHeading),
+          const SizedBox(height: 4),
+          Text('Pull down to refresh', style: AppTextStyles.caption),
+        ],
+      ),
+    );
+  }
+}
+
+/* ───────────────── SALON CARD ───────────────── */
+
+class _NearbySalonCard extends StatelessWidget {
+  final SalonModel salon;
+
+  const _NearbySalonCard({required this.salon});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed('/salon-details', arguments: salon);
       },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: GlassCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    child: Image.network(
+                      salon.imageUrl.isNotEmpty
+                          ? salon.imageUrl
+                          : 'https://via.placeholder.com/400x300?text=Salon',
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 180,
+                        color: AppColors.surface,
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            size: 48,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: salon.isOpen
+                            ? Colors.green.withOpacity(0.9)
+                            : Colors.red.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        salon.isOpen ? 'Open' : 'Closed',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            salon.name,
+                            style: AppTextStyles.subHeading.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                salon.rating.toStringAsFixed(1),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: AppColors.textMuted,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            salon.address,
+                            style: AppTextStyles.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${salon.distance.toStringAsFixed(1)} km',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

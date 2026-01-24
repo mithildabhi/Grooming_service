@@ -2,241 +2,387 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../controllers/user_home_controller.dart';
-import '../../theme/user_colors.dart';
-import '../../widgets/salon_card.dart';
+import '../../models/salon_model.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+
+import '../../widgets/ui/glass_card.dart';
+import '../../widgets/ui/ai_insight_card.dart';
+import '../../widgets/ui/chip_pill.dart';
+import '../../widgets/ui/section_header.dart';
 
 class UserExploreScreen extends StatelessWidget {
   const UserExploreScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final UserHomeController controller = Get.find();
+    final controller = Get.find<UserHomeController>();
 
     return Scaffold(
-      backgroundColor: userBg,
-      appBar: AppBar(
-        backgroundColor: userBg,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        title: const Text(
-          'Explore',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 24,
-            color: Colors.white,
-            letterSpacing: -0.5,
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search salons or services',
-                  hintStyle: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    color: userPrimary,
-                    size: 24,
-                  ),
-                  filled: true,
-                  fillColor: userCard,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                ),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return _shimmerList();
-              }
-
-              final salons = controller.allSalons;
-
-              if (salons.isEmpty) {
-                return _emptyState();
-              }
-
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: ListView.separated(
-                  key: const ValueKey('salon_list'),
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                  itemCount: salons.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (_, i) {
-                    final salon = salons[i];
-                    return SalonCard(
-                      name: salon.name,
-                      rating: salon.rating,
-                      distance: controller.getDistance(salon),
-                      isOpen: salon.isOpen,
-                      onTap: () => controller.selectSalon(salon),
-                    );
-                  },
-                ),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => controller.refreshSalons(),
+          color: AppColors.primary,
+          child: Obx(() {
+            if (controller.isLoading.value) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
               );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
+            }
 
-  Widget _shimmerList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: index == 4 ? 0 : 16),
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: userCard,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  width: 68,
-                  height: 68,
-                  decoration: BoxDecoration(
-                    color: userCard,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                Expanded(
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 8,
-                    ),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: double.infinity,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: userCard,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              'Explore',
+                              style: AppTextStyles.heading.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                            GlassCard(
+                              width: 40,
+                              height: 40,
+                              padding: EdgeInsets.zero,
+                              child: const Icon(
+                                Icons.filter_list,
+                                color: AppColors.textPrimary,
+                                size: 20,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        Container(
-                          width: 120,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: userCard,
-                            borderRadius: BorderRadius.circular(7),
-                          ),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        const _SearchBar(),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        const _CategoryRow(),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        const AiInsightCard(
+                          title: 'AI Match',
+                          description:
+                              'Based on your preferences, these salons fit your style best.',
                         ),
+                        const SizedBox(height: AppSpacing.lg),
                       ],
                     ),
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  width: 60,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: userCard,
-                    borderRadius: BorderRadius.circular(10),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: const SectionHeader(title: 'Salons Near You'),
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _emptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                SliverPadding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  sliver: controller.nearbySalons.isEmpty
+                      ? SliverToBoxAdapter(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(AppSpacing.xl),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.search_off,
+                                    size: 64,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'No salons found',
+                                    style: AppTextStyles.subHeading,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final salon = controller.nearbySalons[index];
+                              return _ExploreSalonCard(salon: salon);
+                            },
+                            childCount: controller.nearbySalons.length,
+                          ),
+                        ),
                 ),
               ],
-            ),
-            child: Icon(
-              Icons.search_off_rounded,
-              size: 64,
-              color: Colors.white54,
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+/* ───────────────── SEARCH BAR ───────────────── */
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, color: AppColors.textMuted, size: 22),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Search salons, services, stylists',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textMuted,
+              ),
             ),
           ),
-          const SizedBox(height: 32),
-          const Text(
-            'No salons found',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF0F172A),
-              letterSpacing: -0.5,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Try adjusting your search',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.white70,
-              fontWeight: FontWeight.w400,
-            ),
+            child: const Icon(Icons.tune, color: AppColors.primary, size: 18),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/* ───────────────── CATEGORY ROW ───────────────── */
+
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = [
+      {'name': 'Hair', 'icon': Icons.content_cut},
+      {'name': 'Spa', 'icon': Icons.spa},
+      {'name': 'Makeup', 'icon': Icons.face},
+      {'name': 'Nails', 'icon': Icons.brush},
+      {'name': 'Massage', 'icon': Icons.airline_seat_flat},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: categories.asMap().entries.map((entry) {
+          final index = entry.key;
+          final category = entry.value;
+          final isSelected = index == 0;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: ChipPill(
+              label: category['name'] as String,
+              selected: isSelected,
+              onTap: () {},
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+/* ───────────────── SALON CARD ───────────────── */
+
+class _ExploreSalonCard extends StatelessWidget {
+  final SalonModel salon;
+
+  const _ExploreSalonCard({required this.salon});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Get.toNamed('/salon-details', arguments: salon),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: GlassCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    child: Image.network(
+                      salon.imageUrl.isNotEmpty
+                          ? salon.imageUrl
+                          : 'https://via.placeholder.com/400x300?text=Salon',
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 200,
+                        color: AppColors.surface,
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            size: 48,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: salon.isOpen
+                            ? Colors.green.withOpacity(0.9)
+                            : Colors.red.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        salon.isOpen ? 'Open' : 'Closed',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            salon.name,
+                            style: AppTextStyles.subHeading.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                salon.rating.toStringAsFixed(1),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: AppColors.textMuted,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            salon.address,
+                            style: AppTextStyles.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${salon.distance.toStringAsFixed(1)} km',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (salon.services.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: salon.services
+                            .take(3)
+                            .map(
+                              (s) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.divider,
+                                  ),
+                                ),
+                                child: Text(
+                                  s,
+                                  style: AppTextStyles.caption.copyWith(
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

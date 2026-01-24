@@ -19,7 +19,8 @@ class AuthController extends GetxController {
   RxBool isLoggedIn = false.obs;
   RxString role = 'user'.obs;
 
-  get user => null;
+  User? get user => FirebaseAuth.instance.currentUser;
+
 
   // ✅ REMOVED onInit() - NO AUTO-INITIALIZATION!
 
@@ -255,7 +256,7 @@ class AuthController extends GetxController {
       print('✅ AUTH: Session initialized with role: ${role.value}');
     } catch (e) {
       print('❌ AUTH: Session init error: $e');
-      throw e;
+      rethrow;
     }
   }
 

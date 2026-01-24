@@ -1,334 +1,214 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/auth_controller.dart';
-import '../../theme/user_colors.dart';
+
+import '../../controllers/user_controller.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+
+import '../../widgets/ui/glass_card.dart';
+import '../../widgets/ui/section_header.dart';
 
 class UserSettingsScreen extends StatelessWidget {
   const UserSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authController = Get.find<AuthController>();
+    final UserController userController = Get.find<UserController>();
 
     return Scaffold(
-      backgroundColor: userBg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: userBg,
+        title: const Text('Settings'),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sectionTitle('Preferences'),
-            const SizedBox(height: 12),
-            _cardBox(
-              child: Column(
-                children: [
-                  _toggleTile(
-                    icon: Icons.notifications_active_rounded,
-                    title: 'Push Notifications',
-                    subtitle: 'Booking and payment alerts',
-                    value: true,
-                  ),
-                  _divider(),
-                  _toggleTile(
-                    icon: Icons.email_rounded,
-                    title: 'Email Notifications',
-                    subtitle: 'Reports and summaries',
-                    value: false,
-                  ),
-                  _divider(),
-                  _toggleTile(
-                    icon: Icons.dark_mode_rounded,
-                    title: 'Dark Mode',
-                    subtitle: 'Always enabled',
-                    value: true,
-                    enabled: false,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            _sectionTitle('Account'),
-            const SizedBox(height: 12),
-            _cardBox(
-              child: Column(
-                children: [
-                  _actionTile(
-                    icon: Icons.person_rounded,
-                    title: 'Edit Profile',
-                    subtitle: 'Update your personal information',
-                    onPressed: () {
-                      Get.toNamed('/user/edit-profile');
-                    },
-                  ),
-                  _divider(),
-                  _actionTile(
-                    icon: Icons.lock_rounded,
-                    title: 'Change Password',
-                    subtitle: 'Update your password',
-                    onPressed: () {
-                      Get.snackbar(
-                        'Info',
-                        'Password change feature coming soon',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: userCard,
-                        colorText: userPrimary,
-                        borderRadius: 12,
-                        margin: const EdgeInsets.all(16),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _actionTile(
-                    icon: Icons.privacy_tip_rounded,
-                    title: 'Privacy Policy',
-                    subtitle: 'Read our privacy policy',
-                    onPressed: () {
-                      Get.snackbar(
-                        'Info',
-                        'Privacy policy coming soon',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: userCard,
-                        colorText: userPrimary,
-                        borderRadius: 12,
-                        margin: const EdgeInsets.all(16),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            _sectionTitle('Support'),
-            const SizedBox(height: 12),
-            _cardBox(
-              child: Column(
-                children: [
-                  _actionTile(
-                    icon: Icons.help_outline_rounded,
-                    title: 'Help & Support',
-                    subtitle: 'Get help with your account',
-                    onPressed: () {
-                      Get.snackbar(
-                        'Info',
-                        'Help center coming soon',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: userCard,
-                        colorText: userPrimary,
-                        borderRadius: 12,
-                        margin: const EdgeInsets.all(16),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _actionTile(
-                    icon: Icons.info_outline_rounded,
-                    title: 'About',
-                    subtitle: 'App version and information',
-                    onPressed: () {
-                      Get.dialog(
-                        AlertDialog(
-                          backgroundColor: userCard,
-                          title: const Text(
-                            'About',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          content: const Text(
-                            'Salon Booking App\nVersion 1.0.0',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Get.back(),
-                              child: Text(
-                                'Close',
-                                style: TextStyle(color: userPrimary),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            _sectionTitle('Security'),
-            const SizedBox(height: 12),
-            _cardBox(
-              child: Column(
-                children: [
-                  _actionTile(
-                    icon: Icons.logout_rounded,
-                    title: 'Logout',
-                    subtitle: 'Sign out from your account',
-                    danger: true,
-                    onPressed: () {
-                      Get.dialog(
-                        AlertDialog(
-                          backgroundColor: userCard,
-                          title: const Text(
-                            'Logout',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          content: const Text(
-                            'Are you sure you want to logout?',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Get.back(),
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Get.back();
-                                authController.logout();
-                              },
-                              child: const Text(
-                                'Logout',
-                                style: TextStyle(color: Colors.redAccent),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-
-  Widget _cardBox({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: userCard,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _divider() {
-    return const Divider(color: Colors.white12, height: 24);
-  }
-
-  Widget _toggleTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    bool enabled = true,
-  }) {
-    return Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: userPrimary.withOpacity(0.2),
-          child: Icon(icon, color: userPrimary, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-        Switch(
-          value: value,
-          activeColor: userPrimary,
-          onChanged: enabled ? (_) {} : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _actionTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    bool danger = false,
-    required VoidCallback onPressed,
-  }) {
-    final Color color = danger ? Colors.redAccent : userPrimary;
-
-    return InkWell(
-      onTap: onPressed,
-      child: Row(
+      body: ListView(
+        padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.2),
-            child: Icon(icon, color: color, size: 20),
+          /// ───────────── PREFERENCES ─────────────
+          const SectionHeader(title: 'Preferences'),
+          const SizedBox(height: AppSpacing.sm),
+
+          _SettingItem(
+            icon: Icons.notifications_none,
+            label: 'Notifications',
+            onTap: () {
+              Get.snackbar(
+                'Notifications',
+                'Notification settings coming soon',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+            },
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: danger ? Colors.redAccent : Colors.white,
-                    fontWeight: FontWeight.w700,
+          _SettingItem(
+            icon: Icons.lock_outline,
+            label: 'Privacy',
+            onTap: () {
+              Get.snackbar(
+                'Privacy',
+                'Privacy settings coming soon',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+            },
+          ),
+          _SettingItem(
+            icon: Icons.palette_outlined,
+            label: 'Appearance',
+            onTap: () {
+              Get.snackbar(
+                'Appearance',
+                'Appearance settings coming soon',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          /// ───────────── SUPPORT ─────────────
+          const SectionHeader(title: 'Support'),
+          const SizedBox(height: AppSpacing.sm),
+
+          _SettingItem(
+            icon: Icons.help_outline,
+            label: 'Help & Support',
+            onTap: () {
+              Get.dialog(
+                AlertDialog(
+                  backgroundColor: AppColors.surface,
+                  title: const Text('Help & Support'),
+                  content: const Text(
+                    'For support, please contact us at:\n\nsupport@salonapp.com\n\nOr call: +91 1234567890',
                   ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: const Text('OK'),
+                    ),
+                  ],
                 ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
+              );
+            },
           ),
-          const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+          _SettingItem(
+            icon: Icons.info_outline,
+            label: 'About App',
+            onTap: () {
+              Get.dialog(
+                AlertDialog(
+                  backgroundColor: AppColors.surface,
+                  title: const Text('About'),
+                  content: const Text(
+                    'Salon Booking App\nVersion 1.0.0\n\nBook your favorite salon services with ease.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          /// ───────────── ACCOUNT ─────────────
+          const SectionHeader(title: 'Account'),
+          const SizedBox(height: AppSpacing.sm),
+
+          _SettingItem(
+            icon: Icons.logout,
+            label: 'Log Out',
+            isDestructive: true,
+            onTap: () async {
+              final confirmed = await Get.dialog<bool>(
+                AlertDialog(
+                  backgroundColor: AppColors.surface,
+                  title: const Text('Log Out'),
+                  content: const Text('Are you sure you want to log out?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Get.back(result: false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Get.back(result: true),
+                      child: const Text('Log Out'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                await userController.logout();
+              }
+            },
+          ),
         ],
       ),
     );
   }
 }
 
+/* ───────────────── SETTING ROW ───────────────── */
+
+class _SettingItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  const _SettingItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = isDestructive
+        ? Colors.redAccent
+        : AppColors.textPrimary;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: GlassCard(
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: (isDestructive ? Colors.redAccent : AppColors.primary)
+                    .withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.body.copyWith(color: color),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: AppColors.textMuted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

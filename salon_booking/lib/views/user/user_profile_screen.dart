@@ -1,250 +1,291 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../controllers/auth_controller.dart';
-import '../../theme/user_colors.dart';
+
+import '../../controllers/user_controller.dart';
+import '../../controllers/booking_controller.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+
+import '../../widgets/ui/glass_card.dart';
+import '../../widgets/ui/section_header.dart';
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authController = Get.find<AuthController>();
-    final user = FirebaseAuth.instance.currentUser;
+    final UserController userController = Get.find<UserController>();
+    final BookingController bookingController = Get.find<BookingController>();
 
     return Scaffold(
-      backgroundColor: userBg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: userBg,
+        title: const Text('Profile', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        // leading: const BackButton(color: Colors.white),
-        title: const Text(
-          'My Profile',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Color(0xFFE5E7EB),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit_rounded, color: userPrimary),
-            onPressed: () => Get.toNamed('/user/edit-profile'),
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _profileHeader(user),
-            const SizedBox(height: 28),
-            _aiStyleHubCard(),
-            const SizedBox(height: 32),
-            _sectionTitle('MY ACCOUNT'),
-            _accountTile(
-              icon: Icons.calendar_today_rounded,
-              title: 'My Appointments',
-              subtitle: 'Upcoming & past bookings',
-              onTap: () => Get.toNamed('/user/appointments'),
-            ),
-            _accountTile(
-              icon: Icons.payment_rounded,
-              title: 'Payment Methods',
-              subtitle: 'Saved cards & UPI',
-              onTap: () {},
-            ),
-            _accountTile(
-              icon: Icons.favorite_rounded,
-              title: 'Saved Styles & Salons',
-              subtitle: 'Your favorites',
-              onTap: () {},
-            ),
-            const SizedBox(height: 28),
-            _sectionTitle('APP SETTINGS'),
-            _switchTile(
-              icon: Icons.notifications_rounded,
-              title: 'Notifications',
-              value: true,
-            ),
-            _accountTile(
-              icon: Icons.lock_rounded,
-              title: 'Privacy & Security',
-              onTap: () => Get.toNamed('/user/settings'),
-            ),
-            const SizedBox(height: 40),
-            _logoutButton(authController),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ---------------- UI PARTS ----------------
-
-  Widget _profileHeader(User? user) {
-    return Column(
-      children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 52,
-              backgroundColor: userPrimary.withOpacity(0.2),
-              child: const Icon(Icons.person, size: 52),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: CircleAvatar(
-                radius: 16,
-                backgroundColor: userPrimary,
-                child: const Icon(
-                  Icons.camera_alt,
-                  size: 16,
-                  color: Colors.black,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await userController.refreshUserData();
+          await bookingController.fetchUserBookings();
+        },
+        color: AppColors.primary,
+        child: Obx(
+          () => ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
+              /// ───────────── PROFILE CARD ─────────────
+              GlassCard(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: AppColors.primary.withOpacity(0.15),
+                      child: userController.userName.value.isNotEmpty
+                          ? Text(
+                              userController.userName.value[0].toUpperCase(),
+                              style: AppTextStyles.heading.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.person,
+                              size: 40,
+                              color: AppColors.primary,
+                            ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userController.userName.value.isNotEmpty
+                                ? userController.userName.value
+                                : 'Guest User',
+                            style: AppTextStyles.subHeading.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            userController.userEmail.value,
+                            style: AppTextStyles.caption,
+                          ),
+                          if (userController.userPhone.value.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.phone,
+                                  size: 12,
+                                  color: AppColors.textMuted,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  userController.userPhone.value,
+                                  style: AppTextStyles.caption,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          user?.displayName ?? 'User',
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFFE5E7EB),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          user?.email ?? '',
-          style: const TextStyle(color: Color(0xFFE5E7EB)),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: userPrimary.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.verified_rounded, size: 16),
-              SizedBox(width: 6),
-              Text('PLATINUM MEMBER'),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              /// ───────────── STATISTICS ─────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.event,
+                      label: 'Total',
+                      value: userController.totalBookings.value.toString(),
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.check_circle,
+                      label: 'Completed',
+                      value: userController.completedBookings.value.toString(),
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.currency_rupee,
+                      label: 'Spent',
+                      value:
+                          '₹${userController.totalSpent.value.toStringAsFixed(0)}',
+                      color: Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              /// ───────────── ACCOUNT ─────────────
+              const SectionHeader(title: 'Account'),
+              const SizedBox(height: AppSpacing.sm),
+
+              _ProfileItem(
+                icon: Icons.edit_outlined,
+                label: 'Edit Profile',
+                onTap: () => Get.toNamed('/edit-profile'),
+              ),
+              _ProfileItem(
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                onTap: () => Get.toNamed('/settings'),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              /// ───────────── SUPPORT ─────────────
+              const SectionHeader(title: 'Support'),
+              const SizedBox(height: AppSpacing.sm),
+
+              _ProfileItem(
+                icon: Icons.help_outline,
+                label: 'Help & Support',
+                onTap: () {
+                  Get.snackbar(
+                    'Help',
+                    'Contact support at support@salonapp.com',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                },
+              ),
+              _ProfileItem(
+                icon: Icons.info_outline,
+                label: 'About App',
+                onTap: () {
+                  Get.dialog(
+                    AlertDialog(
+                      title: const Text('About'),
+                      content: const Text('Salon Booking App v1.0.0'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _aiStyleHubCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: userCard,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
+/* ───────────────── STAT CARD ───────────────── */
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '✨ AI Style Hub',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Discover styles tailored to your face & hair type.',
-                  style: TextStyle(color: Color(0xFFE5E7EB)),
-                ),
-                const SizedBox(height: 14),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: userPrimary,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: () => Get.toNamed('/user/assistant'),
-                  child: const Text('View Recommendations'),
-                ),
-              ],
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            value,
+            style: AppTextStyles.subHeading.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
-          const SizedBox(width: 12),
-          const Icon(Icons.auto_awesome, size: 42),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTextStyles.caption,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _sectionTitle(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Color(0xFFE5E7EB),
-            fontWeight: FontWeight.w700,
-          ),
+/* ───────────────── PROFILE ITEM ───────────────── */
+
+class _ProfileItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ProfileItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: GlassCard(
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: Text(label, style: AppTextStyles.body)),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: AppColors.textMuted,
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _accountTile({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: userPrimary.withOpacity(0.15),
-        child: Icon(icon, color: userPrimary),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: subtitle != null ? Text(subtitle) : null,
-      trailing: const Icon(Icons.chevron_right),
-    );
-  }
-
-  Widget _switchTile({
-    required IconData icon,
-    required String title,
-    required bool value,
-  }) {
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      activeColor: userPrimary,
-      value: value,
-      onChanged: (_) {},
-      title: Text(title),
-      secondary: Icon(icon),
-    );
-  }
-
-  Widget _logoutButton(AuthController authController) {
-    return OutlinedButton.icon(
-      icon: const Icon(Icons.logout, color: Colors.redAccent),
-      label: const Text('Log Out', style: TextStyle(color: Colors.redAccent)),
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Colors.redAccent),
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      ),
-      onPressed: authController.logout,
     );
   }
 }

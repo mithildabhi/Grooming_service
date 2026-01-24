@@ -17,6 +17,9 @@ class UserHomeController extends GetxController {
   final RxList<ServiceModel> salonServices = <ServiceModel>[].obs;
   final RxBool isLoadingServices = false.obs;
 
+  // Getter for salons (returns all salons)
+  List<SalonModel> get salons => allSalons.toList();
+
   @override
   void onInit() {
     super.onInit();

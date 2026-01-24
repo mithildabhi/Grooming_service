@@ -144,7 +144,8 @@ class BookingModel {
     String? customerEmail,
     String? notes,
     String? createdAt,
-    String? updatedAt, required bool isRated,
+    String? updatedAt,
+    bool? isRated,
   }) {
     return BookingModel(
       id: id ?? this.id,
@@ -169,6 +170,7 @@ class BookingModel {
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isRated: isRated ?? this.isRated,
     );
   }
 }

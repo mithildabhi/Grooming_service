@@ -8,6 +8,11 @@ class SalonModel {
   final String about;
   final String imageUrl;
 
+  // ✅ UI SUPPORT (Stitch AI)
+  final double rating;
+  final double distance;
+  final List<String> services;
+
   SalonModel({
     required this.id,
     required this.name,
@@ -17,6 +22,9 @@ class SalonModel {
     required this.phone,
     required this.about,
     required this.imageUrl,
+    required this.rating,
+    required this.distance,
+    required this.services,
   });
 
   // ✅ ADDED: displayImage getter
@@ -28,10 +36,10 @@ class SalonModel {
   }
 
   // ✅ ADDED: rating getter (default for now, can be made dynamic later)
-  double get rating {
-    // TODO: Get actual rating from backend
-    return 4.5; // Default rating
-  }
+  // double get rating {
+  //   // TODO: Get actual rating from backend
+  //   return 4.5; // Default rating
+  // }
 
   // ✅ ADDED: salonTypeDisplay getter
   String get salonTypeDisplay {
@@ -151,7 +159,7 @@ class SalonModel {
       address: (m['address'] ?? '') as String,
       phone: (m['phone'] ?? '') as String,
       about: (m['about'] ?? '') as String,
-      imageUrl: (m['imageUrl'] ?? '') as String,
+      imageUrl: (m['imageUrl'] ?? '') as String, rating: 4.5, distance: 2, services: [],
     );
   }
 
@@ -185,9 +193,13 @@ class SalonModel {
       address: json['address'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       about: json['about'] as String? ?? '',
-      imageUrl: json['image_url'] as String? ?? json['imageUrl'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? json['imageUrl'] as String? ?? '', rating: 4.5, distance: 2, services: [],
     );
   }
+
+  get description => null;
+
+  get servicesList => null;
 
   static Map<String, dynamic> defaultHours() {
     final days = [

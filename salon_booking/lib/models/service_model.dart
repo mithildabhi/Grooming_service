@@ -104,4 +104,6 @@ class ServiceModel {
 
   @override
   int get hashCode => id.hashCode;
+
+  int get durationMinutes => duration;
 }

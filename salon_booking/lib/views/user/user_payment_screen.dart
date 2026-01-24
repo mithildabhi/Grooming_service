@@ -1,13 +1,17 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../models/salon_model.dart';
 import '../../controllers/booking_controller.dart';
-import '../../widgets/user_card.dart';
-import '../../widgets/primary_button.dart';
-import '../../theme/user_colors.dart';
+import '../../controllers/user_controller.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+
+import '../../widgets/ui/glass_card.dart';
+import '../../widgets/ui/primary_button.dart';
 
 class UserPaymentScreen extends StatefulWidget {
   const UserPaymentScreen({super.key});
@@ -17,221 +21,290 @@ class UserPaymentScreen extends StatefulWidget {
 }
 
 class _UserPaymentScreenState extends State<UserPaymentScreen> {
-  String selectedPaymentMethod = '';
-  bool isProcessing = false;
+  String selectedPaymentMethod = 'card';
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<BookingController>();
+    final raw = Get.arguments;
+    if (raw == null || raw is! Map<String, dynamic>) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Payment'), backgroundColor: AppColors.background),
+        body: const Center(child: Text('Invalid data')),
+      );
+    }
+    final args = raw;
+    final BookingController bookingController = Get.find<BookingController>();
+    final UserController userController = Get.find<UserController>();
+
+    final SalonModel? salon = args['salon'] is SalonModel ? args['salon'] as SalonModel : null;
+    final String? date = args['date'] as String?;
+    final String? dateDisplay = args['dateDisplay'] as String?;
+    final String? time = args['time'] as String?;
+    final double amount = (args['amount'] as num?)?.toDouble() ?? 0.0;
+
+    if (salon == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Payment'), backgroundColor: AppColors.background),
+        body: const Center(child: Text('Salon not found')),
+      );
+    }
 
     return Scaffold(
-      backgroundColor: userBg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: userBg,
-        scrolledUnderElevation: 0,
+        title: const Text('Payment'),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: const Text(
-          'Payment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            color: Colors.white,
-            letterSpacing: -0.4,
-          ),
-        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Column(
-                  children: [
-                    _method('UPI', 'payment', Icons.payment_rounded),
-                    const SizedBox(height: 12),
-                    _method(
-                      'Credit / Debit Card',
-                      'credit_card',
-                      Icons.credit_card_rounded,
-                    ),
-                    const SizedBox(height: 12),
-                    _method(
-                      'Wallet',
-                      'account_balance_wallet',
-                      Icons.account_balance_wallet_rounded,
-                    ),
-                    const SizedBox(height: 12),
-                    _method('Pay at Salon', 'store', Icons.store_rounded),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Obx(() {
-              final service = controller.selectedService.value;
-              final price = service?.price ?? 0;
-
-              return PrimaryButton(
-                text: isProcessing
-                    ? 'Processing...'
-                    : 'Pay ₹${price.toStringAsFixed(0)}',
-                onTap: isProcessing ? () {} : () => _processPayment(),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _method(String text, String iconKey, IconData iconData) {
-    final isSelected = selectedPaymentMethod == text;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            selectedPaymentMethod = text;
-          });
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          child: UserCard(
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isSelected ? userPrimary : Colors.transparent,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.all(20),
-              child: Row(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? userPrimary.withOpacity(0.15)
-                          : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      iconData,
-                      color: isSelected ? userPrimary : Colors.grey.shade700,
-                      size: 24,
+                  /// ───────────── BOOKING SUMMARY ─────────────
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            salon.imageUrl.isNotEmpty ? salon.imageUrl : 'https://via.placeholder.com/60',
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 60,
+                              height: 60,
+                              color: AppColors.surface,
+                              child: const Icon(Icons.spa, color: AppColors.primary),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                salon.name,
+                                style: AppTextStyles.subHeading.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              if (dateDisplay != null && time != null)
+                                Text(
+                                  '$dateDisplay • $time',
+                                  style: AppTextStyles.caption,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      text,
-                      style: TextStyle(
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        fontSize: 16,
-                        color: isSelected
-                            ? userPrimary
-                            : const Color(0xFF0F172A),
-                        letterSpacing: -0.3,
-                      ),
+
+                  const SizedBox(height: AppSpacing.lg),
+
+                  /// ───────────── PAYMENT METHOD ─────────────
+                  Text(
+                    'Payment Method',
+                    style: AppTextStyles.subHeading.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (isSelected)
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: userPrimary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  GlassCard(
+                    onTap: () => setState(() => selectedPaymentMethod = 'card'),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    color: selectedPaymentMethod == 'card'
+                        ? AppColors.primary.withOpacity(0.1)
+                        : null,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.credit_card,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        const Expanded(
+                          child: Text(
+                            'Credit / Debit Card',
+                            style: AppTextStyles.body,
+                          ),
+                        ),
+                        if (selectedPaymentMethod == 'card')
+                          const Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary,
+                          ),
+                      ],
                     ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  GlassCard(
+                    onTap: () => setState(() => selectedPaymentMethod = 'upi'),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    color: selectedPaymentMethod == 'upi'
+                        ? AppColors.primary.withOpacity(0.1)
+                        : null,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.account_balance_wallet,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        const Expanded(
+                          child: Text(
+                            'UPI / Wallet',
+                            style: AppTextStyles.body,
+                          ),
+                        ),
+                        if (selectedPaymentMethod == 'upi')
+                          const Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary,
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+
+                  /// ───────────── PRICE BREAKDOWN ─────────────
+                  Text(
+                    'Price Breakdown',
+                    style: AppTextStyles.subHeading.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      children: [
+                        _PriceRow(label: 'Service', value: '₹${amount.toStringAsFixed(0)}'),
+                        const SizedBox(height: 8),
+                        _PriceRow(label: 'Tax', value: '₹0'),
+                        const Divider(height: 24),
+                        _PriceRow(
+                          label: 'Total',
+                          value: '₹${amount.toStringAsFixed(0)}',
+                          isTotal: true,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-        ),
+
+          /// ───────────── PAY CTA ─────────────
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              border: Border(top: BorderSide(color: AppColors.divider)),
+            ),
+            child: Obx(() => PrimaryButton(
+              label: bookingController.isCreatingBooking.value
+                  ? 'Processing...'
+                  : 'Pay ₹${amount.toStringAsFixed(0)}',
+              enabled: !bookingController.isCreatingBooking.value,
+              onPressed: () async {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  Get.snackbar('Error', 'Please login to continue');
+                  return;
+                }
+
+                final success = await bookingController.createBooking(
+                  customerName: userController.userName.value.isNotEmpty
+                      ? userController.userName.value
+                      : user.displayName ?? 'User',
+                  customerPhone: userController.userPhone.value.isNotEmpty
+                      ? userController.userPhone.value
+                      : user.phoneNumber ?? '',
+                );
+
+                if (success) {
+                  Get.offNamed('/booking-success', arguments: {
+                    'salon': salon,
+                    'date': dateDisplay ?? date,
+                    'time': time,
+                  });
+                }
+              },
+            )),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Future<void> _processPayment() async {
-    if (selectedPaymentMethod.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please select a payment method',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade700,
-        borderRadius: 12,
-        margin: const EdgeInsets.all(16),
-      );
-      return;
-    }
+/* ───────────────── PRICE ROW ───────────────── */
 
-    setState(() {
-      isProcessing = true;
-    });
+class _PriceRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isTotal;
 
-    try {
-      final controller = Get.find<BookingController>();
-      final user = FirebaseAuth.instance.currentUser;
+  const _PriceRow({
+    required this.label,
+    required this.value,
+    this.isTotal = false,
+  });
 
-      if (user == null) {
-        throw Exception('User not authenticated');
-      }
-
-      String customerName =
-          user.displayName ?? user.email?.split('@')[0] ?? 'Customer';
-      String customerPhone = user.phoneNumber ?? '';
-
-      print('📱 Creating booking for: $customerName');
-
-      final success = await controller.createBooking(
-        customerName: customerName,
-        customerPhone: customerPhone,
-      );
-
-      if (success) {
-        Get.offAllNamed('/user/booking/success');
-      } else {
-        Get.snackbar(
-          'Error',
-          'Failed to create booking. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade50,
-          colorText: Colors.red.shade700,
-          borderRadius: 12,
-          margin: const EdgeInsets.all(16),
-        );
-      }
-    } catch (e) {
-      print('❌ Payment error: $e');
-      Get.snackbar(
-        'Error',
-        'Booking failed: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade700,
-        borderRadius: 12,
-        margin: const EdgeInsets.all(16),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          isProcessing = false;
-        });
-      }
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: isTotal
+                ? AppTextStyles.subHeading.copyWith(
+                    fontWeight: FontWeight.bold,
+                  )
+                : AppTextStyles.body,
+          ),
+        ),
+        Text(
+          value,
+          style: isTotal
+              ? AppTextStyles.heading.copyWith(
+                  color: AppColors.primary,
+                )
+              : AppTextStyles.subHeading,
+        ),
+      ],
+    );
   }
 }
