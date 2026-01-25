@@ -164,6 +164,13 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
+      onTap: () {
+        // Navigate to Explore screen (index 1) with search focus
+        final shell = context.findAncestorStateOfType<State>();
+        if (shell != null && shell.mounted) {
+          Get.toNamed('/user', arguments: {'tab': 1});
+        }
+      },
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.md,
@@ -257,32 +264,45 @@ class _AiPickCard extends StatelessWidget {
 
 /* ───────────────── CATEGORIES ───────────────── */
 
-class _CategoryRow extends StatelessWidget {
+class _CategoryRow extends StatefulWidget {
   const _CategoryRow();
 
   @override
-  Widget build(BuildContext context) {
-    final categories = [
-      {'name': 'Haircut', 'icon': Icons.content_cut},
-      {'name': 'Spa', 'icon': Icons.spa},
-      {'name': 'Makeup', 'icon': Icons.face},
-      {'name': 'Nails', 'icon': Icons.brush},
-    ];
+  State<_CategoryRow> createState() => _CategoryRowState();
+}
 
+class _CategoryRowState extends State<_CategoryRow> {
+  int selectedIndex = 0;
+
+  final categories = [
+    {'name': 'Haircut', 'icon': Icons.content_cut},
+    {'name': 'Spa', 'icon': Icons.spa},
+    {'name': 'Makeup', 'icon': Icons.face},
+    {'name': 'Nails', 'icon': Icons.brush},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: categories.asMap().entries.map((entry) {
           final index = entry.key;
           final category = entry.value;
-          final isSelected = index == 0;
+          final isSelected = selectedIndex == index;
           
           return Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: ChipPill(
               label: category['name'] as String,
               selected: isSelected,
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  selectedIndex = index;
+                });
+                // Navigate to explore screen with the selected category
+                Get.toNamed('/user', arguments: {'tab': 1});
+              },
             ),
           );
         }).toList(),

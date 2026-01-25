@@ -45,9 +45,10 @@ class _UserAppointmentsScreenState extends State<UserAppointmentsScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Appointments'),
+        title: const Text('My Appointments', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.background,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,

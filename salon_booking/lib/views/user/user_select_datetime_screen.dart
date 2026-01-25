@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/salon_model.dart';
 import '../../controllers/booking_controller.dart';
@@ -26,6 +27,7 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
 
   DateTime? selectedDate;
   String? selectedTime;
+  int selectedMonthOffset = 0;
 
   @override
   void initState() {
@@ -33,29 +35,74 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
     bookingController = Get.find<BookingController>();
     final args = Get.arguments;
     salon = args is SalonModel ? args : null;
-    _generateAvailableDates();
     if (bookingController.selectedService.value != null) {
       bookingController.generateTimeSlots(DateTime.now());
     }
   }
 
-  List<DateTime> _availableDates = [];
-
-  void _generateAvailableDates() {
+  DateTime get _currentMonth {
     final now = DateTime.now();
-    _availableDates = List.generate(14, (index) {
-      return now.add(Duration(days: index + 1));
-    });
+    return DateTime(now.year, now.month + selectedMonthOffset, 1);
   }
 
-  String _formatDateShort(DateTime date) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return '${days[date.weekday - 1]} ${date.day}';
+  List<DateTime?> _getCalendarDays() {
+    final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
+    final lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    final firstWeekday = firstDayOfMonth.weekday;
+    
+    List<DateTime?> days = [];
+    
+    // Add empty slots for days before the first day of month
+    for (int i = 1; i < firstWeekday; i++) {
+      days.add(null);
+    }
+    
+    // Add all days of the month
+    for (int day = 1; day <= lastDayOfMonth.day; day++) {
+      days.add(DateTime(_currentMonth.year, _currentMonth.month, day));
+    }
+    
+    return days;
+  }
+
+  bool _isDateSelectable(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return date.isAfter(today);
+  }
+
+  String _formatDateDisplay(DateTime date) {
+    return DateFormat('EEE, d MMM yyyy').format(date);
   }
 
   List<String> get _availableTimes {
     if (selectedDate == null) return [];
     return bookingController.availableTimeSlots.toList();
+  }
+
+  // Group time slots by period
+  Map<String, List<String>> _groupTimeSlots() {
+    final times = _availableTimes;
+    Map<String, List<String>> grouped = {
+      'Morning': [],
+      'Afternoon': [],
+      'Evening': [],
+    };
+    
+    for (var time in times) {
+      try {
+        final hour = int.parse(time.split(':')[0]);
+        if (hour < 12) {
+          grouped['Morning']!.add(time);
+        } else if (hour < 17) {
+          grouped['Afternoon']!.add(time);
+        } else {
+          grouped['Evening']!.add(time);
+        }
+      } catch (_) {}
+    }
+    
+    return grouped;
   }
 
   @override
@@ -65,8 +112,9 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: const Text('Select Date & Time'),
+          title: const Text('Select Date & Time', style: TextStyle(color: Colors.white)),
           backgroundColor: AppColors.background,
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(child: Text('Salon not found')),
       );
@@ -77,9 +125,10 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Select Date & Time'),
+        title: const Text('Select Date & Time', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.background,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
@@ -128,11 +177,23 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                                 const SizedBox(height: 4),
                                 Text(service.name, style: AppTextStyles.body),
                                 const SizedBox(height: 4),
-                                Text(
-                                  '₹${service.price.toStringAsFixed(0)}',
-                                  style: AppTextStyles.subHeading.copyWith(
-                                    color: AppColors.primary,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '₹${service.price.toStringAsFixed(0)}',
+                                      style: AppTextStyles.subHeading.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${service.durationMinutes} min',
+                                      style: AppTextStyles.caption,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ],
@@ -153,88 +214,200 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  /// ───────────── DATE SELECTION ─────────────
-                  Text(
-                    'Select Date',
-                    style: AppTextStyles.subHeading.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _availableDates.length,
-                      itemBuilder: (context, index) {
-                        final date = _availableDates[index];
-                        final isSelected =
-                            selectedDate?.day == date.day &&
-                            selectedDate?.month == date.month;
-
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedDate = date;
-                              bookingController.selectDate(date);
-                            });
-                          },
-                          child: Container(
-                            width: 70,
-                            margin: const EdgeInsets.only(right: AppSpacing.sm),
-                            child: GlassCard(
-                              padding: const EdgeInsets.all(8),
-                              color: isSelected
-                                  ? AppColors.primary.withOpacity(0.15)
+                  /// ───────────── CALENDAR DATE PICKER (BookMyShow Style) ─────────────
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      children: [
+                        // Month Navigation Header
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              onPressed: selectedMonthOffset > 0
+                                  ? () => setState(() => selectedMonthOffset--)
                                   : null,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    _formatDateShort(date),
-                                    style: AppTextStyles.caption.copyWith(
+                              icon: Icon(
+                                Icons.chevron_left,
+                                color: selectedMonthOffset > 0
+                                    ? AppColors.textPrimary
+                                    : AppColors.textMuted.withOpacity(0.3),
+                              ),
+                            ),
+                            Text(
+                              DateFormat('MMMM yyyy').format(_currentMonth),
+                              style: AppTextStyles.subHeading.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: selectedMonthOffset < 2
+                                  ? () => setState(() => selectedMonthOffset++)
+                                  : null,
+                              icon: Icon(
+                                Icons.chevron_right,
+                                color: selectedMonthOffset < 2
+                                    ? AppColors.textPrimary
+                                    : AppColors.textMuted.withOpacity(0.3),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        
+                        // Day names header
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
+                            return SizedBox(
+                              width: 40,
+                              child: Center(
+                                child: Text(
+                                  day,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textMuted,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        
+                        // Calendar grid
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 7,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                          ),
+                          itemCount: _getCalendarDays().length,
+                          itemBuilder: (context, index) {
+                            final date = _getCalendarDays()[index];
+                            if (date == null) {
+                              return const SizedBox();
+                            }
+                            
+                            final isSelectable = _isDateSelectable(date);
+                            final isSelected = selectedDate != null &&
+                                selectedDate!.day == date.day &&
+                                selectedDate!.month == date.month &&
+                                selectedDate!.year == date.year;
+                            final isToday = DateTime.now().day == date.day &&
+                                DateTime.now().month == date.month &&
+                                DateTime.now().year == date.year;
+                            
+                            return GestureDetector(
+                              onTap: isSelectable
+                                  ? () {
+                                      setState(() {
+                                        selectedDate = date;
+                                        selectedTime = null; // Reset time when date changes
+                                        bookingController.selectDate(date);
+                                      });
+                                    }
+                                  : null,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : isToday
+                                          ? AppColors.primary.withOpacity(0.2)
+                                          : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: isToday && !isSelected
+                                      ? Border.all(color: AppColors.primary, width: 1)
+                                      : null,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    date.day.toString(),
+                                    style: AppTextStyles.body.copyWith(
                                       color: isSelected
-                                          ? AppColors.primary
-                                          : AppColors.textMuted,
-                                      fontWeight: isSelected
+                                          ? Colors.black
+                                          : isSelectable
+                                              ? AppColors.textPrimary
+                                              : AppColors.textMuted.withOpacity(0.3),
+                                      fontWeight: isSelected || isToday
                                           ? FontWeight.bold
                                           : FontWeight.normal,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    date.day.toString(),
-                                    style: AppTextStyles.subHeading.copyWith(
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : AppColors.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ),
-                        );
-                      },
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
 
+                  // Selected Date Display
+                  if (selectedDate != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatDateDisplay(selectedDate!),
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: AppSpacing.lg),
 
-                  /// ───────────── TIME SELECTION ─────────────
+                  /// ───────────── TIME SELECTION (BookMyShow Style) ─────────────
                   Text(
-                    'Select Time',
+                    'Select Time Slot',
                     style: AppTextStyles.subHeading.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
 
                   Obx(() {
                     final times = _availableTimes;
-                    if (times.isEmpty && selectedDate != null) {
+                    if (selectedDate == null) {
+                      return GlassCard(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          children: [
+                            Icon(Icons.calendar_today, size: 48, color: AppColors.textMuted),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              'Please select a date first',
+                              style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    
+                    if (times.isEmpty) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(AppSpacing.xl),
@@ -244,49 +417,82 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                         ),
                       );
                     }
-                    if (times.isEmpty) {
-                      return GlassCard(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Text(
-                          'Select a date first',
-                          style: AppTextStyles.caption,
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-                    return Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
-                      children: times.map((t) {
-                        final isSelected = selectedTime == t;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedTime = t;
-                              bookingController.selectTime(t);
-                            });
-                          },
-                          child: GlassCard(
-                            width: 100,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                    
+                    final groupedSlots = _groupTimeSlots();
+                    
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: groupedSlots.entries.where((e) => e.value.isNotEmpty).map((entry) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  entry.key == 'Morning'
+                                      ? Icons.wb_sunny
+                                      : entry.key == 'Afternoon'
+                                          ? Icons.wb_cloudy
+                                          : Icons.nights_stay,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  entry.key,
+                                  style: AppTextStyles.body.copyWith(
+                                    color: AppColors.textMuted,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            color: isSelected
-                                ? AppColors.primary.withOpacity(0.15)
-                                : null,
-                            child: Text(
-                              _formatTime(t),
-                              style: AppTextStyles.body.copyWith(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : AppColors.textPrimary,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: entry.value.map((t) {
+                                final isSelected = selectedTime == t;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedTime = t;
+                                      bookingController.selectTime(t);
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : AppColors.surface,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.primary
+                                            : AppColors.divider,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _formatTime(t),
+                                      style: AppTextStyles.body.copyWith(
+                                        color: isSelected
+                                            ? Colors.black
+                                            : AppColors.textPrimary,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
-                          ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
                         );
                       }).toList(),
                     );
@@ -305,25 +511,68 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
               color: AppColors.background,
               border: Border(top: BorderSide(color: AppColors.divider)),
             ),
-            child: PrimaryButton(
-              label: canContinue ? 'Continue' : 'Select Date & Time',
-              onPressed: canContinue
-                  ? () {
-                      Get.toNamed(
-                        '/review-booking',
-                        arguments: {
-                          'salon': s,
-                          'date': selectedDate != null
-                              ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
-                              : null,
-                          'dateDisplay': selectedDate != null
-                              ? _formatDateShort(selectedDate!)
-                              : null,
-                          'time': selectedTime,
-                        },
-                      );
-                    }
-                  : () {},
+            child: Column(
+              children: [
+                // Selection Summary
+                if (selectedDate != null || selectedTime != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Row(
+                      children: [
+                        if (selectedDate != null) ...[
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today, size: 14, color: AppColors.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  DateFormat('d MMM').format(selectedDate!),
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.primary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        if (selectedTime != null) ...[
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Icon(Icons.access_time, size: 14, color: AppColors.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatTime(selectedTime!),
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.primary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                PrimaryButton(
+                  label: canContinue ? 'Continue to Review' : 'Select Date & Time',
+                  enabled: canContinue,
+                  onPressed: canContinue
+                      ? () {
+                          Get.toNamed(
+                            '/review-booking',
+                            arguments: {
+                              'salon': s,
+                              'date': selectedDate != null
+                                  ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
+                                  : null,
+                              'dateDisplay': selectedDate != null
+                                  ? _formatDateDisplay(selectedDate!)
+                                  : null,
+                              'time': selectedTime,
+                            },
+                          );
+                        }
+                      : () {},
+                ),
+              ],
             ),
           ),
         ],

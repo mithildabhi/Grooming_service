@@ -13,13 +13,222 @@ import '../../widgets/ui/ai_insight_card.dart';
 import '../../widgets/ui/chip_pill.dart';
 import '../../widgets/ui/section_header.dart';
 
-class UserExploreScreen extends StatelessWidget {
+class UserExploreScreen extends StatefulWidget {
   const UserExploreScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<UserHomeController>();
+  State<UserExploreScreen> createState() => _UserExploreScreenState();
+}
 
+class _UserExploreScreenState extends State<UserExploreScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final RxString searchQuery = ''.obs;
+  final RxInt selectedCategoryIndex = 0.obs;
+  final RxString sortBy = 'distance'.obs;
+  final RxBool showOpenOnly = false.obs;
+  final RxDouble minRating = 0.0.obs;
+
+  late final UserHomeController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(UserHomeController());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<SalonModel> _getFilteredSalons(List<SalonModel> salons) {
+    var filtered = salons.where((salon) {
+      // Search filter
+      if (searchQuery.value.isNotEmpty) {
+        final query = searchQuery.value.toLowerCase();
+        if (!salon.name.toLowerCase().contains(query) &&
+            !salon.address.toLowerCase().contains(query) &&
+            !salon.services.any((s) => s.toLowerCase().contains(query))) {
+          return false;
+        }
+      }
+
+      // Open only filter
+      if (showOpenOnly.value && !salon.isOpen) {
+        return false;
+      }
+
+      // Rating filter
+      if (salon.rating < minRating.value) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    // Sort
+    switch (sortBy.value) {
+      case 'rating':
+        filtered.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'name':
+        filtered.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case 'distance':
+      default:
+        filtered.sort((a, b) => a.distance.compareTo(b.distance));
+    }
+
+    return filtered;
+  }
+
+  void _showFilterSheet() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Filters',
+                  style: AppTextStyles.heading.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () {
+                    sortBy.value = 'distance';
+                    showOpenOnly.value = false;
+                    minRating.value = 0.0;
+                    Get.back();
+                  },
+                  child: Text(
+                    'Reset',
+                    style: TextStyle(color: AppColors.primary),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Sort By
+            Text(
+              'Sort By',
+              style: AppTextStyles.subHeading.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Obx(
+              () => Wrap(
+                spacing: AppSpacing.sm,
+                children: [
+                  _FilterChip(
+                    label: 'Distance',
+                    selected: sortBy.value == 'distance',
+                    onTap: () => sortBy.value = 'distance',
+                  ),
+                  _FilterChip(
+                    label: 'Rating',
+                    selected: sortBy.value == 'rating',
+                    onTap: () => sortBy.value = 'rating',
+                  ),
+                  _FilterChip(
+                    label: 'Name',
+                    selected: sortBy.value == 'name',
+                    onTap: () => sortBy.value = 'name',
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Open Now Filter
+            Obx(
+              () => SwitchListTile(
+                title: Text('Open Now Only', style: AppTextStyles.body),
+                value: showOpenOnly.value,
+                onChanged: (val) => showOpenOnly.value = val,
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Rating Filter
+            Text(
+              'Minimum Rating',
+              style: AppTextStyles.subHeading.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Obx(
+              () => Row(
+                children: [
+                  Expanded(
+                    child: Slider(
+                      value: minRating.value,
+                      min: 0,
+                      max: 5,
+                      divisions: 10,
+                      activeColor: AppColors.primary,
+                      onChanged: (val) => minRating.value = val,
+                    ),
+                  ),
+                  Text(
+                    minRating.value.toStringAsFixed(1),
+                    style: AppTextStyles.subHeading.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Apply Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Get.back(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Apply Filters',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -32,6 +241,8 @@ class UserExploreScreen extends StatelessWidget {
                 child: CircularProgressIndicator(color: AppColors.primary),
               );
             }
+
+            final filteredSalons = _getFilteredSalons(controller.nearbySalons);
 
             return CustomScrollView(
               slivers: [
@@ -47,6 +258,7 @@ class UserExploreScreen extends StatelessWidget {
                               'Explore',
                               style: AppTextStyles.heading.copyWith(
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                             const Spacer(),
@@ -54,6 +266,7 @@ class UserExploreScreen extends StatelessWidget {
                               width: 40,
                               height: 40,
                               padding: EdgeInsets.zero,
+                              onTap: _showFilterSheet,
                               child: const Icon(
                                 Icons.filter_list,
                                 color: AppColors.textPrimary,
@@ -64,10 +277,97 @@ class UserExploreScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: AppSpacing.lg),
 
-                        const _SearchBar(),
+                        // Functional Search Bar
+                        GlassCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.xs,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.search,
+                                color: AppColors.textMuted,
+                                size: 22,
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (val) => searchQuery.value = val,
+                                  style: AppTextStyles.body.copyWith(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText:
+                                        'Search salons, services, stylists',
+                                    hintStyle: AppTextStyles.body.copyWith(
+                                      color: AppColors.textMuted,
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (searchQuery.value.isNotEmpty)
+                                GestureDetector(
+                                  onTap: () {
+                                    _searchController.clear();
+                                    searchQuery.value = '';
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: AppColors.textMuted,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              GestureDetector(
+                                onTap: _showFilterSheet,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.tune,
+                                    color: AppColors.primary,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: AppSpacing.lg),
 
-                        const _CategoryRow(),
+                        _CategoryRow(
+                          selectedIndex: selectedCategoryIndex,
+                          onCategorySelected: (index) {
+                            selectedCategoryIndex.value = index;
+                            // Filter by category
+                            final categories = [
+                              'All',
+                              'Hair',
+                              'Spa',
+                              'Makeup',
+                              'Nails',
+                              'Massage',
+                            ];
+                            if (index == 0) {
+                              searchQuery.value = '';
+                              _searchController.clear();
+                            } else {
+                              searchQuery.value = categories[index];
+                              _searchController.text = categories[index];
+                            }
+                          },
+                        ),
                         const SizedBox(height: AppSpacing.lg),
 
                         const AiInsightCard(
@@ -85,12 +385,23 @@ class UserExploreScreen extends StatelessWidget {
                     horizontal: AppSpacing.md,
                   ),
                   sliver: SliverToBoxAdapter(
-                    child: const SectionHeader(title: 'Salons Near You'),
+                    child: Row(
+                      children: [
+                        const SectionHeader(title: 'Salons Near You'),
+                        const Spacer(),
+                        Text(
+                          '${filteredSalons.length} found',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  sliver: controller.nearbySalons.isEmpty
+                  sliver: filteredSalons.isEmpty
                       ? SliverToBoxAdapter(
                           child: Center(
                             child: Padding(
@@ -107,19 +418,24 @@ class UserExploreScreen extends StatelessWidget {
                                     'No salons found',
                                     style: AppTextStyles.subHeading,
                                   ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    'Try adjusting your filters',
+                                    style: AppTextStyles.caption,
+                                  ),
                                 ],
                               ),
                             ),
                           ),
                         )
                       : SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final salon = controller.nearbySalons[index];
-                              return _ExploreSalonCard(salon: salon);
-                            },
-                            childCount: controller.nearbySalons.length,
-                          ),
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final salon = filteredSalons[index];
+                            return _ExploreSalonCard(salon: salon);
+                          }, childCount: filteredSalons.length),
                         ),
                 ),
               ],
@@ -131,39 +447,39 @@ class UserExploreScreen extends StatelessWidget {
   }
 }
 
-/* ───────────────── SEARCH BAR ───────────────── */
+/* ───────────────── FILTER CHIP ───────────────── */
 
-class _SearchBar extends StatelessWidget {
-  const _SearchBar();
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.search, color: AppColors.textMuted, size: 22),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Search salons, services, stylists',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textMuted,
-              ),
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.divider,
           ),
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.tune, color: AppColors.primary, size: 18),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.body.copyWith(
+            color: selected ? Colors.black : AppColors.textPrimary,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -172,11 +488,18 @@ class _SearchBar extends StatelessWidget {
 /* ───────────────── CATEGORY ROW ───────────────── */
 
 class _CategoryRow extends StatelessWidget {
-  const _CategoryRow();
+  final RxInt selectedIndex;
+  final Function(int) onCategorySelected;
+
+  const _CategoryRow({
+    required this.selectedIndex,
+    required this.onCategorySelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     final categories = [
+      {'name': 'All', 'icon': Icons.apps},
       {'name': 'Hair', 'icon': Icons.content_cut},
       {'name': 'Spa', 'icon': Icons.spa},
       {'name': 'Makeup', 'icon': Icons.face},
@@ -186,21 +509,23 @@ class _CategoryRow extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories.asMap().entries.map((entry) {
-          final index = entry.key;
-          final category = entry.value;
-          final isSelected = index == 0;
+      child: Obx(
+        () => Row(
+          children: categories.asMap().entries.map((entry) {
+            final index = entry.key;
+            final category = entry.value;
+            final isSelected = selectedIndex.value == index;
 
-          return Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: ChipPill(
-              label: category['name'] as String,
-              selected: isSelected,
-              onTap: () {},
-            ),
-          );
-        }).toList(),
+            return Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: ChipPill(
+                label: category['name'] as String,
+                selected: isSelected,
+                onTap: () => onCategorySelected(index),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -362,9 +687,7 @@ class _ExploreSalonCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppColors.divider,
-                                  ),
+                                  border: Border.all(color: AppColors.divider),
                                 ),
                                 child: Text(
                                   s,

@@ -101,11 +101,12 @@ class _UserAiAssistantScreenState extends State<UserAiAssistantScreen> {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Text('AI Assistant'),
+            const Text('AI Assistant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ],
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [

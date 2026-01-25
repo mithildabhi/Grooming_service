@@ -10,7 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../services/auth_service.dart';
 import 'admin_controller.dart';
+import 'booking_controller.dart';
 import '../services/django_api_service.dart';
+import 'user_controller.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -42,6 +44,9 @@ class AuthController extends GetxController {
       await prefs.setBool('forceLogin', false);
 
       isLoggedIn.value = true;
+
+      // Load user data into UserController after successful login
+      await _loadUserControllerData();
 
       print("🎯 Login complete, redirecting as: ${role.value}");
       _redirectByRole();
@@ -155,6 +160,9 @@ class AuthController extends GetxController {
 
           isLoggedIn.value = true;
 
+          // Load user data into UserController after successful registration
+          await _loadUserControllerData();
+
           print('🎯 Registration complete, redirecting as: ${this.role.value}');
 
           Get.snackbar(
@@ -203,26 +211,39 @@ class AuthController extends GetxController {
   }
 
   // ---------------- LOGOUT ----------------
+  // Centralized logout - handles ALL cleanup for both user and admin roles
   Future<void> logout() async {
     try {
-      print('👋 AUTH: Starting logout...');
+      print('👋 AUTH: Starting centralized logout...');
 
-      final prefs = await SharedPreferences.getInstance();
+      // ✅ Clear UserController data
+      if (Get.isRegistered<UserController>()) {
+        final userController = Get.find<UserController>();
+        userController.clearUserData();
+        print('✅ AUTH: Cleared UserController data');
+      }
 
-      // ✅ Set force login flag FIRST
-      await prefs.setBool('forceLogin', true);
-      await prefs.remove('role');
-      await prefs.remove('user_role');
+      // ✅ Clear AdminController data
+      if (Get.isRegistered<AdminController>()) {
+        final adminController = Get.find<AdminController>();
+        adminController.clearAdminData();
+        print('✅ AUTH: Cleared AdminController data');
+      }
 
-      print('✅ AUTH: Cleared SharedPrefs');
+      // ✅ Clear BookingController data
+      if (Get.isRegistered<BookingController>()) {
+        final bookingController = Get.find<BookingController>();
+        bookingController.userBookings.clear();
+        bookingController.bookings.clear();
+        print('✅ AUTH: Cleared BookingController data');
+      }
 
-      // ✅ Sign out from Firebase
-      await _auth.signOut();
+      // ✅ Use centralized AuthService logout (handles SharedPrefs + Firebase signout)
       await _authService.logout();
 
-      print('✅ AUTH: Signed out from Firebase');
+      print('✅ AUTH: AuthService logout complete');
 
-      // ✅ Update state
+      // ✅ Update in-memory state
       isLoggedIn.value = false;
       role.value = 'user';
 
@@ -232,6 +253,11 @@ class AuthController extends GetxController {
       Get.offAllNamed(AppRoutes.login);
     } catch (e) {
       print('❌ AUTH: Logout error: $e');
+      
+      // ✅ Ensure state is cleared even on error
+      isLoggedIn.value = false;
+      role.value = 'user';
+      
       // ✅ Force navigation even on error
       Get.offAllNamed(AppRoutes.login);
     }
@@ -253,10 +279,27 @@ class AuthController extends GetxController {
 
       isLoggedIn.value = true;
 
+      // Load user data into UserController after session restore
+      await _loadUserControllerData();
+
       print('✅ AUTH: Session initialized with role: ${role.value}');
     } catch (e) {
       print('❌ AUTH: Session init error: $e');
       rethrow;
+    }
+  }
+
+  // ---------------- LOAD USER CONTROLLER DATA ----------------
+  Future<void> _loadUserControllerData() async {
+    try {
+      if (Get.isRegistered<UserController>()) {
+        final userController = Get.find<UserController>();
+        userController.loadUserData();
+        await userController.loadUserStatistics();
+        print('✅ AUTH: UserController data loaded');
+      }
+    } catch (e) {
+      print('⚠️ AUTH: Could not load UserController data: $e');
     }
   }
 

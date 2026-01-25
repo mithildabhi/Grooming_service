@@ -19,7 +19,11 @@ class UserReviewBookingScreen extends StatelessWidget {
     final raw = Get.arguments;
     if (raw == null || raw is! Map<String, dynamic>) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Review'), backgroundColor: AppColors.background),
+        appBar: AppBar(
+          title: const Text('Review', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.background,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
         body: const Center(child: Text('Invalid data')),
       );
     }
@@ -33,7 +37,11 @@ class UserReviewBookingScreen extends StatelessWidget {
 
     if (salon == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Review'), backgroundColor: AppColors.background),
+        appBar: AppBar(
+          title: const Text('Review', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.background,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
         body: const Center(child: Text('Salon not found')),
       );
     }
@@ -46,9 +54,10 @@ class UserReviewBookingScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Review Booking'),
+        title: const Text('Review Booking', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.background,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [

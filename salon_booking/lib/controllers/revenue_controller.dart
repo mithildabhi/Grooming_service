@@ -82,10 +82,10 @@ class RevenueController extends GetxController {
       final data = await RevenueApi.getRevenueOverview();
       revenueData.value = data;
       
-      print('✅ Revenue loaded: ₹${totalRevenue}');
-      print('   Today: ₹${todayRevenue}');
-      print('   This Week: ₹${weekRevenue}');
-      print('   This Month: ₹${monthRevenue}');
+      print('✅ Revenue loaded: ₹$totalRevenue');
+      print('   Today: ₹$todayRevenue');
+      print('   This Week: ₹$weekRevenue');
+      print('   This Month: ₹$monthRevenue');
     } catch (e) {
       print('❌ Revenue fetch error: $e');
       Get.snackbar('Error', 'Failed to load revenue data');
@@ -192,6 +192,7 @@ class RevenueController extends GetxController {
   // REFRESH
   // ========================
   
+  @override
   Future<void> refresh() async {
     await fetchRevenueOverview();
   }

@@ -141,11 +141,35 @@ class AuthService extends GetxService {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
-  // Logout
-  Future<void> logout() async {
-    await _auth.signOut();
+  // Centralized session clearing - clears ALL auth-related data
+  Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Set forceLogin to prevent auto-login on restart
+    await prefs.setBool('forceLogin', true);
+    
+    // Clear all auth-related keys
     await prefs.remove('user_role');
-    print('👋 Logged out');
+    await prefs.remove('role');
+    
+    print('🧹 AUTH_SERVICE: Session data cleared, forceLogin set to true');
+  }
+
+  // Logout - signs out Firebase and clears session
+  Future<void> logout() async {
+    try {
+      // Clear session data first (ensures forceLogin is set even if signOut fails)
+      await clearSession();
+      
+      // Sign out from Firebase
+      await _auth.signOut();
+      
+      print('👋 AUTH_SERVICE: Logged out successfully');
+    } catch (e) {
+      print('❌ AUTH_SERVICE: Logout error: $e');
+      // Re-ensure session is cleared even on error
+      await clearSession();
+      rethrow;
+    }
   }
 }

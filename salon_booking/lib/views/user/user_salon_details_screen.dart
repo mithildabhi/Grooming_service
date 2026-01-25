@@ -38,7 +38,11 @@ class _UserSalonDetailsScreenState extends State<UserSalonDetailsScreen> {
     final args = Get.arguments;
     if (args == null || args is! SalonModel) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Salon'), backgroundColor: AppColors.background),
+        appBar: AppBar(
+          title: const Text('Salon', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.background,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
         body: const Center(child: Text('Something went wrong')),
       );
     }

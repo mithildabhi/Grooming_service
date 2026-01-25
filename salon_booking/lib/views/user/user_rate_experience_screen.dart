@@ -42,9 +42,10 @@ class _UserRateExperienceScreenState extends State<UserRateExperienceScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: const Text('Rate Experience'),
+          title: const Text('Rate Experience', style: TextStyle(color: Colors.white)),
           backgroundColor: AppColors.background,
           elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(
           child: Text('No booking found'),
@@ -55,9 +56,10 @@ class _UserRateExperienceScreenState extends State<UserRateExperienceScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Rate Experience'),
+        title: const Text('Rate Experience', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.background,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [

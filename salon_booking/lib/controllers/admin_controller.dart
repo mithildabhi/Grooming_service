@@ -634,32 +634,43 @@ Future<void> _initIfAdmin() async {
   }
 
   // =========================
+  // CLEAR ADMIN DATA (called by AuthController during centralized logout)
+  // =========================
+  void clearAdminData() {
+    salonProfile.value = null;
+    activeSalonId.value = '';
+    bookingsList.clear();
+    employeesList.clear();
+    filteredEmployees.clear();
+    servicesList.clear();
+    staffList.clear();
+    inventoryList.clear();
+    galleryList.clear();
+    reviewsList.clear();
+    isLoadingServices.value = false;
+    isLoadingProfile.value = false;
+    isLoadingStaff.value = false;
+    print('🧹 ADMIN: Admin data cleared');
+  }
+
+  // =========================
   // AUTH
   // =========================
-
+  // Delegates to centralized AuthController.logout() which handles all cleanup
   Future<void> logout() async {
     try {
-      print('👋 ADMIN: Logging out...');
+      print('👋 ADMIN: Logout requested, delegating to AuthController...');
       
-      // ✅ Clear admin data first
-      salonProfile.value = null;
-      activeSalonId.value = '';
-      bookingsList.clear();
-      employeesList.clear();
-      servicesList.clear();
-      staffList.clear();
-      
-      print('✅ ADMIN: Admin data cleared');
-      
-      // ✅ Call AuthController logout (which handles Firebase + SharedPrefs)
-      final authController = Get.find<AuthController>();
-      await authController.logout();
-      
-      print('✅ ADMIN: Logout complete');
-      
+      if (Get.isRegistered<AuthController>()) {
+        final authController = Get.find<AuthController>();
+        await authController.logout();
+      } else {
+        // Fallback: clear own data and navigate
+        clearAdminData();
+        Get.offAllNamed('/login');
+      }
     } catch (e) {
       print('❌ ADMIN: Logout error: $e');
-      // ✅ Force navigation to login even if error
       Get.offAllNamed('/login');
     }
   }

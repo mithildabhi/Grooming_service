@@ -133,7 +133,7 @@ class UserBookingSuccessScreen extends StatelessWidget {
               PrimaryButton(
                 label: 'View Appointments',
                 onPressed: () {
-                  Get.offAllNamed('/user', arguments: {'tab': 2});
+                  Get.offAllNamed('/user', arguments: {'tab': 3}); // Appointments is now at index 3
                 },
               ),
 
