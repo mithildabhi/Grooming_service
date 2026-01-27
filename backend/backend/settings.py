@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'reviews',
     'staff',
     'chatbot',
+    'customers',
 
 ]
 AUTH_USER_MODEL = 'accounts.User'

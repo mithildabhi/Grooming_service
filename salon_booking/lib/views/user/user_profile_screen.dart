@@ -11,14 +11,46 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/ui/glass_card.dart';
 import '../../widgets/ui/section_header.dart';
 
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final UserController userController = Get.find<UserController>();
-    final BookingController bookingController = Get.find<BookingController>();
+  State<UserProfileScreen> createState() => _UserProfileScreenState();
+}
 
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  final UserController userController = Get.find<UserController>();
+  final BookingController bookingController = Get.find<BookingController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Load profile data when screen opens
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    print('🔄 Loading profile data...');
+    await userController.refreshUserData();
+    await bookingController.fetchUserBookings();
+  }
+
+  Future<void> _navigateToEditProfile() async {
+    // Navigate to edit profile
+    await Get.toNamed('/edit-profile');
+    
+    // ✅ When returning from edit profile, refresh the data
+    print('⬅️ Returned from edit profile, refreshing...');
+    await _loadProfileData();
+    
+    // Force UI rebuild
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -28,16 +60,13 @@ class UserProfileScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await userController.refreshUserData();
-          await bookingController.fetchUserBookings();
-        },
+        onRefresh: _loadProfileData,
         color: AppColors.primary,
         child: Obx(
           () => ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
-              /// ───────────── PROFILE CARD ─────────────
+              /// ─────────── PROFILE CARD ───────────
               GlassCard(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
@@ -102,7 +131,7 @@ class UserProfileScreen extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.lg),
 
-              /// ───────────── STATISTICS ─────────────
+              /// ─────────── STATISTICS ───────────
               Row(
                 children: [
                   Expanded(
@@ -137,14 +166,14 @@ class UserProfileScreen extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.lg),
 
-              /// ───────────── ACCOUNT ─────────────
+              /// ─────────── ACCOUNT ───────────
               const SectionHeader(title: 'Account'),
               const SizedBox(height: AppSpacing.sm),
 
               _ProfileItem(
                 icon: Icons.edit_outlined,
                 label: 'Edit Profile',
-                onTap: () => Get.toNamed('/edit-profile'),
+                onTap: _navigateToEditProfile,  // ✅ Use custom navigation
               ),
               _ProfileItem(
                 icon: Icons.settings_outlined,
@@ -154,7 +183,7 @@ class UserProfileScreen extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.lg),
 
-              /// ───────────── SUPPORT ─────────────
+              /// ─────────── SUPPORT ───────────
               const SectionHeader(title: 'Support'),
               const SizedBox(height: AppSpacing.sm),
 

@@ -84,7 +84,11 @@ class Booking(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user} - {self.service} on {self.booking_date} at {self.booking_time} - ₹{self.price}"
+        """
+        ✅ UPDATED: Show customer name instead of username
+        """
+        customer_name = str(self.user)  # Will use User's __str__ method
+        return f"{customer_name} - {self.service} on {self.booking_date} at {self.booking_time} - ₹{self.price}"
 
     def save(self, *args, **kwargs):
         # ✅ Auto-set price from service if not already set

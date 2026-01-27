@@ -2,15 +2,21 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+import '../config/api_config.dart';
+import '../models/customer_model.dart';
 import 'auth_controller.dart';
 import 'booking_controller.dart';
 
 class UserController extends GetxController {
   // ========================
-  // USER PROFILE STATE
+  // CUSTOMER PROFILE STATE (Rx for reactivity)
   // ========================
+  final Rxn<CustomerModel> customerProfile = Rxn<CustomerModel>();
+  
+  // Rx wrappers for compatibility with existing code
   final RxString userName = ''.obs;
   final RxString userEmail = ''.obs;
   final RxString userPhone = ''.obs;
@@ -19,38 +25,72 @@ class UserController extends GetxController {
   final RxString userPincode = ''.obs;
   final RxString userGender = ''.obs;
   final RxString userDateOfBirth = ''.obs;
-
-  // ========================
-  // USER STATISTICS
-  // ========================
+  
+  // Statistics as Rx
   final RxInt totalBookings = 0.obs;
   final RxInt completedBookings = 0.obs;
   final RxDouble totalSpent = 0.0.obs;
+  final RxString loyaltyTier = 'NEW'.obs;
 
   // ========================
-  // INITIALIZATION FLAG
+  // LOADING STATE
   // ========================
   final RxBool isDataLoaded = false.obs;
+  final RxBool isUpdating = false.obs;
 
   @override
   void onInit() {
     super.onInit();
 
+    // ✅ ONLY load if user is already logged in
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('⚠️ USER: Skipping init (not logged in yet - will load after login)');
-      return;
+    final auth = Get.find<AuthController>();
+    
+    if (user != null && auth.isLoggedIn.value == true) {
+      print('✅ USER: User already logged in, loading profile');
+      loadCustomerProfile();
+    } else {
+      print('⚠️ USER: Waiting for login before loading data');
     }
-
-    // User already logged in (e.g., app restart with valid session)
-    loadUserData();
-    loadUserStatistics();
   }
 
   // ========================
-  // LOAD USER DATA
+  // SYNC Rx VARS FROM CUSTOMER PROFILE
   // ========================
-  void loadUserData() async {
+  void _syncRxVarsFromProfile() {
+    if (customerProfile.value != null) {
+      final profile = customerProfile.value!;
+      
+      print('🔄 USER: Syncing Rx vars from profile...');
+      print('   Full Name: "${profile.fullName}"');
+      print('   Email: "${profile.email}"');
+      print('   Phone: "${profile.phone}"');
+      
+      userName.value = profile.fullName;
+      userEmail.value = profile.email;
+      userPhone.value = profile.phone;
+      userAddress.value = profile.address;
+      userCity.value = profile.city;
+      userPincode.value = profile.pincode;
+      userGender.value = profile.gender;
+      userDateOfBirth.value = profile.dateOfBirth ?? '';
+      
+      totalBookings.value = profile.totalBookings;
+      completedBookings.value = profile.completedBookings;
+      totalSpent.value = profile.totalSpent;
+      loyaltyTier.value = profile.loyaltyTier;
+      
+      print('✅ USER: Sync complete');
+      print('   userName.value: "${userName.value}"');
+      print('   userEmail.value: "${userEmail.value}"');
+      print('   userPhone.value: "${userPhone.value}"');
+    }
+  }
+
+  // ========================
+  // LOAD CUSTOMER PROFILE FROM BACKEND
+  // ========================
+  Future<void> loadCustomerProfile() async {
     try {
       final firebaseUser = FirebaseAuth.instance.currentUser;
 
@@ -60,76 +100,60 @@ class UserController extends GetxController {
         return;
       }
 
-      // Refresh token to ensure session is valid
-      await firebaseUser.getIdToken(true);
+      // Get Firebase ID token for authentication
+      final idToken = await firebaseUser.getIdToken();
 
-      userName.value = firebaseUser.displayName ?? 'Guest User';
-      userEmail.value = firebaseUser.email ?? '';
-      userPhone.value = firebaseUser.phoneNumber ?? '';
+      print('🔥 USER: Fetching customer profile from backend...');
+      print('   URL: ${ApiConfig.baseUrl}/customers/me/');
 
-      // Load additional profile data from local storage
-      final prefs = await SharedPreferences.getInstance();
-      final uid = firebaseUser.uid;
-      
-      userAddress.value = prefs.getString('${uid}_address') ?? '';
-      userCity.value = prefs.getString('${uid}_city') ?? '';
-      userPincode.value = prefs.getString('${uid}_pincode') ?? '';
-      userGender.value = prefs.getString('${uid}_gender') ?? '';
-      userDateOfBirth.value = prefs.getString('${uid}_dob') ?? '';
-      
-      // Load saved name if displayName is empty
-      if (userName.value.isEmpty || userName.value == 'Guest User') {
-        final savedName = prefs.getString('${uid}_name');
-        if (savedName != null && savedName.isNotEmpty) {
-          userName.value = savedName;
-        }
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/customers/me/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      print('📊 USER: Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('📦 USER: Raw response data: $data');
+        
+        customerProfile.value = CustomerModel.fromJson(data);
+        
+        // Sync Rx vars for existing code compatibility
+        _syncRxVarsFromProfile();
+        
+        isDataLoaded.value = true;
+        print('✅ USER: Customer profile loaded successfully');
+      } else if (response.statusCode == 404) {
+        print('⚠️ USER: Profile not found (404) - will be auto-created on next request');
+        print('   Response body: ${response.body}');
+        isDataLoaded.value = false;
+      } else {
+        print('❌ USER: Failed to load profile: ${response.statusCode}');
+        print('   Response: ${response.body}');
+        isDataLoaded.value = false;
       }
-      
-      // Load saved phone if phoneNumber is empty
-      if (userPhone.value.isEmpty) {
-        final savedPhone = prefs.getString('${uid}_phone');
-        if (savedPhone != null && savedPhone.isNotEmpty) {
-          userPhone.value = savedPhone;
-        }
-      }
-
-      isDataLoaded.value = true;
-      print('✅ USER: Data loaded for ${userEmail.value}');
-      print('   Name: ${userName.value}');
-      print('   Phone: ${userPhone.value}');
-      print('   Gender: ${userGender.value}');
-    } catch (e) {
-      print('❌ USER: Error loading user data: $e');
+    } catch (e, stackTrace) {
+      print('❌ USER: Error loading customer profile: $e');
+      print('   Stack trace: $stackTrace');
       isDataLoaded.value = false;
     }
   }
 
   // ========================
-  // LOAD USER STATISTICS
+  // LEGACY METHOD NAMES (for compatibility)
   // ========================
+  Future<void> loadUserData() async {
+    await loadCustomerProfile();
+  }
+
   Future<void> loadUserStatistics() async {
-    try {
-      final bookingController = Get.find<BookingController>();
-
-      await bookingController.fetchUserBookings();
-
-      final bookings = bookingController.userBookings;
-
-      totalBookings.value = bookings.length;
-      completedBookings.value = bookings
-          .where((b) => b.status == 'COMPLETED')
-          .length;
-
-      totalSpent.value = bookings
-          .where((b) => b.status == 'COMPLETED')
-          .fold(0.0, (sum, b) => sum + b.price);
-
-      print('✅ USER: Statistics loaded');
-      print('   Total bookings: ${totalBookings.value}');
-      print('   Completed: ${completedBookings.value}');
-      print('   Total spent: ₹${totalSpent.value}');
-    } catch (e) {
-      print('❌ USER: Error loading statistics: $e');
+    // Statistics are loaded with profile, so just refresh bookings
+    if (Get.isRegistered<BookingController>()) {
+      await Get.find<BookingController>().fetchUserBookings();
     }
   }
 
@@ -137,14 +161,19 @@ class UserController extends GetxController {
   // REFRESH USER DATA
   // ========================
   Future<void> refreshUserData() async {
-    print('🔄 USER: Refreshing user data...');
-    loadUserData();
-    await loadUserStatistics();
-    print('✅ USER: User data refreshed');
+    print('🔄 USER: Refreshing customer profile...');
+    await loadCustomerProfile();
+    
+    // Also refresh bookings for statistics
+    if (Get.isRegistered<BookingController>()) {
+      await Get.find<BookingController>().fetchUserBookings();
+    }
+    
+    print('✅ USER: Profile refreshed');
   }
 
   // ========================
-  // UPDATE PROFILE
+  // UPDATE CUSTOMER PROFILE
   // ========================
   Future<bool> updateProfile({
     String? name,
@@ -156,95 +185,145 @@ class UserController extends GetxController {
     String? dateOfBirth,
   }) async {
     try {
+      isUpdating.value = true;
+      
       final firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) {
-        print('❌ USER: updateProfile - No Firebase user found');
-        Get.snackbar(
-          'Error',
-          'Please log in again to update your profile',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        print('❌ USER: No Firebase user found');
+        Get.snackbar('Error', 'Please log in again');
         return false;
       }
 
-      // Refresh token to ensure session is valid
-      await firebaseUser.getIdToken(true);
+      final idToken = await firebaseUser.getIdToken();
 
-      final prefs = await SharedPreferences.getInstance();
-      final uid = firebaseUser.uid;
+      print('📤 USER: Updating customer profile...');
 
-      print('📝 USER: Updating profile for UID: $uid');
-
-      // Update local state and save to SharedPreferences
-      if (name != null) {
-        userName.value = name;
-        await prefs.setString('${uid}_name', name);
-        print('   ✅ Name updated: $name');
+      // Build update payload - only include changed fields
+      final Map<String, dynamic> updateData = {};
+      
+      if (name != null && name.trim().isNotEmpty) {
+        updateData['full_name'] = name.trim();
       }
-      if (phone != null) {
-        userPhone.value = phone;
-        await prefs.setString('${uid}_phone', phone);
-        print('   ✅ Phone updated: $phone');
+      
+      if (phone != null && phone.trim().isNotEmpty) {
+        updateData['phone'] = phone.trim();
       }
+      
       if (address != null) {
-        userAddress.value = address;
-        await prefs.setString('${uid}_address', address);
-        print('   ✅ Address updated: $address');
+        updateData['address'] = address.trim();
       }
+      
       if (city != null) {
-        userCity.value = city;
-        await prefs.setString('${uid}_city', city);
-        print('   ✅ City updated: $city');
+        updateData['city'] = city.trim();
       }
+      
       if (pincode != null) {
-        userPincode.value = pincode;
-        await prefs.setString('${uid}_pincode', pincode);
-        print('   ✅ Pincode updated: $pincode');
+        updateData['pincode'] = pincode.trim();
       }
+      
       if (gender != null) {
-        userGender.value = gender;
-        await prefs.setString('${uid}_gender', gender);
-        print('   ✅ Gender updated: $gender');
+        updateData['gender'] = gender;
       }
-      if (dateOfBirth != null) {
-        userDateOfBirth.value = dateOfBirth;
-        await prefs.setString('${uid}_dob', dateOfBirth);
-        print('   ✅ DOB updated: $dateOfBirth');
+      
+      if (dateOfBirth != null && dateOfBirth.isNotEmpty) {
+        // Extract date only (YYYY-MM-DD) from ISO string or datetime
+        final datePart = dateOfBirth.split('T')[0];
+        updateData['date_of_birth'] = datePart;
       }
 
-      print('✅ USER: Profile updated successfully');
+      if (updateData.isEmpty) {
+        print('⚠️ USER: No changes to update');
+        Get.snackbar('Info', 'No changes to save');
+        return false;
+      }
 
-      Get.snackbar(
-        'Success',
-        'Profile updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      print('📝 Update data: $updateData');
 
-      return true;
+      final response = await http.patch(
+        Uri.parse('${ApiConfig.baseUrl}/customers/me/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: jsonEncode(updateData),
+      ).timeout(const Duration(seconds: 15));
+
+      print('📊 Update response: ${response.statusCode}');
+      print('📦 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        customerProfile.value = CustomerModel.fromJson(data);
+        
+        // Sync Rx vars
+        _syncRxVarsFromProfile();
+        
+        print('✅ USER: Profile updated successfully');
+        
+        Get.snackbar(
+          'Success',
+          'Profile updated successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+        
+        return true;
+      } else {
+        final errorBody = response.body;
+        print('❌ USER: Update failed: ${response.statusCode}');
+        print('   Response: $errorBody');
+        
+        // Try to parse error message
+        String errorMessage = 'Failed to update profile';
+        try {
+          final errorData = jsonDecode(errorBody);
+          if (errorData is Map && errorData.containsKey('message')) {
+            errorMessage = errorData['message'];
+          } else if (errorData is Map) {
+            // Show first validation error
+            final firstError = errorData.values.first;
+            if (firstError is List && firstError.isNotEmpty) {
+              errorMessage = firstError.first.toString();
+            }
+          }
+        } catch (_) {}
+        
+        Get.snackbar(
+          'Error',
+          errorMessage,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
+        
+        return false;
+      }
     } catch (e) {
-      print('❌ USER: Update profile error: $e');
+      print('❌ USER: Update error: $e');
+      
       Get.snackbar(
         'Error',
-        'Failed to update profile: ${e.toString()}',
+        'Network error. Please check your connection.',
         snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
       );
+      
       return false;
+    } finally {
+      isUpdating.value = false;
     }
   }
 
   // ========================
   // LOGOUT
   // ========================
-  // Delegates to centralized AuthController.logout() which handles all cleanup
   Future<void> logout() async {
     try {
-      print('👋 USER: Logout requested, delegating to AuthController...');
+      print('👋 USER: Logout requested');
       
       if (Get.isRegistered<AuthController>()) {
         final authController = Get.find<AuthController>();
         await authController.logout();
       } else {
-        // Fallback: clear own data and navigate
         clearUserData();
         Get.offAllNamed('/login');
       }
@@ -255,9 +334,10 @@ class UserController extends GetxController {
   }
 
   // ========================
-  // CLEAR DATA (for logout without navigation)
+  // CLEAR DATA
   // ========================
   void clearUserData() {
+    customerProfile.value = null;
     userName.value = '';
     userEmail.value = '';
     userPhone.value = '';
@@ -269,6 +349,7 @@ class UserController extends GetxController {
     totalBookings.value = 0;
     completedBookings.value = 0;
     totalSpent.value = 0.0;
+    loyaltyTier.value = 'NEW';
     isDataLoaded.value = false;
     print('🧹 USER: User data cleared');
   }

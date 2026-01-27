@@ -49,6 +49,24 @@ class _UserAppointmentsScreenState extends State<UserAppointmentsScreen>
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          Obx(() => IconButton(
+            icon: bookingController.isLoading.value
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.refresh, color: Colors.white),
+            onPressed: bookingController.isLoading.value
+                ? null
+                : () => bookingController.fetchUserBookings(),
+            tooltip: 'Refresh',
+          )),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,

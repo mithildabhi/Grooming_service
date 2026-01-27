@@ -23,9 +23,6 @@ class AuthController extends GetxController {
 
   User? get user => FirebaseAuth.instance.currentUser;
 
-
-  // ✅ REMOVED onInit() - NO AUTO-INITIALIZATION!
-
   // ---------------- LOGIN ----------------
   Future<void> login(String email, String password) async {
     print("🟡 LOGIN STARTED");
@@ -107,9 +104,17 @@ class AuthController extends GetxController {
   }
 
   // ---------------- REGISTER ----------------
-  Future<void> register(String email, String password, String role) async {
+  Future<void> register(
+    String email,
+    String password,
+    String role, {
+    String? name,
+    String? phone,
+    String? gender,  // ✅ ADD GENDER PARAMETER
+  }) async {
     try {
       print('📝 Registering user: $email, Role: $role');
+      print('📝 Name: $name, Phone: $phone, Gender: $gender');
 
       UserCredential credential;
       try {
@@ -134,6 +139,27 @@ class AuthController extends GetxController {
       final token = await credential.user?.getIdToken();
 
       if (token != null) {
+        // ✅ BUILD REQUEST BODY WITH NAME, PHONE AND GENDER
+        final requestBody = {
+          'email': email,
+          'password': password,
+          'role': role,
+          'firebase_uid': credential.user?.uid,
+        };
+
+        // ✅ ADD NAME, PHONE AND GENDER IF PROVIDED
+        if (name != null && name.trim().isNotEmpty) {
+          requestBody['full_name'] = name.trim();
+        }
+        if (phone != null && phone.trim().isNotEmpty) {
+          requestBody['phone'] = phone.trim();
+        }
+        if (gender != null && gender.trim().isNotEmpty) {
+          requestBody['gender'] = gender.trim();
+        }
+
+        print('📤 Sending to Django: $requestBody');
+
         final response = await http
             .post(
               Uri.parse('${ApiConfig.baseUrl}/auth/register/'),
@@ -141,12 +167,7 @@ class AuthController extends GetxController {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer $token',
               },
-              body: jsonEncode({
-                'email': email,
-                'password': password,
-                'role': role,
-                'firebase_uid': credential.user?.uid,
-              }),
+              body: jsonEncode(requestBody),
             )
             .timeout(const Duration(seconds: 30));
 
@@ -160,8 +181,16 @@ class AuthController extends GetxController {
 
           isLoggedIn.value = true;
 
-          // Load user data into UserController after successful registration
+          // ✅ IMMEDIATELY LOAD USER DATA after registration
+          // This ensures the profile data is available right away
           await _loadUserControllerData();
+          
+          // ✅ FORCE REFRESH to sync the registered data
+          if (Get.isRegistered<UserController>()) {
+            final userController = Get.find<UserController>();
+            await userController.refreshUserData();
+            print('✅ User profile data synced after registration');
+          }
 
           print('🎯 Registration complete, redirecting as: ${this.role.value}');
 
@@ -190,6 +219,7 @@ class AuthController extends GetxController {
     }
   }
 
+  // ✅ SAVE ROLE METHOD (RESTORED)
   Future<void> saveRole(String userRole) async {
     try {
       await _authService.saveRole(userRole);
@@ -294,7 +324,7 @@ class AuthController extends GetxController {
     try {
       if (Get.isRegistered<UserController>()) {
         final userController = Get.find<UserController>();
-        userController.loadUserData();
+        await userController.loadUserData();
         await userController.loadUserStatistics();
         print('✅ AUTH: UserController data loaded');
       }
@@ -315,7 +345,7 @@ class AuthController extends GetxController {
       adminCtrl.activeSalonId.value = '1';
 
       // ✅ Use the correct route
-      Get.offAllNamed('/admin'); // or AdminRoutes.adminDashboard
+      Get.offAllNamed('/admin');
     } else {
       print('➡️ AUTH: Going to User Home');
       Get.offAllNamed(AppRoutes.userHome);

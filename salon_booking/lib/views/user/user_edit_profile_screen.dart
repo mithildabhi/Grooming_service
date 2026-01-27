@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../../controllers/user_controller.dart';
@@ -27,24 +26,58 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   final TextEditingController pincodeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   
-  String selectedGender = 'Not specified';
+  String selectedGender = 'NOT_SPECIFIED';
   DateTime? selectedDateOfBirth;
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentData();
+  }
+
+  void _loadCurrentData() {
+    // Load current customer profile data
     nameController.text = userController.userName.value;
     phoneController.text = userController.userPhone.value;
     addressController.text = userController.userAddress.value;
     cityController.text = userController.userCity.value;
     pincodeController.text = userController.userPincode.value;
-    selectedGender = userController.userGender.value.isNotEmpty 
-        ? userController.userGender.value 
-        : 'Not specified';
+    
+    // Map backend gender values to display values
+    selectedGender = _mapGenderFromBackend(userController.userGender.value);
+    
     if (userController.userDateOfBirth.value.isNotEmpty) {
       try {
         selectedDateOfBirth = DateTime.parse(userController.userDateOfBirth.value);
       } catch (_) {}
+    }
+  }
+
+  String _mapGenderFromBackend(String backendGender) {
+    switch (backendGender.toUpperCase()) {
+      case 'MALE':
+        return 'Male';
+      case 'FEMALE':
+        return 'Female';
+      case 'OTHER':
+        return 'Other';
+      case 'NOT_SPECIFIED':
+      default:
+        return 'Not specified';
+    }
+  }
+
+  String _mapGenderToBackend(String displayGender) {
+    switch (displayGender) {
+      case 'Male':
+        return 'MALE';
+      case 'Female':
+        return 'FEMALE';
+      case 'Other':
+        return 'OTHER';
+      case 'Not specified':
+      default:
+        return 'NOT_SPECIFIED';
     }
   }
 
@@ -83,14 +116,44 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     }
   }
 
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Show loading
+    print('📤 Saving profile changes...');
+
+    final success = await userController.updateProfile(
+      name: nameController.text.trim(),
+      phone: phoneController.text.trim(),
+      address: addressController.text.trim(),
+      city: cityController.text.trim(),
+      pincode: pincodeController.text.trim(),
+      gender: _mapGenderToBackend(selectedGender),
+      dateOfBirth: selectedDateOfBirth?.toIso8601String() ?? '',
+    );
+
+    if (success) {
+      print('✅ Profile saved successfully, going back to profile screen');
+      
+      // ✅ Wait a moment for the UI to update
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Go back to profile screen - the profile will auto-refresh
+      Get.back();
+    } else {
+      print('❌ Profile save failed');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+        title: const Text('Edit Profile', 
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -105,7 +168,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// ───────────── PROFILE PICTURE ─────────────
+                    /// PROFILE PICTURE
                     Center(
                       child: Stack(
                         children: [
@@ -148,7 +211,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
 
                     const SizedBox(height: AppSpacing.lg),
 
-                    /// ───────────── PERSONAL INFO ─────────────
+                    /// PERSONAL INFO
                     Text(
                       'Personal Information',
                       style: AppTextStyles.subHeading.copyWith(
@@ -177,7 +240,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                           
                           TextFormField(
                             enabled: false,
-                            initialValue: user?.email ?? '',
+                            initialValue: userController.userEmail.value,
                             decoration: _inputDecoration(
                               label: 'Email',
                               icon: Icons.email,
@@ -283,7 +346,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
 
                     const SizedBox(height: AppSpacing.lg),
 
-                    /// ───────────── ADDRESS INFO ─────────────
+                    /// ADDRESS INFO
                     Text(
                       'Address Details',
                       style: AppTextStyles.subHeading.copyWith(
@@ -341,32 +404,18 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
               ),
             ),
 
-            /// ───────────── SAVE BUTTON ─────────────
+            /// SAVE BUTTON
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColors.background,
                 border: Border(top: BorderSide(color: AppColors.divider)),
               ),
-              child: PrimaryButton(
-                label: 'Save Changes',
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final success = await userController.updateProfile(
-                      name: nameController.text.trim(),
-                      phone: phoneController.text.trim(),
-                      address: addressController.text.trim(),
-                      city: cityController.text.trim(),
-                      pincode: pincodeController.text.trim(),
-                      gender: selectedGender,
-                      dateOfBirth: selectedDateOfBirth?.toIso8601String() ?? '',
-                    );
-                    if (success) {
-                      Get.back();
-                    }
-                  }
-                },
-              ),
+              child: Obx(() => PrimaryButton(
+                label: userController.isUpdating.value ? 'Saving...' : 'Save Changes',
+                enabled: !userController.isUpdating.value,
+                onPressed: _handleSave,
+              )),
             ),
           ],
         ),

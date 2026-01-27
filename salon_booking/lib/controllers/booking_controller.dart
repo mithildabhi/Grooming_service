@@ -163,21 +163,36 @@ class BookingController extends GetxController {
       bookings.where((b) => b.status == 'CANCELLED').length;
   int get pendingCount => bookings.where((b) => b.status == 'PENDING').length;
 
- @override
+@override
 void onInit() {
   super.onInit();
 
+  // ✅ ONLY load bookings if already logged in
   final auth = Get.find<AuthController>();
+  
+  // ✅ Check CURRENT login state first
+  if (auth.isLoggedIn.value == true) {
+    print('✅ BOOKING: User already logged in, loading bookings');
+    fetchBookings();
+    fetchUserBookings();
+    _startAutoRefresh();
+  }
 
+  // ✅ Watch for future login events
   ever(auth.isLoggedIn, (loggedIn) {
+    print('👀 BOOKING: Login state changed to $loggedIn');
     if (loggedIn == true) {
       fetchBookings();
       fetchUserBookings();
       _startAutoRefresh();
+    } else {
+      // ✅ Clear bookings on logout
+      bookings.clear();
+      userBookings.clear();
+      _autoRefreshTimer?.cancel();
     }
   });
 }
-
 
   @override
   void onClose() {

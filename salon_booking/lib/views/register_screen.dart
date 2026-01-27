@@ -16,6 +16,9 @@ class RegisterScreen extends StatelessWidget {
 
     // ✅ ROLE STATE (DEFAULT = USER)
     final RxString selectedRole = 'user'.obs;
+    
+    // ✅ GENDER STATE
+    final RxString selectedGender = 'NOT_SPECIFIED'.obs;
 
     return Scaffold(
       appBar: AppBar(
@@ -73,21 +76,47 @@ class RegisterScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _input(phone, "Phone Number", Icons.phone),
             const SizedBox(height: 16),
+            
+            // ✅ GENDER SELECTION
+            Obx(() => _genderDropdown(selectedGender)),
+            const SizedBox(height: 16),
+            
             _input(password, "Password", Icons.lock, obscure: true),
 
             const SizedBox(height: 28),
             _primaryButton(
               text: "Register →",
               onTap: () {
-                if (email.text.isEmpty || password.text.isEmpty) {
-                  Get.snackbar("Error", "All fields required");
+                // ✅ VALIDATE ALL FIELDS
+                if (name.text.trim().isEmpty) {
+                  Get.snackbar("Error", "Please enter your name");
+                  return;
+                }
+                if (email.text.trim().isEmpty) {
+                  Get.snackbar("Error", "Please enter your email");
+                  return;
+                }
+                if (phone.text.trim().isEmpty) {
+                  Get.snackbar("Error", "Please enter your phone number");
+                  return;
+                }
+                if (password.text.trim().isEmpty) {
+                  Get.snackbar("Error", "Please enter a password");
+                  return;
+                }
+                if (phone.text.trim().length < 10) {
+                  Get.snackbar("Error", "Please enter a valid phone number");
                   return;
                 }
 
+                // ✅ PASS ALL DATA INCLUDING NAME, PHONE AND GENDER
                 auth.register(
                   email.text.trim(),
                   password.text.trim(),
-                  selectedRole.value, // ✅ ROLE PASSED
+                  selectedRole.value,
+                  name: name.text.trim(),
+                  phone: phone.text.trim(),
+                  gender: selectedGender.value,  // ← Add gender
                 );
               },
             ),
@@ -130,6 +159,48 @@ class RegisterScreen extends StatelessWidget {
               color: isSelected ? Colors.black : Colors.black54,
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ GENDER DROPDOWN WIDGET
+  static Widget _genderDropdown(RxString selectedGender) {
+    final Map<String, String> genderOptions = {
+      'NOT_SPECIFIED': 'Not specified',
+      'MALE': 'Male',
+      'FEMALE': 'Female',
+      'OTHER': 'Other',
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: selectedGender.value,
+          icon: const Icon(Icons.arrow_drop_down),
+          items: genderOptions.entries.map((entry) {
+            return DropdownMenuItem<String>(
+              value: entry.key,
+              child: Row(
+                children: [
+                  const Icon(Icons.person_outline, size: 20),
+                  const SizedBox(width: 12),
+                  Text(entry.value),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              selectedGender.value = newValue;
+            }
+          },
         ),
       ),
     );
