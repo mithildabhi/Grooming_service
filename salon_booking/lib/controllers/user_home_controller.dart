@@ -1,3 +1,5 @@
+// lib/controllers/user_home_controller.dart - UPDATED WITH LOCATION
+
 // ignore_for_file: avoid_print
 
 import 'package:get/get.dart';
@@ -6,59 +8,216 @@ import 'dart:convert';
 import '../config/api_config.dart';
 import '../models/salon_model.dart';
 import '../models/service_model.dart';
+import 'user_controller.dart';
+import 'location_controller.dart';
 
 class UserHomeController extends GetxController {
+  // ========================
+  // STATE MANAGEMENT
+  // ========================
   final RxBool isLoading = true.obs;
-  final RxList<SalonModel> nearbySalons = <SalonModel>[].obs;
-  final RxList<SalonModel> allSalons = <SalonModel>[].obs;
+  final RxBool isLoadingCities = false.obs;
+  final RxBool isLoadingServices = false.obs;
   
-  // Selected salon for details page
+  final RxList<SalonModel> allSalons = <SalonModel>[].obs;
+  final RxList<SalonModel> nearbySalons = <SalonModel>[].obs;
+  
   final Rxn<SalonModel> selectedSalon = Rxn<SalonModel>();
   final RxList<ServiceModel> salonServices = <ServiceModel>[].obs;
-  final RxBool isLoadingServices = false.obs;
+  
+  // ✅ City filtering
+  final RxString selectedCity = 'All Cities'.obs;
+  final RxList<String> availableCities = <String>[].obs;
+  
+  // ✅ Location-based filtering
+  final RxBool useGpsLocation = false.obs;
+  final RxDouble searchRadius = 10.0.obs; // km
+  
+  // ✅ Error handling
+  final RxString errorMessage = ''.obs;
+  final RxBool hasError = false.obs;
 
-  // Getter for salons (returns all salons)
+  // ========================
+  // GETTERS
+  // ========================
   List<SalonModel> get salons => allSalons.toList();
+  
+  bool get hasCityFilter => selectedCity.value != 'All Cities';
+  
+  String get cityDisplayText {
+    if (useGpsLocation.value) {
+      final locationCtrl = Get.find<LocationController>();
+      if (locationCtrl.hasLocation) {
+        return 'Near ${locationCtrl.currentCity.value}';
+      }
+      return 'Near You';
+    }
+    
+    if (selectedCity.value == 'All Cities') {
+      return 'All Cities';
+    }
+    return selectedCity.value;
+  }
 
+  // ========================
+  // INITIALIZATION
+  // ========================
   @override
   void onInit() {
     super.onInit();
-    fetchSalons();
+    _initializeApp();
   }
 
-  /// Fetch all salons from Django backend
-  Future<void> fetchSalons() async {
+  /// ✅ OPTIMIZED: Single initialization flow
+  Future<void> _initializeApp() async {
     try {
-      isLoading.value = true;
-      print('📥 Fetching salons from backend...');
+      print('🚀 HOME: Initializing app...');
+      
+      // Initialize location controller if not already registered
+      if (!Get.isRegistered<LocationController>()) {
+        Get.put(LocationController());
+      }
+      
+      // Run in parallel for faster loading
+      await Future.wait([
+        _loadUserCity(),
+        fetchAvailableCities(),
+      ]);
+      
+      // Then fetch salons
+      await fetchSalons();
+      
+      print('✅ HOME: App initialized successfully');
+    } catch (e) {
+      print('❌ HOME: Initialization error: $e');
+      errorMessage.value = 'Failed to initialize';
+      hasError.value = true;
+    }
+  }
 
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/salons/'),
-      ).timeout(const Duration(seconds: 10));
-
-      print('📊 Response status: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        
-        print('✅ Found ${data.length} salons');
-        
-        // Convert to SalonModel
-        final salons = data.map((json) => SalonModel.fromJson(json)).toList();
-        
-        allSalons.value = salons;
-        nearbySalons.value = salons; // For now, show all as nearby
-        
-        print('✅ Loaded ${salons.length} salons successfully');
+  /// ✅ OPTIMIZED: Load user's city from profile
+  Future<void> _loadUserCity() async {
+    try {
+      if (!Get.isRegistered<UserController>()) {
+        print('⚠️ HOME: UserController not registered');
+        selectedCity.value = 'All Cities';
+        return;
+      }
+      
+      final userController = Get.find<UserController>();
+      
+      // Wait for user data with timeout
+      int attempts = 0;
+      while (!userController.isDataLoaded.value && attempts < 10) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        attempts++;
+      }
+      
+      if (userController.userCity.value.isNotEmpty) {
+        selectedCity.value = userController.userCity.value;
+        print('🌍 HOME: User city loaded: ${selectedCity.value}');
       } else {
-        print('❌ Failed to fetch salons: ${response.statusCode}');
-        throw Exception('Failed to load salons');
+        selectedCity.value = 'All Cities';
+        print('🔍 HOME: No city in profile, showing all');
       }
     } catch (e) {
-      print('❌ Error fetching salons: $e');
+      print('❌ HOME: Error loading user city: $e');
+      selectedCity.value = 'All Cities';
+    }
+  }
+
+  // ========================
+  // LOCATION-BASED FETCHING
+  // ========================
+  
+  /// ✅ NEW: Toggle GPS location filtering
+  Future<void> toggleGpsLocation() async {
+    if (useGpsLocation.value) {
+      // Disable GPS filtering
+      useGpsLocation.value = false;
+      await fetchSalons();
+    } else {
+      // Enable GPS filtering
+      final locationCtrl = Get.find<LocationController>();
+      
+      // Get current location if not already available
+      if (!locationCtrl.hasLocation) {
+        final success = await locationCtrl.getCurrentLocation();
+        if (!success) {
+          Get.snackbar(
+            'Location Required',
+            'Please enable location to find nearby salons',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return;
+        }
+      }
+      
+      useGpsLocation.value = true;
+      await fetchSalons();
+    }
+  }
+  
+  /// ✅ NEW: Fetch nearby salons using GPS
+  Future<void> fetchNearbySalons({double? radius}) async {
+    try {
+      final locationCtrl = Get.find<LocationController>();
+      
+      if (!locationCtrl.hasLocation) {
+        Get.snackbar(
+          'Location Required',
+          'Please enable location services',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+      
+      isLoading.value = true;
+      
+      final lat = locationCtrl.latitude!;
+      final lon = locationCtrl.longitude!;
+      final searchRadius = radius ?? this.searchRadius.value;
+      
+      print('📍 HOME: Fetching salons within ${searchRadius}km of $lat, $lon');
+      
+      final response = await http.get(
+        Uri.parse(
+          '${ApiConfig.baseUrl}/salons/nearby/?lat=$lat&lon=$lon&radius=$searchRadius'
+        ),
+      ).timeout(const Duration(seconds: 15));
+      
+      print('📊 HOME: Nearby salons response: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        List<dynamic> salonsData = data['results'] ?? [];
+        
+        final salons = <SalonModel>[];
+        for (var json in salonsData) {
+          try {
+            final salon = SalonModel.fromJson(json as Map<String, dynamic>);
+            salons.add(salon);
+          } catch (e) {
+            print('⚠️ HOME: Error parsing salon: $e');
+          }
+        }
+        
+        allSalons.value = salons;
+        nearbySalons.value = salons;
+        
+        print('✅ HOME: Found ${salons.length} nearby salons');
+        
+        if (salons.isEmpty) {
+          errorMessage.value = 'No salons found within ${searchRadius}km';
+        }
+      }
+      
+    } catch (e) {
+      print('❌ HOME: Error fetching nearby salons: $e');
       Get.snackbar(
         'Error',
-        'Failed to load salons: $e',
+        'Could not load nearby salons',
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -66,60 +225,300 @@ class UserHomeController extends GetxController {
     }
   }
 
+  // ========================
+  // FETCH CITIES
+  // ========================
+  /// ✅ Fetch available cities from backend
+  Future<void> fetchAvailableCities() async {
+    try {
+      isLoadingCities.value = true;
+      print('🌍 HOME: Fetching available cities...');
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/salons/cities/'),
+      ).timeout(const Duration(seconds: 10));
+
+      print('📊 HOME: Cities response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        // ✅ SAFE: Handle both formats
+        List<dynamic> citiesList;
+        if (data is Map && data.containsKey('cities')) {
+          citiesList = data['cities'] ?? [];
+        } else if (data is List) {
+          citiesList = data;
+        } else {
+          citiesList = [];
+        }
+        
+        availableCities.value = citiesList
+            .map((c) => c.toString())
+            .where((c) => c.isNotEmpty)
+            .toList();
+        
+        // Add "All Cities" at the beginning
+        if (!availableCities.contains('All Cities')) {
+          availableCities.insert(0, 'All Cities');
+        }
+        
+        print('✅ HOME: Found ${availableCities.length} cities');
+      } else {
+        print('⚠️ HOME: Cities API returned ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ HOME: Error fetching cities: $e');
+      // Add at least "All Cities" as fallback
+      if (!availableCities.contains('All Cities')) {
+        availableCities.add('All Cities');
+      }
+    } finally {
+      isLoadingCities.value = false;
+    }
+  }
+
+  // ========================
+  // FETCH SALONS
+  // ========================
+  /// ✅ UPDATED: Proper API response parsing with location support
+  Future<void> fetchSalons({String? city}) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+      
+      // If GPS location is enabled, use nearby endpoint
+      if (useGpsLocation.value) {
+        await fetchNearbySalons();
+        return;
+      }
+      
+      final filterCity = city ?? selectedCity.value;
+      
+      // Build URL with city filter
+      String url = '${ApiConfig.baseUrl}/salons/';
+      Map<String, String> queryParams = {};
+      
+      if (filterCity.isNotEmpty && filterCity != 'All Cities') {
+        queryParams['city'] = filterCity;
+        print('🌍 HOME: Fetching salons for city: $filterCity');
+      } else {
+        print('🌍 HOME: Fetching all salons');
+      }
+      
+      // ✅ NEW: Add user location for distance calculation
+      if (Get.isRegistered<LocationController>()) {
+        final locationCtrl = Get.find<LocationController>();
+        if (locationCtrl.hasLocation) {
+          queryParams['lat'] = locationCtrl.latitude.toString();
+          queryParams['lon'] = locationCtrl.longitude.toString();
+          print('📍 HOME: Including user location for distance calculation');
+        }
+      }
+      
+      // Build final URL
+      if (queryParams.isNotEmpty) {
+        url += '?' + queryParams.entries
+            .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+            .join('&');
+      }
+      
+      final response = await http.get(
+        Uri.parse(url),
+      ).timeout(const Duration(seconds: 15));
+
+      print('📊 HOME: Salons response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        // ✅ CRITICAL FIX: Handle both response formats
+        List<dynamic> salonsData;
+        
+        if (data is Map) {
+          if (data.containsKey('results')) {
+            salonsData = data['results'] as List<dynamic>;
+          } else if (data.containsKey('data')) {
+            salonsData = data['data'] as List<dynamic>;
+          } else {
+            print('⚠️ HOME: Unexpected Map format: ${data.keys}');
+            salonsData = [];
+          }
+        } else if (data is List) {
+          salonsData = data;
+        } else {
+          print('❌ HOME: Unexpected response type: ${data.runtimeType}');
+          salonsData = [];
+        }
+        
+        print('📊 HOME: Found ${salonsData.length} salons');
+        
+        // Convert to SalonModel with error handling
+        final salons = <SalonModel>[];
+        for (var json in salonsData) {
+          try {
+            final salon = SalonModel.fromJson(json as Map<String, dynamic>);
+            salons.add(salon);
+          } catch (e) {
+            print('⚠️ HOME: Error parsing salon: $e');
+            print('   Data: $json');
+          }
+        }
+        
+        allSalons.value = salons;
+        nearbySalons.value = salons;
+        
+        print('✅ HOME: Successfully loaded ${salons.length} salons');
+        
+        if (salons.isEmpty) {
+          errorMessage.value = filterCity == 'All Cities'
+              ? 'No salons available yet'
+              : 'No salons found in $filterCity';
+        }
+        
+      } else {
+        print('❌ HOME: Failed to fetch salons: ${response.statusCode}');
+        print('   Body: ${response.body}');
+        throw Exception('Server returned ${response.statusCode}');
+      }
+      
+    } catch (e, stackTrace) {
+      print('❌ HOME: Error fetching salons: $e');
+      print('   Stack: $stackTrace');
+      
+      hasError.value = true;
+      errorMessage.value = 'Failed to load salons';
+      
+      Get.snackbar(
+        'Error',
+        'Failed to load salons',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ========================
+  // CHANGE CITY
+  // ========================
+  /// ✅ Change city and reload salons
+  Future<void> changeCity(String city) async {
+    if (city == selectedCity.value) return;
+    
+    // Disable GPS if switching to city filter
+    useGpsLocation.value = false;
+    
+    selectedCity.value = city;
+    print('🌍 HOME: City changed to: $city');
+    
+    // Reload salons for new city
+    await fetchSalons(city: city);
+    
+    // Show feedback
+    Get.snackbar(
+      'Location Changed',
+      city == 'All Cities' 
+        ? 'Showing salons from all cities'
+        : 'Showing salons in $city',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  // ========================
+  // FETCH SERVICES
+  // ========================
   /// Fetch services for a specific salon
   Future<void> fetchSalonServices(String salonId) async {
     try {
       isLoadingServices.value = true;
-      print('📥 Fetching services for salon: $salonId');
+      print('🔥 HOME: Fetching services for salon: $salonId');
 
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/services/?salon=$salonId'),
       ).timeout(const Duration(seconds: 10));
 
-      print('📊 Services response: ${response.statusCode}');
+      print('📊 HOME: Services response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final data = jsonDecode(response.body);
         
-        print('✅ Found ${data.length} services');
+        // Handle both formats
+        List<dynamic> servicesData;
+        if (data is Map && data.containsKey('results')) {
+          servicesData = data['results'];
+        } else if (data is List) {
+          servicesData = data;
+        } else {
+          servicesData = [];
+        }
         
-        salonServices.value = data
+        salonServices.value = servicesData
             .map((json) => ServiceModel.fromJson(json))
             .toList();
         
-        print('✅ Loaded ${salonServices.length} services');
+        print('✅ HOME: Loaded ${salonServices.length} services');
       } else {
-        print('⚠️ No services found for this salon');
+        print('⚠️ HOME: No services found');
         salonServices.clear();
       }
     } catch (e) {
-      print('❌ Error fetching services: $e');
+      print('❌ HOME: Error fetching services: $e');
       salonServices.clear();
     } finally {
       isLoadingServices.value = false;
     }
   }
 
+  // ========================
+  // NAVIGATION
+  // ========================
   /// Select a salon and navigate to details
   void selectSalon(SalonModel salon) {
     selectedSalon.value = salon;
     fetchSalonServices(salon.id);
-    Get.toNamed('/user/salon-details', arguments: salon);
+    Get.toNamed('/salon-details', arguments: salon);
   }
 
-  /// Calculate distance (mock for now)
-  String getDistance(SalonModel salon) {
-    // TODO: Implement real distance calculation using user location
-    return '${(1.0 + (salon.id.hashCode % 50) / 10).toStringAsFixed(1)} km';
+  // ========================
+  // UTILITIES
+  // ========================
+  /// Calculate distance from user's current location
+  String getDistanceText(SalonModel salon) {
+    if (salon.distance > 0) {
+      return '${salon.distance.toStringAsFixed(1)} km';
+    }
+    
+    // Calculate from current location if available
+    if (Get.isRegistered<LocationController>()) {
+      final locationCtrl = Get.find<LocationController>();
+      if (locationCtrl.hasLocation && 
+          salon.city.isNotEmpty) {
+        // Distance will be calculated by backend
+        return '--';
+      }
+    }
+    
+    return '--';
   }
 
   /// Check if salon is currently open
   bool isSalonOpen(SalonModel salon) {
-    // TODO: Implement real time-based logic
     return salon.isOpen;
   }
 
-  /// Refresh salons
+  /// Refresh all data
+  Future<void> refreshAll() async {
+    await Future.wait([
+      fetchSalons(),
+      fetchAvailableCities(),
+    ]);
+  }
+
+  /// Refresh salons only
   Future<void> refreshSalons() async {
     await fetchSalons();
   }

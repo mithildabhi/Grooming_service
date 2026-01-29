@@ -1,3 +1,6 @@
+// lib/services/admin_profile_service.dart
+// ✅ UPDATED: Complete location fields support
+
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
@@ -6,7 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../config/api_config.dart';
 
 class AdminProfileService {
-static String get baseUrl => ApiConfig.baseUrl;
+  static String get baseUrl => ApiConfig.baseUrl;
 
   /// Get Firebase token and headers
   static Future<Map<String, String>> _getHeaders() async {
@@ -51,11 +54,16 @@ static String get baseUrl => ApiConfig.baseUrl;
   }
 
   /// Save admin profile (create or update salon)
-  /// This endpoint handles BOTH create and update automatically
+  /// ✅ UPDATED: Includes city, state, pincode, latitude, longitude
   static Future<Map<String, dynamic>> saveProfile({
     required String salonName,
     required String phone,
-    required String location,
+    required String address,        // Street address
+    String? city,                   // ✅ NEW
+    String? state,                  // ✅ NEW
+    String? pincode,                // ✅ NEW
+    double? latitude,               // ✅ NEW
+    double? longitude,              // ✅ NEW
     String? about,
     String? imageUrl,
     String salonType = 'unisex',
@@ -64,13 +72,11 @@ static String get baseUrl => ApiConfig.baseUrl;
     try {
       final headers = await _getHeaders();
       
-      // Prepare data matching Django model
-      // DO NOT send 'owner' field - it's set automatically by backend
-      // DO NOT send 'email' field - Salon model doesn't have it
-      final body = jsonEncode({
+      // ✅ UPDATED: Build request body with all location fields
+      final bodyMap = {
         'name': salonName,
         'salon_type': salonType,
-        'address': location,
+        'address': address,           // Street address
         'phone': phone,
         'about': about ?? '',
         'image_url': imageUrl ?? '',
@@ -83,7 +89,26 @@ static String get baseUrl => ApiConfig.baseUrl;
           'Sat': '09:00-19:00',
           'Sun': 'Closed',
         },
-      });
+      };
+
+      // ✅ NEW: Add location fields if provided
+      if (city != null && city.isNotEmpty) {
+        bodyMap['city'] = city;
+      }
+      if (state != null && state.isNotEmpty) {
+        bodyMap['state'] = state;
+      }
+      if (pincode != null && pincode.isNotEmpty) {
+        bodyMap['pincode'] = pincode;
+      }
+      if (latitude != null) {
+        bodyMap['latitude'] = latitude;
+      }
+      if (longitude != null) {
+        bodyMap['longitude'] = longitude;
+      }
+
+      final body = jsonEncode(bodyMap);
 
       print('📤 POST: $baseUrl/salons/create/');
       print('📦 Body: $body');
@@ -112,11 +137,17 @@ static String get baseUrl => ApiConfig.baseUrl;
     }
   }
 
-  /// Update existing profile (alternative method if you prefer separate update)
+  /// Update existing profile
+  /// ✅ UPDATED: Includes all location fields
   static Future<Map<String, dynamic>> updateProfile({
     required String salonName,
     required String phone,
-    required String location,
+    required String address,
+    String? city,                   // ✅ NEW
+    String? state,                  // ✅ NEW
+    String? pincode,                // ✅ NEW
+    double? latitude,               // ✅ NEW
+    double? longitude,              // ✅ NEW
     String? about,
     String? imageUrl,
     String? salonType,
@@ -127,7 +158,7 @@ static String get baseUrl => ApiConfig.baseUrl;
       
       final bodyMap = <String, dynamic>{
         'name': salonName,
-        'address': location,
+        'address': address,
         'phone': phone,
       };
 
@@ -136,6 +167,13 @@ static String get baseUrl => ApiConfig.baseUrl;
       if (imageUrl != null && imageUrl.isNotEmpty) bodyMap['image_url'] = imageUrl;
       if (salonType != null) bodyMap['salon_type'] = salonType;
       if (hours != null) bodyMap['hours'] = hours;
+      
+      // ✅ NEW: Add location fields
+      if (city != null && city.isNotEmpty) bodyMap['city'] = city;
+      if (state != null && state.isNotEmpty) bodyMap['state'] = state;
+      if (pincode != null && pincode.isNotEmpty) bodyMap['pincode'] = pincode;
+      if (latitude != null) bodyMap['latitude'] = latitude;
+      if (longitude != null) bodyMap['longitude'] = longitude;
 
       final body = jsonEncode(bodyMap);
 

@@ -15,6 +15,7 @@ import '../../widgets/ui/ai_badge.dart';
 import '../../widgets/ui/primary_button.dart';
 import '../../widgets/ui/chip_pill.dart';
 import '../../widgets/ui/section_header.dart';
+import '../../widgets/city_selector_widget.dart';
 
 class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({super.key});
@@ -28,7 +29,7 @@ class UserHomeScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => controller.refreshSalons(),
+          onRefresh: () => controller.refreshAll(),
           color: AppColors.primary,
           child: Obx(() {
             if (controller.isLoading.value) {
@@ -43,7 +44,12 @@ class UserHomeScreen extends StatelessWidget {
                 const _Header(),
                 const SizedBox(height: AppSpacing.lg),
                 const _SearchBar(),
+                const SizedBox(height: AppSpacing.md),
+                
+                // ✅ City Selector
+                const CitySelectorWidget(),
                 const SizedBox(height: AppSpacing.lg),
+                
                 Obx(() {
                   final up = bookingController.upcomingBookings;
                   if (up.isNotEmpty) {
@@ -63,12 +69,22 @@ class UserHomeScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 const _CategoryRow(),
                 const SizedBox(height: AppSpacing.lg),
-                const SectionHeader(title: 'Nearby Salons'),
+                
+                // ✅ Show city in header
+                Obx(() => SectionHeader(
+                  title: controller.hasCityFilter
+                      ? 'Salons in ${controller.selectedCity.value}'
+                      : 'Nearby Salons',
+                )),
                 const SizedBox(height: AppSpacing.sm),
+                
                 Obx(() {
                   final list = controller.nearbySalons;
                   if (list.isEmpty) {
-                    return const _NearbyEmptyState();
+                    return _NearbyEmptyState(
+                      city: controller.selectedCity.value,
+                      onChangeCity: () => controller.changeCity('All Cities'),
+                    );
                   }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,11 +181,7 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       onTap: () {
-        // Navigate to Explore screen (index 1) with search focus
-        final shell = context.findAncestorStateOfType<State>();
-        if (shell != null && shell.mounted) {
-          Get.toNamed('/user', arguments: {'tab': 1});
-        }
+        Get.toNamed('/user', arguments: {'tab': 1});
       },
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -235,24 +247,24 @@ class _AiPickCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '₹899',
-                    style: AppTextStyles.heading.copyWith(
+                    '₹299',
+                    style: AppTextStyles.subHeading.copyWith(
                       color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    'Special Price',
-                    style: AppTextStyles.caption,
-                  ),
+                  const SizedBox(height: 2),
+                  Text('45 min', style: AppTextStyles.caption),
                 ],
               ),
               const Spacer(),
-              SizedBox(
-                width: 120,
-                child: PrimaryButton(
-                  label: 'View Deal',
-                  onPressed: () {},
-                ),
+              // ✅ FIXED: Add onPressed parameter
+              PrimaryButton(
+                label: 'Book Now',
+                onPressed: () {
+                  // TODO: Navigate to booking screen
+                  Get.snackbar('Info', 'AI Pick booking coming soon!');
+                },
               ),
             ],
           ),
@@ -262,56 +274,49 @@ class _AiPickCard extends StatelessWidget {
   }
 }
 
-/* ───────────────── CATEGORIES ───────────────── */
+/* ───────────────── CATEGORY ROW ───────────────── */
 
-class _CategoryRow extends StatefulWidget {
+class _CategoryRow extends StatelessWidget {
   const _CategoryRow();
 
   @override
-  State<_CategoryRow> createState() => _CategoryRowState();
-}
-
-class _CategoryRowState extends State<_CategoryRow> {
-  int selectedIndex = 0;
-
-  final categories = [
-    {'name': 'Haircut', 'icon': Icons.content_cut},
-    {'name': 'Spa', 'icon': Icons.spa},
-    {'name': 'Makeup', 'icon': Icons.face},
-    {'name': 'Nails', 'icon': Icons.brush},
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories.asMap().entries.map((entry) {
-          final index = entry.key;
-          final category = entry.value;
-          final isSelected = selectedIndex == index;
-          
-          return Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: ChipPill(
-              label: category['name'] as String,
-              selected: isSelected,
-              onTap: () {
-                setState(() {
-                  selectedIndex = index;
-                });
-                // Navigate to explore screen with the selected category
-                Get.toNamed('/user', arguments: {'tab': 1});
-              },
-            ),
-          );
-        }).toList(),
-      ),
+    return Row(
+      children: [
+        // ✅ FIXED: Remove isSelected parameter - ChipPill doesn't support it
+        Expanded(
+          child: ChipPill(
+            label: 'Haircut',
+            onTap: () {},
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: ChipPill(
+            label: 'Spa',
+            onTap: () {},
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: ChipPill(
+            label: 'Makeup',
+            onTap: () {},
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: ChipPill(
+            label: 'Nails',
+            onTap: () {},
+          ),
+        ),
+      ],
     );
   }
 }
 
-/* ───────────────── UPCOMING ───────────────── */
+/* ───────────────── UPCOMING APPOINTMENT ───────────────── */
 
 class _UpcomingAppointmentCard extends StatelessWidget {
   final dynamic booking;
@@ -321,75 +326,75 @@ class _UpcomingAppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      onTap: () {
-        Get.toNamed('/appointment-details', arguments: booking);
-      },
+      padding: EdgeInsets.zero,
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primary,
-                  AppColors.primary.withOpacity(0.7),
-                ],
+            width: 80,
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
               ),
-              borderRadius: BorderRadius.circular(16),
             ),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   _getMonth(booking.date),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   _getDay(booking.date),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
+                  style: AppTextStyles.heading.copyWith(
+                    color: Colors.black,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  booking.salonName,
-                  style: AppTextStyles.subHeading.copyWith(
-                    fontWeight: FontWeight.bold,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    booking.salonName ?? 'Salon',
+                    style: AppTextStyles.subHeading.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  booking.serviceName,
-                  style: AppTextStyles.body,
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 14,
+                  const SizedBox(height: 4),
+                  Text(
+                    booking.serviceName ?? 'Service',
+                    style: AppTextStyles.body.copyWith(
                       color: AppColors.textMuted,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatTime(booking.time),
-                      style: AppTextStyles.caption,
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: AppColors.textMuted,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatTime(booking.time),
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           Container(
@@ -439,7 +444,13 @@ class _UpcomingAppointmentCard extends StatelessWidget {
 /* ───────────────── NEARBY EMPTY ───────────────── */
 
 class _NearbyEmptyState extends StatelessWidget {
-  const _NearbyEmptyState();
+  final String city;
+  final VoidCallback? onChangeCity;
+  
+  const _NearbyEmptyState({
+    required this.city,
+    this.onChangeCity,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -449,9 +460,31 @@ class _NearbyEmptyState extends StatelessWidget {
         children: [
           Icon(Icons.search_off, size: 48, color: AppColors.textMuted),
           const SizedBox(height: AppSpacing.sm),
-          Text('No salons in your area', style: AppTextStyles.subHeading),
+          Text(
+            city == 'All Cities'
+                ? 'No salons available yet'
+                : 'No salons in $city',
+            style: AppTextStyles.subHeading.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('Pull down to refresh', style: AppTextStyles.caption),
+          Text(
+            'Pull down to refresh or try another city',
+            style: AppTextStyles.caption,
+            textAlign: TextAlign.center,
+          ),
+          if (city != 'All Cities' && onChangeCity != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            TextButton.icon(
+              onPressed: onChangeCity,
+              icon: const Icon(Icons.public, size: 16),
+              label: const Text('View All Cities'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -586,7 +619,9 @@ class _NearbySalonCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            salon.address,
+                            salon.city.isNotEmpty 
+                                ? '${salon.city} · ${salon.address}'
+                                : salon.address,
                             style: AppTextStyles.caption,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

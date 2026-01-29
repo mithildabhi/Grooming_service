@@ -13,6 +13,9 @@ class SalonSerializer(serializers.ModelSerializer):
         default=''
     )
     
+    # ✅ NEW: Add full_address property
+    full_address = serializers.ReadOnlyField()
+    
     class Meta:
         model = Salon
         fields = [
@@ -23,16 +26,31 @@ class SalonSerializer(serializers.ModelSerializer):
             'name',
             'salon_type',
             'address',
+            'city',           # ✅ NEW
+            'state',          # ✅ NEW
+            'pincode',        # ✅ NEW
+            'full_address',   # ✅ NEW (computed)
             'phone',
             'about',
             'image_url',
             'hours',
+            'latitude',       # ✅ NEW
+            'longitude',      # ✅ NEW
             'rating',
             'is_open',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'owner', 'owner_id', 'owner_email', 'rating', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id', 
+            'owner', 
+            'owner_id', 
+            'owner_email', 
+            'rating', 
+            'full_address',
+            'created_at', 
+            'updated_at'
+        ]
     
     def validate_phone(self, value):
         """Validate phone number - allow + and digits"""
@@ -78,6 +96,19 @@ class SalonSerializer(serializers.ModelSerializer):
         
         return value
     
+    def validate_city(self, value):
+        """Normalize city name"""
+        if value:
+            # Capitalize first letter of each word
+            return value.strip().title()
+        return ''
+    
+    def validate_state(self, value):
+        """Normalize state name"""
+        if value:
+            return value.strip().title()
+        return ''
+    
     def create(self, validated_data):
         """Override create to handle owner assignment"""
         # owner is set in the view via save(owner=request.user)
@@ -86,3 +117,28 @@ class SalonSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """Override update to handle partial updates"""
         return super().update(instance, validated_data)
+
+
+class SalonListSerializer(serializers.ModelSerializer):
+    """
+    Lightweight serializer for salon list view
+    Used when returning multiple salons to reduce payload size
+    """
+    full_address = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Salon
+        fields = [
+            'id',
+            'name',
+            'salon_type',
+            'address',
+            'city',
+            'state',
+            'pincode',
+            'full_address',
+            'phone',
+            'image_url',
+            'rating',
+            'is_open',
+        ]

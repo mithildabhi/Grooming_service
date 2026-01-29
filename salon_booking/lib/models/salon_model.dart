@@ -4,11 +4,14 @@ class SalonModel {
   final String type; // Male | Female | Unisex
   final Map<String, dynamic> hours; // per_day: monday..sunday -> {open, close, closed}
   final String address;
+  final String city;      // ✅ NEW
+  final String state;     // ✅ NEW
+  final String pincode;   // ✅ NEW
   final String phone;
   final String about;
   final String imageUrl;
 
-  // ✅ UI SUPPORT (Stitch AI)
+  // ✅ UI SUPPORT
   final double rating;
   final double distance;
   final List<String> services;
@@ -19,6 +22,9 @@ class SalonModel {
     required this.type,
     required this.hours,
     required this.address,
+    this.city = '',         // ✅ NEW with default
+    this.state = '',        // ✅ NEW with default
+    this.pincode = '',      // ✅ NEW with default
     required this.phone,
     required this.about,
     required this.imageUrl,
@@ -35,12 +41,6 @@ class SalonModel {
     return 'https://via.placeholder.com/400x300?text=Salon+Image';
   }
 
-  // ✅ ADDED: rating getter (default for now, can be made dynamic later)
-  // double get rating {
-  //   // TODO: Get actual rating from backend
-  //   return 4.5; // Default rating
-  // }
-
   // ✅ ADDED: salonTypeDisplay getter
   String get salonTypeDisplay {
     switch (type.toLowerCase()) {
@@ -53,6 +53,28 @@ class SalonModel {
       default:
         return 'Salon';
     }
+  }
+
+  // ✅ NEW: Get formatted full address with city
+  String get fullAddress {
+    List<String> parts = [];
+    if (address.isNotEmpty) parts.add(address);
+    if (city.isNotEmpty) parts.add(city);
+    if (state.isNotEmpty) parts.add(state);
+    if (pincode.isNotEmpty) parts.add(pincode);
+    return parts.join(', ');
+  }
+
+  // ✅ NEW: Get short location (city + state)
+  String get shortLocation {
+    if (city.isNotEmpty && state.isNotEmpty) {
+      return '$city, $state';
+    } else if (city.isNotEmpty) {
+      return city;
+    } else if (state.isNotEmpty) {
+      return state;
+    }
+    return 'Location not set';
   }
 
   // ✅ FIXED: isOpen method (was returning null)
@@ -124,6 +146,9 @@ class SalonModel {
         'type': type,
         'hours': hours,
         'address': address,
+        'city': city,           // ✅ NEW
+        'state': state,         // ✅ NEW
+        'pincode': pincode,     // ✅ NEW
         'phone': phone,
         'about': about,
         'imageUrl': imageUrl,
@@ -157,13 +182,19 @@ class SalonModel {
       type: (m['type'] ?? 'Unisex') as String,
       hours: hours,
       address: (m['address'] ?? '') as String,
+      city: (m['city'] ?? '') as String,         // ✅ NEW
+      state: (m['state'] ?? '') as String,       // ✅ NEW
+      pincode: (m['pincode'] ?? '') as String,   // ✅ NEW
       phone: (m['phone'] ?? '') as String,
       about: (m['about'] ?? '') as String,
-      imageUrl: (m['imageUrl'] ?? '') as String, rating: 4.5, distance: 2, services: [],
+      imageUrl: (m['imageUrl'] ?? '') as String,
+      rating: 4.5,
+      distance: 2,
+      services: [],
     );
   }
 
-  // ✅ ADDED: fromJson factory method (for Django backend)
+  // ✅ UPDATED: fromJson factory method with city support
   factory SalonModel.fromJson(Map<String, dynamic> json) {
     final days = [
       'monday',
@@ -191,14 +222,19 @@ class SalonModel {
       type: json['type'] as String? ?? json['salon_type'] as String? ?? 'Unisex',
       hours: hours,
       address: json['address'] as String? ?? '',
+      city: json['city'] as String? ?? '',           // ✅ NEW
+      state: json['state'] as String? ?? '',         // ✅ NEW
+      pincode: json['pincode'] as String? ?? '',     // ✅ NEW
       phone: json['phone'] as String? ?? '',
       about: json['about'] as String? ?? '',
-      imageUrl: json['image_url'] as String? ?? json['imageUrl'] as String? ?? '', rating: 4.5, distance: 2, services: [],
+      imageUrl: json['image_url'] as String? ?? json['imageUrl'] as String? ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
+      distance: (json['distance'] as num?)?.toDouble() ?? 2.0,
+      services: [],
     );
   }
 
   get description => null;
-
   get servicesList => null;
 
   static Map<String, dynamic> defaultHours() {
