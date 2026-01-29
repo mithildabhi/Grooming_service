@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 class CustomerModel {
   final String userId;
   final String fullName;

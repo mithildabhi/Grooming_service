@@ -1,6 +1,8 @@
 // lib/views/user/user_ai_assistant_screen.dart
 // ✅ COMPLETE IMPLEMENTATION - Real API Integration
 
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;

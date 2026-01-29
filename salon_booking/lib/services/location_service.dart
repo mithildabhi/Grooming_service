@@ -1,5 +1,7 @@
 // lib/services/location_service.dart
 
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';

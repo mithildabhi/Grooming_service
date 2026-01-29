@@ -1,5 +1,7 @@
 // lib/controllers/location_controller.dart
 
+// ignore_for_file: avoid_print
+
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/location_service.dart';

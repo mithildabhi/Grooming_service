@@ -331,6 +331,7 @@ class CitySelectorWidget extends StatelessWidget {
             : null,
         onTap: () async {
           await controller.toggleGpsLocation();
+          // ignore: use_build_context_synchronously
           Navigator.pop(context);
         },
       ),
