@@ -35,9 +35,18 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
     bookingController = Get.find<BookingController>();
     final args = Get.arguments;
     salon = args is SalonModel ? args : null;
-    if (bookingController.selectedService.value != null) {
-      bookingController.generateTimeSlots(DateTime.now());
-    }
+    
+    // ✅ FIX: AUTO-SELECT TODAY'S DATE on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final today = DateTime.now();
+      setState(() {
+        selectedDate = today;
+      });
+      // ✅ Generate time slots for today automatically
+      bookingController.generateTimeSlots(today);
+      print('✅ Auto-selected today: ${today.toString().split(' ')[0]}');
+      print('⏰ Current time: ${today.hour}:${today.minute}');
+    });
   }
 
   DateTime get _currentMonth {
@@ -65,29 +74,30 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
     return days;
   }
 
+  // ✅ FIXED: Allow selecting today OR future dates
   bool _isDateSelectable(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return date.isAfter(today);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    
+    // ✅ Can select today or future dates
+    return dateOnly.isAtSameMomentAs(today) || dateOnly.isAfter(today);
   }
 
   String _formatDateDisplay(DateTime date) {
     return DateFormat('EEE, d MMM yyyy').format(date);
   }
 
-  List<String> get _availableTimes {
-    if (selectedDate == null) return [];
-    return bookingController.availableTimeSlots.toList();
-  }
-
-  // Group time slots by period
+  // ✅ FIXED: Group time slots by period with PROPER filtering
   Map<String, List<String>> _groupTimeSlots() {
-    final times = _availableTimes;
     Map<String, List<String>> grouped = {
       'Morning': [],
       'Afternoon': [],
       'Evening': [],
     };
+    
+    // ✅ Get times from observable list
+    final times = bookingController.availableTimeSlots.toList();
     
     for (var time in times) {
       try {
@@ -214,7 +224,7 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  /// ───────────── CALENDAR DATE PICKER (BookMyShow Style) ─────────────
+                  /// ───────────── CALENDAR DATE PICKER ─────────────
                   GlassCard(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
@@ -307,8 +317,9 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                                       setState(() {
                                         selectedDate = date;
                                         selectedTime = null; // Reset time when date changes
-                                        bookingController.selectDate(date);
                                       });
+                                      // ✅ Generate time slots with filtering
+                                      bookingController.generateTimeSlots(date);
                                     }
                                   : null,
                               child: Container(
@@ -378,7 +389,7 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  /// ───────────── TIME SELECTION (BookMyShow Style) ─────────────
+                  /// ───────────── TIME SELECTION ─────────────
                   Text(
                     'Select Time Slot',
                     style: AppTextStyles.subHeading.copyWith(
@@ -388,8 +399,8 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
 
+                  // ✅ FIXED: Proper Obx usage watching the controller's observable
                   Obx(() {
-                    final times = _availableTimes;
                     if (selectedDate == null) {
                       return GlassCard(
                         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -407,13 +418,32 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                       );
                     }
                     
-                    if (times.isEmpty) {
+                    // ✅ Watch isLoadingSlots observable
+                    if (bookingController.isLoadingSlots.value) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(AppSpacing.xl),
                           child: CircularProgressIndicator(
                             color: AppColors.primary,
                           ),
+                        ),
+                      );
+                    }
+                    
+                    // ✅ Watch availableTimeSlots observable
+                    if (bookingController.availableTimeSlots.isEmpty) {
+                      return GlassCard(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          children: [
+                            Icon(Icons.event_busy, size: 48, color: AppColors.textMuted),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              'No time slots available for this date',
+                              style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       );
                     }
@@ -457,8 +487,8 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                                   onTap: () {
                                     setState(() {
                                       selectedTime = t;
-                                      bookingController.selectTime(t);
                                     });
+                                    bookingController.selectTime(t);
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(

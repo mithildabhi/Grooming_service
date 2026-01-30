@@ -129,7 +129,7 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
 
-                  // Cash Payment Option
+                  // ✅ FIXED: Cash Payment Option with proper layout
                   _PaymentMethodCard(
                     icon: Icons.payments_outlined,
                     title: 'Pay at Salon (Cash)',
@@ -372,6 +372,7 @@ class _PaymentMethodCard extends StatelessWidget {
       color: isSelected ? AppColors.primary.withOpacity(0.1) : null,
       child: Row(
         children: [
+          // Icon Container
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -386,23 +387,35 @@ class _PaymentMethodCard extends StatelessWidget {
               size: 24,
             ),
           ),
+          
           const SizedBox(width: AppSpacing.md),
+          
+          // ✅ FIXED: Flexible text content to prevent overflow
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // Title Row with Badge
                 Row(
                   children: [
-                    Text(
-                      title,
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.bold,
+                    // ✅ FIXED: Flexible title text
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
+                    
+                    // Badge (if present)
                     if (badge != null) ...[
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(4),
@@ -411,7 +424,7 @@ class _PaymentMethodCard extends StatelessWidget {
                           badge!,
                           style: AppTextStyles.caption.copyWith(
                             color: Colors.green,
-                            fontSize: 10,
+                            fontSize: 9,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -419,16 +432,26 @@ class _PaymentMethodCard extends StatelessWidget {
                     ],
                   ],
                 ),
+                
                 const SizedBox(height: 2),
+                
+                // Subtitle
                 Text(
                   subtitle,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textMuted,
+                    fontSize: 12,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
           ),
+          
+          const SizedBox(width: AppSpacing.sm),
+          
+          // Radio Button
           Container(
             width: 22,
             height: 22,

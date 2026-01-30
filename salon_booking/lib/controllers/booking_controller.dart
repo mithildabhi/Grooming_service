@@ -1,3 +1,6 @@
+// lib/controllers/booking_controller.dart
+// ✅ COMPLETE FIX: Time slot filtering + Review API integration
+
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
@@ -39,9 +42,6 @@ class BookingController extends GetxController {
   List<BookingModel> get cancelledBookings {
     return bookings.where((b) => b.status == 'CANCELLED').toList();
   }
-  // ========================
-  // COMPUTED PROPERTIES
-  // ========================
 
   /// Today's bookings
   List<BookingModel> get todayBookings {
@@ -70,16 +70,14 @@ class BookingController extends GetxController {
           int.parse(timeParts[1]),
         );
 
-        // Add duration to get end time
         final endTime = bookingDateTime.add(
           Duration(minutes: b.durationMinutes),
         );
 
-        // Only show if not past
         return endTime.isAfter(now);
       } catch (e) {
         print('Error parsing booking date/time: $e');
-        return true; // Show if can't parse
+        return true;
       }
     }).toList();
   }
@@ -163,36 +161,36 @@ class BookingController extends GetxController {
       bookings.where((b) => b.status == 'CANCELLED').length;
   int get pendingCount => bookings.where((b) => b.status == 'PENDING').length;
 
-@override
-void onInit() {
-  super.onInit();
+  @override
+  void onInit() {
+    super.onInit();
 
-  // ✅ ONLY load bookings if already logged in
-  final auth = Get.find<AuthController>();
-  
-  // ✅ Check CURRENT login state first
-  if (auth.isLoggedIn.value == true) {
-    print('✅ BOOKING: User already logged in, loading bookings');
-    fetchBookings();
-    fetchUserBookings();
-    _startAutoRefresh();
-  }
-
-  // ✅ Watch for future login events
-  ever(auth.isLoggedIn, (loggedIn) {
-    print('👀 BOOKING: Login state changed to $loggedIn');
-    if (loggedIn == true) {
+    // ✅ ONLY load bookings if already logged in
+    final auth = Get.find<AuthController>();
+    
+    // ✅ Check CURRENT login state first
+    if (auth.isLoggedIn.value == true) {
+      print('✅ BOOKING: User already logged in, loading bookings');
       fetchBookings();
       fetchUserBookings();
       _startAutoRefresh();
-    } else {
-      // ✅ Clear bookings on logout
-      bookings.clear();
-      userBookings.clear();
-      _autoRefreshTimer?.cancel();
     }
-  });
-}
+
+    // ✅ Watch for future login events
+    ever(auth.isLoggedIn, (loggedIn) {
+      print('👀 BOOKING: Login state changed to $loggedIn');
+      if (loggedIn == true) {
+        fetchBookings();
+        fetchUserBookings();
+        _startAutoRefresh();
+      } else {
+        // ✅ Clear bookings on logout
+        bookings.clear();
+        userBookings.clear();
+        _autoRefreshTimer?.cancel();
+      }
+    });
+  }
 
   @override
   void onClose() {
@@ -251,22 +249,65 @@ void onInit() {
     );
   }
 
-  // ========================
-  // TIME SLOTS (UI ONLY)
-  // ========================
+  // ✅ FIXED: TIME SLOTS WITH PROPER FILTERING FOR TODAY
   void generateTimeSlots(DateTime date) {
-    isLoadingSlots.value = true;
-    availableTimeSlots.clear();
+    try {
+      isLoadingSlots.value = true;
+      availableTimeSlots.clear();
 
-    for (int h = 9; h <= 21; h++) {
-      for (int m = 0; m < 60; m += 30) {
-        availableTimeSlots.add(
-          '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}',
-        );
+      final now = DateTime.now();
+      
+      // ✅ Check if selected date is TODAY
+      final isToday = date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+
+      print('📅 Generating time slots for: ${date.toString().split(' ')[0]}');
+      print('🔍 Is today: $isToday');
+      
+      if (isToday) {
+        print('⏰ Current time: ${now.hour}:${now.minute}');
       }
-    }
 
-    isLoadingSlots.value = false;
+      List<String> slots = [];
+      
+      // Generate slots from 9 AM to 9 PM (21:00)
+      for (int hour = 9; hour <= 21; hour++) {
+        for (int minute = 0; minute < 60; minute += 30) {
+          final timeSlot = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+          
+          // ✅ FILTER PAST TIMES IF TODAY
+          if (isToday) {
+            // Skip if this slot is in the past
+            if (hour < now.hour) {
+              print('⏭️ Skipping past hour: $timeSlot');
+              continue;
+            }
+            
+            // If same hour, check minutes
+            if (hour == now.hour && minute <= now.minute) {
+              print('⏭️ Skipping past minute: $timeSlot');
+              continue;
+            }
+          }
+          
+          slots.add(timeSlot);
+        }
+      }
+
+      availableTimeSlots.value = slots;
+      isLoadingSlots.value = false;
+
+      print('✅ Generated ${slots.length} available time slots');
+      if (slots.isNotEmpty) {
+        print('   First slot: ${slots.first}');
+        print('   Last slot: ${slots.last}');
+      }
+    } catch (e) {
+      print('❌ Error generating time slots: $e');
+      isLoadingSlots.value = false;
+      availableTimeSlots.clear();
+    }
   }
 
   // ========================
@@ -369,10 +410,8 @@ void onInit() {
     }
   }
 
-  // Replace the STATUS UPDATES section in your BookingController with this:
-
   // ========================
-  // STATUS UPDATES - FIXED
+  // STATUS UPDATES
   // ========================
   Future<void> updateStatus(dynamic id, String status) async {
     print('═══════════════════════════════════════');
@@ -382,19 +421,16 @@ void onInit() {
     print('═══════════════════════════════════════');
 
     try {
-      // Validate booking ID
       if (id == null) {
         print('❌ CONTROLLER: ID is null');
         throw Exception('Invalid booking ID');
       }
 
-      // Convert to int if needed
       print('🔵 CONTROLLER: Converting ID...');
       final int bookingId = id is int ? id : int.parse(id.toString());
       print('✅ CONTROLLER: ID converted to $bookingId');
 
       print('🔵 CONTROLLER: Showing loading dialog...');
-      // Show loading dialog
       Get.dialog(
         const Center(child: CircularProgressIndicator()),
         barrierDismissible: false,
@@ -402,12 +438,10 @@ void onInit() {
       print('✅ CONTROLLER: Loading dialog shown');
 
       print('🔵 CONTROLLER: Calling BookingApi.updateBookingStatus...');
-      // Call API
       await BookingApi.updateBookingStatus(bookingId, status);
       print('✅ CONTROLLER: API call completed successfully');
 
       print('🔵 CONTROLLER: Closing loading dialog...');
-      // Close loading dialog
       if (Get.isDialogOpen == true) {
         Get.back();
       }
@@ -416,16 +450,13 @@ void onInit() {
       print('✅ CONTROLLER: Status updated successfully');
 
       print('🔵 CONTROLLER: Updating local state...');
-      // Update local state
       _updateLocalBookingStatus(bookingId, status);
       print('✅ CONTROLLER: Local state updated');
 
       print('🔵 CONTROLLER: Refreshing bookings from server...');
-      // Refresh bookings from server
       await fetchBookings();
       print('✅ CONTROLLER: Bookings refreshed');
 
-      // Show success message
       Get.snackbar(
         'Success',
         'Booking status updated to $status',
@@ -446,14 +477,12 @@ void onInit() {
       print(stackTrace);
       print('═══════════════════════════════════════');
 
-      // Close loading dialog if still open
       if (Get.isDialogOpen == true) {
         Get.back();
       }
 
       print('❌ CONTROLLER: Update status error: $e');
 
-      // Show error message
       Get.snackbar(
         'Error',
         e.toString().replaceAll('Exception: ', ''),
@@ -461,39 +490,35 @@ void onInit() {
         backgroundColor: Get.theme.colorScheme.error.withOpacity(0.1),
         duration: const Duration(seconds: 4),
       );
-
-      // Don't rethrow - we've handled the error
     }
   }
 
-  /// Update booking status in local state without API call
- void _updateLocalBookingStatus(int bookingId, String status) {
-  try {
-    final bookingIndex = bookings.indexWhere((b) => b.id == bookingId);
-    if (bookingIndex != -1) {
-      final booking = bookings[bookingIndex];
-      bookings[bookingIndex] = booking.copyWith(
-        status: status,
-        isRated: status == 'COMPLETED' ? false : booking.isRated,
-      );
-      bookings.refresh();
-    }
+  void _updateLocalBookingStatus(int bookingId, String status) {
+    try {
+      final bookingIndex = bookings.indexWhere((b) => b.id == bookingId);
+      if (bookingIndex != -1) {
+        final booking = bookings[bookingIndex];
+        bookings[bookingIndex] = booking.copyWith(
+          status: status,
+          isRated: status == 'COMPLETED' ? false : booking.isRated,
+        );
+        bookings.refresh();
+      }
 
-    final userBookingIndex =
-        userBookings.indexWhere((b) => b.id == bookingId);
-    if (userBookingIndex != -1) {
-      final booking = userBookings[userBookingIndex];
-      userBookings[userBookingIndex] = booking.copyWith(
-        status: status,
-        isRated: status == 'COMPLETED' ? false : booking.isRated,
-      );
-      userBookings.refresh();
+      final userBookingIndex =
+          userBookings.indexWhere((b) => b.id == bookingId);
+      if (userBookingIndex != -1) {
+        final booking = userBookings[userBookingIndex];
+        userBookings[userBookingIndex] = booking.copyWith(
+          status: status,
+          isRated: status == 'COMPLETED' ? false : booking.isRated,
+        );
+        userBookings.refresh();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error updating local booking status: $e');
     }
-  } catch (e) {
-    debugPrint('⚠️ Error updating local booking status: $e');
   }
-}
-
 
   Future<void> cancelBooking(dynamic id) async {
     print('🚫 CONTROLLER: Cancelling booking $id');
@@ -541,7 +566,7 @@ void onInit() {
       selectedTime.value.isNotEmpty;
 
   // ========================
-  // ⭐ USER REVIEW (UI ONLY)
+  // ⭐ USER REVIEW (UI ONLY FOR NOW - Will integrate ReviewAPI next)
   // ========================
   Future<void> submitReview({
     required int bookingId,
