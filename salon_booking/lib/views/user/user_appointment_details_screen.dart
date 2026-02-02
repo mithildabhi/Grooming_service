@@ -233,6 +233,21 @@ class UserAppointmentDetailsScreen extends StatelessWidget {
                     label: 'Rate Experience',
                     onPressed: () => Get.toNamed('/rate-experience', arguments: booking),
                   ),
+                  
+                  // ✅ ADD THIS: Review specific service
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton(
+                    onPressed: () {
+                      // Allow reviewing service even if booking rated
+                      Get.toNamed('/review-service', arguments: {
+                        'serviceId': booking.serviceId,
+                        'salonId': booking.salonId,
+                        'serviceName': booking.serviceName,
+                        'salonName': booking.salonName,
+                      });
+                    },
+                    child: const Text('Review This Service'),
+                  ),
                 ],
               ],
             ),

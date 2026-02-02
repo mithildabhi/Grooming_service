@@ -1,4 +1,5 @@
-// lib/controllers/user_home_controller.dart - UPDATED WITH LOCATION
+// lib/controllers/user_home_controller.dart
+// ✅ COMPLETE: Full GPS location support + distance calculation
 
 // ignore_for_file: avoid_print
 
@@ -18,6 +19,7 @@ class UserHomeController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool isLoadingCities = false.obs;
   final RxBool isLoadingServices = false.obs;
+  final RxBool useGpsLocation = false.obs;  // ✅ FIXED: Only one declaration
   
   final RxList<SalonModel> allSalons = <SalonModel>[].obs;
   final RxList<SalonModel> nearbySalons = <SalonModel>[].obs;
@@ -30,7 +32,6 @@ class UserHomeController extends GetxController {
   final RxList<String> availableCities = <String>[].obs;
   
   // ✅ Location-based filtering
-  final RxBool useGpsLocation = false.obs;
   final RxDouble searchRadius = 10.0.obs; // km
   
   // ✅ Error handling
@@ -46,9 +47,11 @@ class UserHomeController extends GetxController {
   
   String get cityDisplayText {
     if (useGpsLocation.value) {
-      final locationCtrl = Get.find<LocationController>();
-      if (locationCtrl.hasLocation) {
-        return 'Near ${locationCtrl.currentCity.value}';
+      final locationCtrl = Get.isRegistered<LocationController>() 
+          ? Get.find<LocationController>() 
+          : null;
+      if (locationCtrl?.hasLocation == true) {
+        return 'Near ${locationCtrl!.currentCity.value}';
       }
       return 'Near You';
     }
@@ -73,7 +76,7 @@ class UserHomeController extends GetxController {
     try {
       print('🚀 HOME: Initializing app...');
       
-      // Initialize location controller if not already registered
+      // ✅ Initialize location controller if not already registered
       if (!Get.isRegistered<LocationController>()) {
         Get.put(LocationController());
       }
@@ -127,38 +130,68 @@ class UserHomeController extends GetxController {
   }
 
   // ========================
-  // LOCATION-BASED FETCHING
+  // ✅ GPS LOCATION TOGGLE
   // ========================
   
-  /// ✅ NEW: Toggle GPS location filtering
+  /// Toggle GPS location filtering
   Future<void> toggleGpsLocation() async {
     if (useGpsLocation.value) {
-      // Disable GPS filtering
+      // ✅ Disable GPS filtering
       useGpsLocation.value = false;
+      print('📍 HOME: GPS location disabled, switching to city filter');
       await fetchSalons();
     } else {
-      // Enable GPS filtering
+      // ✅ Enable GPS filtering
       final locationCtrl = Get.find<LocationController>();
       
       // Get current location if not already available
       if (!locationCtrl.hasLocation) {
-        final success = await locationCtrl.getCurrentLocation();
+        print('📍 HOME: Getting current location...');
+        
+        // Get.dialog(
+        //   const Center(
+        //     child: CircularProgressIndicator(),
+        //   ),
+        //   barrierDismissible: false,
+        // );
+        
+        final success = await locationCtrl.getCurrentLocation(showDialog: false);
+        
+        if (Get.isDialogOpen == true) {
+          Get.back(); // Close loading dialog
+        }
+        
         if (!success) {
           Get.snackbar(
             'Location Required',
             'Please enable location to find nearby salons',
             snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 3),
           );
           return;
         }
       }
       
       useGpsLocation.value = true;
+      print('📍 HOME: GPS location enabled');
+      
+      // ✅ Fetch salons with GPS coordinates
       await fetchSalons();
+      
+      Get.snackbar(
+        'Location Enabled',
+        'Showing salons near you',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
     }
   }
   
-  /// ✅ NEW: Fetch nearby salons using GPS
+  // ========================
+  // ✅ FETCH NEARBY SALONS (GPS)
+  // ========================
+  
+  /// Fetch nearby salons using GPS coordinates
   Future<void> fetchNearbySalons({double? radius}) async {
     try {
       final locationCtrl = Get.find<LocationController>();
@@ -178,7 +211,7 @@ class UserHomeController extends GetxController {
       final lon = locationCtrl.longitude!;
       final searchRadius = radius ?? this.searchRadius.value;
       
-      print('📍 HOME: Fetching salons within ${searchRadius}km of $lat, $lon');
+      print('📍 HOME: Fetching salons within ${searchRadius}km of ($lat, $lon)');
       
       final response = await http.get(
         Uri.parse(
@@ -210,7 +243,14 @@ class UserHomeController extends GetxController {
         
         if (salons.isEmpty) {
           errorMessage.value = 'No salons found within ${searchRadius}km';
+          Get.snackbar(
+            'No Salons Found',
+            'Try increasing the search radius or selecting a specific city',
+            snackPosition: SnackPosition.BOTTOM,
+          );
         }
+      } else {
+        throw Exception('Server returned ${response.statusCode}');
       }
       
     } catch (e) {
@@ -228,7 +268,8 @@ class UserHomeController extends GetxController {
   // ========================
   // FETCH CITIES
   // ========================
-  /// ✅ Fetch available cities from backend
+  
+  /// Fetch available cities from backend
   Future<void> fetchAvailableCities() async {
     try {
       isLoadingCities.value = true;
@@ -279,17 +320,19 @@ class UserHomeController extends GetxController {
   }
 
   // ========================
-  // FETCH SALONS
+  // ✅ FETCH SALONS WITH LOCATION
   // ========================
-  /// ✅ UPDATED: Proper API response parsing with location support
+  
+  /// Fetch salons with optional city filter and distance calculation
   Future<void> fetchSalons({String? city}) async {
     try {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
       
-      // If GPS location is enabled, use nearby endpoint
+      // ✅ If GPS location is enabled, use nearby endpoint
       if (useGpsLocation.value) {
+        print('📍 HOME: Using GPS mode - fetching nearby salons');
         await fetchNearbySalons();
         return;
       }
@@ -307,7 +350,7 @@ class UserHomeController extends GetxController {
         print('🌍 HOME: Fetching all salons');
       }
       
-      // ✅ NEW: Add user location for distance calculation
+      // ✅ NEW: Add user location for distance calculation (even in city mode)
       if (Get.isRegistered<LocationController>()) {
         final locationCtrl = Get.find<LocationController>();
         if (locationCtrl.hasLocation) {
@@ -323,6 +366,8 @@ class UserHomeController extends GetxController {
             .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
             .join('&');
       }
+      
+      print('🔗 HOME: Fetching from: $url');
       
       final response = await http.get(
         Uri.parse(url),
@@ -392,7 +437,7 @@ class UserHomeController extends GetxController {
       
       Get.snackbar(
         'Error',
-        'Failed to load salons',
+        'Failed to load salons: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 3),
       );
@@ -404,11 +449,12 @@ class UserHomeController extends GetxController {
   // ========================
   // CHANGE CITY
   // ========================
-  /// ✅ Change city and reload salons
+  
+  /// Change city and reload salons
   Future<void> changeCity(String city) async {
     if (city == selectedCity.value) return;
     
-    // Disable GPS if switching to city filter
+    // ✅ Disable GPS if switching to city filter
     useGpsLocation.value = false;
     
     selectedCity.value = city;
@@ -431,6 +477,7 @@ class UserHomeController extends GetxController {
   // ========================
   // FETCH SERVICES
   // ========================
+  
   /// Fetch services for a specific salon
   Future<void> fetchSalonServices(String salonId) async {
     try {
@@ -476,6 +523,7 @@ class UserHomeController extends GetxController {
   // ========================
   // NAVIGATION
   // ========================
+  
   /// Select a salon and navigate to details
   void selectSalon(SalonModel salon) {
     selectedSalon.value = salon;
@@ -486,20 +534,11 @@ class UserHomeController extends GetxController {
   // ========================
   // UTILITIES
   // ========================
+  
   /// Calculate distance from user's current location
   String getDistanceText(SalonModel salon) {
     if (salon.distance > 0) {
       return '${salon.distance.toStringAsFixed(1)} km';
-    }
-    
-    // Calculate from current location if available
-    if (Get.isRegistered<LocationController>()) {
-      final locationCtrl = Get.find<LocationController>();
-      if (locationCtrl.hasLocation && 
-          salon.city.isNotEmpty) {
-        // Distance will be calculated by backend
-        return '--';
-      }
     }
     
     return '--';
@@ -521,5 +560,15 @@ class UserHomeController extends GetxController {
   /// Refresh salons only
   Future<void> refreshSalons() async {
     await fetchSalons();
+  }
+  
+  // ========================
+  // CLEANUP
+  // ========================
+  
+  @override
+  void onClose() {
+    // Clean up if needed
+    super.onClose();
   }
 }

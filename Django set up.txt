@@ -72,3 +72,17 @@ git commit -m "Merge my changes with latest main"
 🔹 Step 5: Push YOUR branch
 
 git push origin flutter-mithil
+
+
+
+Django REST Framework
+Flutter & GetX
+OpenStreetMap/Nominatim
+Geolocator package
+
+  geolocator: ^11.0.0
+  permission_handler: ^11.2.0
+  geocoding: ^2.1.1  # Optional, we're using Nominatim directly
+  url_launcher: ^6.2.2
+
+  add this TO YAML FILE

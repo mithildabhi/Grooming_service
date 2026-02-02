@@ -1,4 +1,4 @@
-# salons/views.py - ENHANCED WITH AUTOMATIC GEOCODING
+# salons/views.py - ✅ COMPLETE WITH GEOCODING & LOCATION
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -6,11 +6,133 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Q
 import math
+import requests
+from time import sleep
 
 from authentication.firebase_auth import FirebaseAuthentication
 from .models import Salon
 from .serializers import SalonSerializer
 import json
+
+
+# ========================================
+# ✅ GEOCODING UTILITIES
+# ========================================
+
+def geocode_address(address):
+    """
+    Convert address to coordinates using Nominatim (OpenStreetMap)
+    FREE - No API key needed!
+    
+    Returns: {'lat': float, 'lon': float} or None
+    """
+    if not address or not address.strip():
+        return None
+    
+    try:
+        url = 'https://nominatim.openstreetmap.org/search'
+        params = {
+            'q': address.strip(),
+            'format': 'json',
+            'limit': 1,
+        }
+        headers = {
+            'User-Agent': 'SalonBookingApp/1.0'  # Required by Nominatim
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data and len(data) > 0:
+                result = data[0]
+                coords = {
+                    'lat': float(result['lat']),
+                    'lon': float(result['lon']),
+                    'display_name': result.get('display_name', '')
+                }
+                print(f"✅ Geocoded '{address}' to: ({coords['lat']}, {coords['lon']})")
+                return coords
+        
+        print(f"⚠️ Could not geocode address: {address}")
+        return None
+        
+    except Exception as e:
+        print(f"❌ Geocoding error: {e}")
+        return None
+
+
+def reverse_geocode(lat, lon):
+    """
+    Convert coordinates to address using Nominatim
+    
+    Returns: {'address': str, 'city': str, 'state': str} or None
+    """
+    try:
+        url = 'https://nominatim.openstreetmap.org/reverse'
+        params = {
+            'lat': lat,
+            'lon': lon,
+            'format': 'json',
+        }
+        headers = {
+            'User-Agent': 'SalonBookingApp/1.0'
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('address'):
+                addr = data['address']
+                
+                # Extract components
+                city = (addr.get('city') or 
+                       addr.get('town') or 
+                       addr.get('village') or 
+                       addr.get('municipality') or '')
+                
+                state = (addr.get('state') or 
+                        addr.get('state_district') or '')
+                
+                result = {
+                    'address': data.get('display_name', ''),
+                    'city': city,
+                    'state': state,
+                    'pincode': addr.get('postcode', ''),
+                    'country': addr.get('country', ''),
+                }
+                
+                print(f"✅ Reverse geocoded ({lat}, {lon}) to: {city}, {state}")
+                return result
+        
+        return None
+        
+    except Exception as e:
+        print(f"❌ Reverse geocoding error: {e}")
+        return None
+
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate distance between two coordinates using Haversine formula
+    Returns distance in kilometers
+    """
+    R = 6371  # Earth's radius in kilometers
+    
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    delta_lat = math.radians(lat2 - lat1)
+    delta_lon = math.radians(lon2 - lon1)
+    
+    a = (math.sin(delta_lat / 2) ** 2 +
+         math.cos(lat1_rad) * math.cos(lat2_rad) *
+         math.sin(delta_lon / 2) ** 2)
+    
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    distance = R * c
+    return distance
 
 
 # ========================================
@@ -35,7 +157,7 @@ def salon_list(request):
     
     # ✅ CITY FILTER
     city = request.query_params.get('city', None)
-    if city:
+    if city and city != 'All Cities':
         salons = salons.filter(city__iexact=city.strip())
         print(f"🌍 Filtering salons by city: {city} - Found {salons.count()} salons")
     
@@ -81,9 +203,9 @@ def salon_list(request):
                     )
                     salon['distance'] = round(distance, 2)
                 else:
-                    salon['distance'] = None  # No coordinates available
+                    salon['distance'] = None
             
-            # Sort by distance if calculated
+            # Sort by distance
             salon_data = sorted(
                 salon_data, 
                 key=lambda x: x['distance'] if x['distance'] is not None else float('inf')
@@ -102,100 +224,114 @@ def salon_list(request):
             'state': state,
             'search': search,
             'salon_type': salon_type,
-            'user_location': {
-                'lat': user_lat,
-                'lon': user_lon,
-            } if user_lat and user_lon else None,
         }
     })
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+def salon_detail(request, pk):
+    """Get single salon details with optional distance calculation"""
+    try:
+        salon = Salon.objects.get(pk=pk)
+    except Salon.DoesNotExist:
+        return Response(
+            {'error': 'Salon not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    serializer = SalonSerializer(salon)
+    salon_data = serializer.data
+    
+    # Calculate distance if user location provided
+    user_lat = request.query_params.get('lat', None)
+    user_lon = request.query_params.get('lon', None)
+    
+    if user_lat and user_lon and salon_data.get('latitude') and salon_data.get('longitude'):
+        try:
+            distance = calculate_distance(
+                float(user_lat), float(user_lon),
+                float(salon_data['latitude']), float(salon_data['longitude'])
+            )
+            salon_data['distance'] = round(distance, 2)
+        except (ValueError, TypeError):
+            pass
+    
+    return Response(salon_data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def nearby_salons(request):
     """
-    Get salons near user's location
+    Get salons near user location
     
-    Query Parameters:
-    - lat: User's latitude (required)
-    - lon: User's longitude (required)
-    - radius: Search radius in kilometers (default: 10km)
-    - city: Fallback to city-based search if coordinates not provided
+    Query Parameters (REQUIRED):
+    - lat: User latitude
+    - lon: User longitude
+    - radius: Search radius in km (default: 10)
+    - city: Fallback city filter if no GPS
     """
-    lat = request.query_params.get('lat', None)
-    lon = request.query_params.get('lon', None)
+    user_lat = request.query_params.get('lat', None)
+    user_lon = request.query_params.get('lon', None)
     radius = float(request.query_params.get('radius', 10))  # Default 10km
-    city = request.query_params.get('city', None)
     
-    salons = Salon.objects.filter(is_open=True)
-    
-    # If coordinates provided, use distance calculation
-    if lat and lon:
-        try:
-            user_lat = float(lat)
-            user_lon = float(lon)
-            
-            # Get salons with coordinates
-            salons_with_coords = salons.exclude(
-                Q(latitude__isnull=True) | Q(longitude__isnull=True)
-            )
-            
-            # Calculate distance for each salon
-            nearby = []
-            for salon in salons_with_coords:
-                distance = calculate_distance(
-                    user_lat, user_lon,
-                    float(salon.latitude), float(salon.longitude)
-                )
-                
-                if distance <= radius:
-                    salon_data = SalonSerializer(salon).data
-                    salon_data['distance'] = round(distance, 2)
-                    nearby.append(salon_data)
-            
-            # Sort by distance
-            nearby.sort(key=lambda x: x['distance'])
-            
-            print(f"📍 Found {len(nearby)} salons within {radius}km")
-            
-            return Response({
-                'count': len(nearby),
-                'radius_km': radius,
-                'user_location': {'lat': user_lat, 'lon': user_lon},
-                'results': nearby
-            })
-            
-        except (ValueError, TypeError) as e:
+    # Fallback to city if no GPS
+    if not user_lat or not user_lon:
+        city = request.query_params.get('city', None)
+        if city:
+            return salon_list(request)
+        else:
             return Response(
-                {'error': f'Invalid coordinates: {str(e)}'},
+                {'error': 'Please provide lat/lon or city'},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    # Fallback to city-based search
-    elif city:
-        salons = salons.filter(city__iexact=city.strip())
-        serializer = SalonSerializer(salons, many=True)
-        
-        return Response({
-            'count': salons.count(),
-            'city': city,
-            'results': serializer.data
-        })
-    
-    else:
+    try:
+        user_lat = float(user_lat)
+        user_lon = float(user_lon)
+    except ValueError:
         return Response(
-            {'error': 'Please provide either coordinates (lat/lon) or city'},
+            {'error': 'Invalid coordinates'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    # Get all salons with coordinates
+    salons = Salon.objects.filter(
+        is_open=True,
+        latitude__isnull=False,
+        longitude__isnull=False
+    )
+    
+    # Calculate distances
+    salons_with_distance = []
+    for salon in salons:
+        distance = calculate_distance(
+            user_lat, user_lon,
+            float(salon.latitude), float(salon.longitude)
+        )
+        
+        if distance <= radius:
+            serializer = SalonSerializer(salon)
+            salon_data = serializer.data
+            salon_data['distance'] = round(distance, 2)
+            salons_with_distance.append(salon_data)
+    
+    # Sort by distance
+    salons_with_distance.sort(key=lambda x: x['distance'])
+    
+    return Response({
+        'count': len(salons_with_distance),
+        'radius_km': radius,
+        'user_location': {'lat': user_lat, 'lon': user_lon},
+        'results': salons_with_distance,
+    })
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def cities_list(request):
-    """
-    Get list of all cities where salons are available
-    Useful for city selection dropdown
-    """
+    """Get list of all cities with salons"""
     cities = Salon.objects.filter(
         is_open=True,
         city__isnull=False
@@ -203,50 +339,12 @@ def cities_list(request):
         city=''
     ).values_list('city', flat=True).distinct().order_by('city')
     
-    # Also get state information
-    states = Salon.objects.filter(
-        is_open=True,
-        state__isnull=False
-    ).exclude(
-        state=''
-    ).values_list('state', flat=True).distinct().order_by('state')
+    city_list = ['All Cities'] + list(cities)
     
     return Response({
-        'count': len(cities),
-        'cities': list(cities),
-        'states': list(states),
+        'count': len(city_list),
+        'cities': city_list
     })
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def salon_detail(request, pk):
-    """Get single salon by ID (public)"""
-    try:
-        salon = Salon.objects.get(pk=pk, is_open=True)
-        serializer = SalonSerializer(salon)
-        salon_data = serializer.data
-        
-        # Calculate distance if user location provided
-        user_lat = request.query_params.get('lat', None)
-        user_lon = request.query_params.get('lon', None)
-        
-        if user_lat and user_lon and salon.latitude and salon.longitude:
-            try:
-                distance = calculate_distance(
-                    float(user_lat), float(user_lon),
-                    float(salon.latitude), float(salon.longitude)
-                )
-                salon_data['distance'] = round(distance, 2)
-            except (ValueError, TypeError):
-                pass
-        
-        return Response(salon_data)
-    except Salon.DoesNotExist:
-        return Response(
-            {'detail': 'Salon not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
 
 
 # ========================================
@@ -257,14 +355,14 @@ def salon_detail(request, pk):
 @authentication_classes([FirebaseAuthentication])
 @permission_classes([IsAuthenticated])
 def my_salon(request):
-    """Get authenticated user's salon"""
+    """Get owner's salon profile"""
     try:
         salon = Salon.objects.get(owner=request.user)
         serializer = SalonSerializer(salon)
         return Response(serializer.data)
     except Salon.DoesNotExist:
         return Response(
-            {'detail': 'No salon found for this user'},
+            {'error': 'No salon profile found'},
             status=status.HTTP_404_NOT_FOUND
         )
 
@@ -274,156 +372,83 @@ def my_salon(request):
 @permission_classes([IsAuthenticated])
 def salon_create(request):
     """
-    Create salon if not exists, otherwise update existing salon
-    ✅ AUTOMATICALLY geocodes address to get latitude/longitude
+    Create or update salon profile
+    ✅ AUTOMATICALLY GEOCODES ADDRESS TO GET COORDINATES
     """
-    print("\n" + "="*60)
-    print("🔥 SALON CREATE/UPDATE REQUEST")
-    print("="*60)
-    print(f"📦 Request Data: {json.dumps(request.data, indent=2)}")
-    print(f"👤 User: {request.user.email}")
-    print(f"🎭 Role: {request.user.role}")
-    print(f"🔑 User ID: {request.user.id}")
-    
     try:
-        # Check if salon already exists for this user
         salon = Salon.objects.get(owner=request.user)
-        print(f"✏️ UPDATING existing salon: {salon.name} (ID: {salon.id})")
-        
-        # Store old address to check if it changed
-        old_full_address = salon.full_address
-        
-        # UPDATE existing salon
+        # Update existing salon
         serializer = SalonSerializer(salon, data=request.data, partial=True)
-        is_update = True
-        
     except Salon.DoesNotExist:
-        print("➕ CREATING new salon")
-        
-        # CREATE new salon
+        # Create new salon
         serializer = SalonSerializer(data=request.data)
-        old_full_address = None
-        is_update = False
-
+    
     if serializer.is_valid():
-        # Save with owner
-        saved_salon = serializer.save(owner=request.user)
+        # ✅ AUTOMATIC GEOCODING BEFORE SAVE
+        validated_data = serializer.validated_data
         
-        # ✅ AUTO-GEOCODE ADDRESS
-        # Geocode if:
-        # 1. No coordinates exist, OR
-        # 2. Address/city changed (for updates)
+        # Build full address for geocoding
+        address_parts = []
+        if 'address' in validated_data:
+            address_parts.append(validated_data['address'])
+        if 'city' in validated_data:
+            address_parts.append(validated_data['city'])
+        if 'state' in validated_data:
+            address_parts.append(validated_data['state'])
+        if 'pincode' in validated_data:
+            address_parts.append(validated_data['pincode'])
+        
+        full_address = ', '.join(address_parts)
+        
+        # Only geocode if address changed or no coordinates exist
         should_geocode = False
         
-        if not saved_salon.latitude or not saved_salon.longitude:
+        if hasattr(serializer, 'instance') and serializer.instance:
+            # Updating existing salon - check if address changed
+            old_salon = serializer.instance
+            address_changed = (
+                old_salon.address != validated_data.get('address', old_salon.address) or
+                old_salon.city != validated_data.get('city', old_salon.city) or
+                old_salon.state != validated_data.get('state', old_salon.state) or
+                old_salon.pincode != validated_data.get('pincode', old_salon.pincode)
+            )
+            should_geocode = address_changed
+        else:
+            # New salon
             should_geocode = True
-            print("🗺️ No coordinates found, will geocode...")
-        elif is_update and old_full_address and saved_salon.full_address != old_full_address:
-            should_geocode = True
-            print(f"🗺️ Address changed from '{old_full_address}' to '{saved_salon.full_address}', will re-geocode...")
         
-        if should_geocode:
-            print(f"📍 Geocoding address: {saved_salon.full_address}")
-            coords = geocode_address(saved_salon.full_address)
+        # Geocode if needed
+        if should_geocode and full_address:
+            print(f"🗺️ Geocoding address: {full_address}")
+            coords = geocode_address(full_address)
             
             if coords:
-                saved_salon.latitude = coords['lat']
-                saved_salon.longitude = coords['lon']
-                saved_salon.save()
-                print(f"✅ Successfully geocoded to: {coords['lat']}, {coords['lon']}")
+                serializer.validated_data['latitude'] = coords['lat']
+                serializer.validated_data['longitude'] = coords['lon']
+                print(f"✅ Coordinates set: ({coords['lat']}, {coords['lon']})")
             else:
-                print("⚠️ Geocoding failed - coordinates not updated")
-        else:
-            print("ℹ️ Coordinates already set and address unchanged")
+                print("⚠️ Geocoding failed - proceeding without coordinates")
         
-        print(f"\n✅ SUCCESS! Salon saved: {saved_salon.name}")
-        print(f"🆔 ID: {saved_salon.id}")
-        print(f"📞 Phone: {saved_salon.phone}")
-        print(f"🏠 Address: {saved_salon.address}")
-        print(f"🌆 City: {saved_salon.city}")
-        print(f"🏛️ State: {saved_salon.state}")
-        print(f"📮 Pincode: {saved_salon.pincode}")
-        print(f"📍 Coordinates: ({saved_salon.latitude}, {saved_salon.longitude})")
-        print(f"🎨 Type: {saved_salon.salon_type}")
-        print("="*60 + "\n")
+        # Save salon
+        salon = serializer.save(owner=request.user)
         
         return Response(
-            SalonSerializer(saved_salon).data,
-            status=status.HTTP_201_CREATED
+            SalonSerializer(salon).data,
+            status=status.HTTP_200_OK if hasattr(serializer, 'instance') and serializer.instance else status.HTTP_201_CREATED
         )
     
-    print(f"❌ VALIDATION ERRORS:")
-    print(json.dumps(serializer.errors, indent=2))
-    print("="*60 + "\n")
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        serializer.errors,
+        status=status.HTTP_400_BAD_REQUEST
+    )
 
 
-@api_view(['PUT', 'PATCH'])
+@api_view(['PUT'])
 @authentication_classes([FirebaseAuthentication])
 @permission_classes([IsAuthenticated])
 def salon_update(request):
-    """
-    Update salon profile with automatic re-geocoding when address changes
-    """
-    print(f"\n🔄 UPDATE REQUEST from {request.user.email}")
-    print(f"📦 Data: {request.data}")
-    
-    try:
-        salon = Salon.objects.get(owner=request.user)
-    except Salon.DoesNotExist:
-        return Response(
-            {'detail': 'No salon found. Please create one first.'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    
-    # Store old address components to detect changes
-    old_full_address = salon.full_address
-    old_address = salon.address
-    old_city = salon.city
-    old_state = salon.state
-    old_pincode = salon.pincode
-    
-    # Partial update allows updating only specific fields
-    serializer = SalonSerializer(salon, data=request.data, partial=True)
-    
-    if serializer.is_valid():
-        updated_salon = serializer.save()
-        
-        # ✅ AUTO RE-GEOCODE IF ANY ADDRESS COMPONENT CHANGED
-        address_changed = (
-            updated_salon.address != old_address or
-            updated_salon.city != old_city or
-            updated_salon.state != old_state or
-            updated_salon.pincode != old_pincode
-        )
-        
-        if address_changed:
-            new_full_address = updated_salon.full_address
-            print(f"🗺️ Address changed:")
-            print(f"   Old: {old_full_address}")
-            print(f"   New: {new_full_address}")
-            print("   Re-geocoding...")
-            
-            coords = geocode_address(new_full_address)
-            
-            if coords:
-                updated_salon.latitude = coords['lat']
-                updated_salon.longitude = coords['lon']
-                updated_salon.save()
-                print(f"✅ Re-geocoded to: {coords['lat']}, {coords['lon']}")
-            else:
-                print("⚠️ Re-geocoding failed - keeping old coordinates")
-        else:
-            print("ℹ️ Address unchanged, skipping geocoding")
-        
-        print(f"✅ Salon updated: {updated_salon.name} in {updated_salon.city}")
-        print(f"📍 Final coordinates: ({updated_salon.latitude}, {updated_salon.longitude})")
-        
-        return Response(SalonSerializer(updated_salon).data)
-    
-    print(f"❌ Validation errors: {serializer.errors}")
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    """Update salon profile (alias for create - handles both)"""
+    return salon_create(request)
 
 
 @api_view(['DELETE'])
@@ -433,26 +458,18 @@ def salon_delete(request):
     """Delete/deactivate salon"""
     try:
         salon = Salon.objects.get(owner=request.user)
-        
-        # Soft delete - just mark as closed
         salon.is_open = False
         salon.save()
-        
-        print(f"🗑️ Salon deactivated: {salon.name}")
-        
-        return Response(
-            {'detail': 'Salon deactivated successfully'},
-            status=status.HTTP_200_OK
-        )
+        return Response({'message': 'Salon deactivated successfully'})
     except Salon.DoesNotExist:
         return Response(
-            {'detail': 'No salon found'},
+            {'error': 'No salon profile found'},
             status=status.HTTP_404_NOT_FOUND
         )
 
 
 # ========================================
-# GEOCODING ENDPOINTS
+# ✅ GEOCODING ENDPOINTS
 # ========================================
 
 @api_view(['POST'])
@@ -460,8 +477,19 @@ def salon_delete(request):
 @permission_classes([IsAuthenticated])
 def geocode_address_endpoint(request):
     """
-    Geocode an address to get coordinates
-    Request body: {"address": "123 Main St, City, State"}
+    Convert address to coordinates
+    
+    Request Body:
+    {
+        "address": "123 Main St, Surat, Gujarat, 395007"
+    }
+    
+    Response:
+    {
+        "lat": 21.1702,
+        "lon": 72.8311,
+        "display_name": "..."
+    }
     """
     address = request.data.get('address', '')
     
@@ -474,16 +502,11 @@ def geocode_address_endpoint(request):
     coords = geocode_address(address)
     
     if coords:
-        return Response({
-            'success': True,
-            'address': address,
-            'latitude': coords['lat'],
-            'longitude': coords['lon'],
-        })
+        return Response(coords)
     else:
         return Response(
             {'error': 'Could not geocode address'},
-            status=status.HTTP_400_BAD_REQUEST
+            status=status.HTTP_404_NOT_FOUND
         )
 
 
@@ -492,201 +515,46 @@ def geocode_address_endpoint(request):
 @permission_classes([IsAuthenticated])
 def reverse_geocode_endpoint(request):
     """
-    Reverse geocode coordinates to get address
-    Request body: {"lat": 23.0225, "lon": 72.5714}
+    Convert coordinates to address
+    
+    Request Body:
+    {
+        "lat": 21.1702,
+        "lon": 72.8311
+    }
+    
+    Response:
+    {
+        "address": "...",
+        "city": "Surat",
+        "state": "Gujarat",
+        "pincode": "395007"
+    }
     """
     lat = request.data.get('lat', None)
     lon = request.data.get('lon', None)
     
-    if not lat or not lon:
+    if lat is None or lon is None:
         return Response(
             {'error': 'Latitude and longitude are required'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
     try:
-        address_data = reverse_geocode(float(lat), float(lon))
-        
-        if address_data:
-            return Response({
-                'success': True,
-                'latitude': lat,
-                'longitude': lon,
-                **address_data
-            })
-        else:
-            return Response(
-                {'error': 'Could not reverse geocode coordinates'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    except (ValueError, TypeError) as e:
+        lat = float(lat)
+        lon = float(lon)
+    except ValueError:
         return Response(
-            {'error': f'Invalid coordinates: {str(e)}'},
+            {'error': 'Invalid coordinates'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-
-# ========================================
-# HELPER FUNCTIONS
-# ========================================
-
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """
-    Calculate distance between two coordinates using Haversine formula
-    Returns distance in kilometers
     
-    Args:
-        lat1: Latitude of point 1 (decimal degrees)
-        lon1: Longitude of point 1 (decimal degrees)
-        lat2: Latitude of point 2 (decimal degrees)
-        lon2: Longitude of point 2 (decimal degrees)
+    address_data = reverse_geocode(lat, lon)
     
-    Returns:
-        float: Distance in kilometers
-    """
-    # Convert decimal degrees to radians
-    lon1_rad = math.radians(lon1)
-    lat1_rad = math.radians(lat1)
-    lon2_rad = math.radians(lon2)
-    lat2_rad = math.radians(lat2)
-    
-    # Haversine formula
-    dlon = lon2_rad - lon1_rad
-    dlat = lat2_rad - lat1_rad
-    a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a))
-    
-    # Radius of earth in kilometers
-    r = 6371
-    
-    return c * r
-
-
-def geocode_address(address):
-    """
-    Geocode an address using Nominatim (OpenStreetMap) - FREE
-    
-    Args:
-        address: Full address string
-    
-    Returns:
-        dict: {'lat': float, 'lon': float} or None if failed
-    """
-    import requests
-    from time import sleep
-    
-    if not address or not address.strip():
-        return None
-    
-    try:
-        # ✅ Using Nominatim - Completely FREE
-        url = 'https://nominatim.openstreetmap.org/search'
-        params = {
-            'q': address,
-            'format': 'json',
-            'limit': 1,
-        }
-        headers = {
-            'User-Agent': 'SalonBookingApp/1.0'  # Required by Nominatim
-        }
-        
-        # Be respectful - sleep to avoid rate limiting
-        sleep(1)
-        
-        response = requests.get(url, params=params, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data and len(data) > 0:
-                result = data[0]
-                return {
-                    'lat': float(result['lat']),
-                    'lon': float(result['lon'])
-                }
-        
-        print(f"⚠️ Geocoding failed for: {address}")
-        return None
-        
-    except Exception as e:
-        print(f"❌ Geocoding error: {e}")
-        return None
-
-
-def reverse_geocode(lat, lon):
-    """
-    Reverse geocode coordinates to address using Nominatim - FREE
-    
-    Args:
-        lat: Latitude
-        lon: Longitude
-    
-    Returns:
-        dict: {
-            'address': str,
-            'city': str,
-            'state': str,
-            'pincode': str,
-            'country': str
-        } or None if failed
-    """
-    import requests
-    from time import sleep
-    
-    try:
-        # ✅ Using Nominatim - Completely FREE
-        url = 'https://nominatim.openstreetmap.org/reverse'
-        params = {
-            'lat': lat,
-            'lon': lon,
-            'format': 'json',
-        }
-        headers = {
-            'User-Agent': 'SalonBookingApp/1.0'
-        }
-        
-        # Be respectful
-        sleep(1)
-        
-        response = requests.get(url, params=params, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            if 'address' in data:
-                addr = data['address']
-                
-                # Extract components
-                city = (
-                    addr.get('city') or 
-                    addr.get('town') or 
-                    addr.get('village') or 
-                    addr.get('municipality') or
-                    ''
-                )
-                
-                state = (
-                    addr.get('state') or 
-                    addr.get('state_district') or
-                    ''
-                )
-                
-                pincode = addr.get('postcode', '')
-                country = addr.get('country', '')
-                
-                # Build full address
-                full_address = data.get('display_name', '')
-                
-                return {
-                    'address': full_address,
-                    'city': city,
-                    'state': state,
-                    'pincode': pincode,
-                    'country': country,
-                }
-        
-        print(f"⚠️ Reverse geocoding failed for: {lat}, {lon}")
-        return None
-        
-    except Exception as e:
-        print(f"❌ Reverse geocoding error: {e}")
-        return None
+    if address_data:
+        return Response(address_data)
+    else:
+        return Response(
+            {'error': 'Could not reverse geocode coordinates'},
+            status=status.HTTP_404_NOT_FOUND
+        )

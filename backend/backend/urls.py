@@ -27,7 +27,7 @@ urlpatterns = [
     path('api/bookings/', include('bookings.urls')),
     path('api/staff/', include('staff.urls')),
     path('api/chatbot/', include('chatbot.urls')),
-    path('api/customers/', include('customers.urls')),  # ✅ This MUST be here
-
+    path('api/customers/', include('customers.urls')),
+    path('api/reviews/', include('reviews.urls')),
 
 ]

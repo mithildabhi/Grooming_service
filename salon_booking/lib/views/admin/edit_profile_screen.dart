@@ -1,10 +1,11 @@
 // lib/views/admin/edit_profile_screen.dart
-// ✅ UPDATED: Complete location fields (address, city, state, pincode)
+// ✅ COMPLETE: GPS location integration + all location fields
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salon_booking/controllers/admin_controller.dart';
 import 'package:salon_booking/models/salon_profile.dart';
+import 'package:salon_booking/controllers/location_controller.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -23,13 +24,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   SalonProfile? existingProfile;
 
-  // ✅ UPDATED: Separate controllers for location fields
+  // ✅ Controllers for all fields
   late TextEditingController _salonNameController;
   late TextEditingController _phoneController;
-  late TextEditingController _addressController;      // NEW: Street address
-  late TextEditingController _cityController;         // NEW: City
-  late TextEditingController _stateController;        // NEW: State
-  late TextEditingController _pincodeController;      // NEW: Pincode
+  late TextEditingController _addressController;
+  late TextEditingController _cityController;
+  late TextEditingController _stateController;
+  late TextEditingController _pincodeController;
   late TextEditingController _aboutController;
   late TextEditingController _imageUrlController;
 
@@ -47,8 +48,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController = TextEditingController(
       text: existingProfile?.phone ?? '',
     );
-    
-    // ✅ NEW: Initialize location fields separately
     _addressController = TextEditingController(
       text: existingProfile?.address ?? '',
     );
@@ -61,7 +60,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _pincodeController = TextEditingController(
       text: existingProfile?.pincode ?? '',
     );
-    
     _aboutController = TextEditingController(
       text: existingProfile?.about ?? '',
     );
@@ -85,31 +83,113 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  // ✅ NEW: Open location picker screen
-  Future<void> _openLocationPicker() async {
-    // You can create a separate AdminLocationPickerScreen or use a simple dialog
-    // For now, I'll show a dialog, but you can replace with Get.to()
-    
-    final result = await Get.dialog<Map<String, dynamic>>(
-      _buildLocationPickerDialog(),
-      barrierDismissible: false,
-    );
-    
-    if (result != null) {
-      setState(() {
-        if (result['address'] != null) {
-          _addressController.text = result['address'];
-        }
-        if (result['city'] != null) {
-          _cityController.text = result['city'];
-        }
-        if (result['state'] != null) {
-          _stateController.text = result['state'];
-        }
-        if (result['pincode'] != null) {
-          _pincodeController.text = result['pincode'];
-        }
-      });
+  // ✅ GPS LOCATION FEATURE
+  Future<void> _useCurrentLocation() async {
+    try {
+      // Show loading
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(color: accent),
+        ),
+        barrierDismissible: false,
+      );
+
+      // Get location controller
+      LocationController locationCtrl;
+      if (Get.isRegistered<LocationController>()) {
+        locationCtrl = Get.find<LocationController>();
+      } else {
+        locationCtrl = Get.put(LocationController());
+      }
+
+      // Get current GPS position
+      final success = await locationCtrl.getCurrentLocation(showDialog: false);
+
+      if (Get.isDialogOpen == true) {
+        Get.back(); // Close loading
+      }
+
+      if (!success) {
+        Get.snackbar(
+          'Location Error',
+          'Could not get your location. Please check GPS settings.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade50,
+          colorText: Colors.red.shade700,
+        );
+        return;
+      }
+
+      // Get address from coordinates
+      final lat = locationCtrl.latitude!;
+      final lon = locationCtrl.longitude!;
+
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(color: accent),
+        ),
+        barrierDismissible: false,
+      );
+
+      final addressData = await locationCtrl.reverseGeocode(lat, lon);
+
+      if (Get.isDialogOpen == true) {
+        Get.back(); // Close loading
+      }
+
+      if (addressData != null) {
+        setState(() {
+          // Fill location fields from GPS
+          if (addressData['city']?.isNotEmpty == true) {
+            _cityController.text = addressData['city']!;
+          }
+          if (addressData['state']?.isNotEmpty == true) {
+            _stateController.text = addressData['state']!;
+          }
+          if (addressData['pincode']?.isNotEmpty == true) {
+            _pincodeController.text = addressData['pincode']!;
+          }
+          // Optionally set full address
+          if (_addressController.text.trim().isEmpty) {
+            if (addressData['address']?.isNotEmpty == true) {
+              // Extract just the street part (first part before first comma)
+              final parts = addressData['address']!.split(',');
+              if (parts.isNotEmpty) {
+                _addressController.text = parts[0].trim();
+              }
+            }
+          }
+        });
+
+        Get.snackbar(
+          'Location Retrieved',
+          'City: ${addressData['city']}, State: ${addressData['state']}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade50,
+          colorText: Colors.green.shade700,
+          duration: const Duration(seconds: 3),
+        );
+      } else {
+        Get.snackbar(
+          'Location Error',
+          'Could not determine address from your location',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade50,
+          colorText: Colors.orange.shade700,
+        );
+      }
+    } catch (e) {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      
+      Get.snackbar(
+        'Error',
+        'Failed to get location: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade700,
+      );
     }
   }
 
@@ -119,14 +199,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     try {
-      // ✅ UPDATED: Include all location fields
+      // ✅ Include all location fields
       final profile = existingProfile?.copyWith(
         name: _salonNameController.text.trim(),
         phone: _phoneController.text.trim(),
-        address: _addressController.text.trim(),      // Street address
-        city: _cityController.text.trim(),            // City
-        state: _stateController.text.trim(),          // State
-        pincode: _pincodeController.text.trim(),      // Pincode
+        address: _addressController.text.trim(),
+        city: _cityController.text.trim(),
+        state: _stateController.text.trim(),
+        pincode: _pincodeController.text.trim(),
         about: _aboutController.text.trim(),
         imageUrl: _imageUrlController.text.trim(),
         salonType: _selectedSalonType,
@@ -255,20 +335,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                 const SizedBox(height: 24),
 
-                // ✅ LOCATION SECTION
+                // ✅ LOCATION SECTION WITH GPS BUTTON
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _sectionTitle('Location Details'),
-                    TextButton.icon(
-                      onPressed: _openLocationPicker,
-                      icon: const Icon(Icons.my_location, color: accent, size: 18),
-                      label: const Text(
-                        'Use GPS',
-                        style: TextStyle(color: accent, fontSize: 13),
+                    // ✅ GPS BUTTON
+                    ElevatedButton.icon(
+                      onPressed: _useCurrentLocation,
+                      icon: const Icon(Icons.my_location, size: 16),
+                      label: const Text('Use GPS', style: TextStyle(fontSize: 13)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accent.withOpacity(0.15),
+                        foregroundColor: accent,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Tap "Use GPS" to auto-fill city, state & pincode',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
@@ -298,7 +396,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         icon: Icons.location_city,
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) {
-                            return 'City is required';
+                            return 'City required';
                           }
                           return null;
                         },
@@ -500,71 +598,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  // ✅ Simple location picker dialog (you can replace with full screen)
-  Widget _buildLocationPickerDialog() {
-    return AlertDialog(
-      backgroundColor: card,
-      title: const Text(
-        'Location Options',
-        style: TextStyle(color: Colors.white),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.my_location, color: accent),
-            title: const Text(
-              'Use Current Location',
-              style: TextStyle(color: Colors.white),
-            ),
-            subtitle: const Text(
-              'Auto-fill from GPS',
-              style: TextStyle(color: Colors.white60, fontSize: 12),
-            ),
-            onTap: () async {
-              // TODO: Implement GPS location fetch
-              Get.back(result: {
-                'address': 'Auto-filled from GPS',
-                'city': 'Surat',
-                'state': 'Gujarat',
-                'pincode': '395007',
-              });
-              
-              Get.snackbar(
-                'GPS Feature',
-                'GPS location will be implemented with location service',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: card,
-                colorText: Colors.white,
-              );
-            },
-          ),
-          const Divider(color: Colors.white12),
-          ListTile(
-            leading: const Icon(Icons.edit, color: accent),
-            title: const Text(
-              'Enter Manually',
-              style: TextStyle(color: Colors.white),
-            ),
-            subtitle: const Text(
-              'Fill forms below',
-              style: TextStyle(color: Colors.white60, fontSize: 12),
-            ),
-            onTap: () {
-              Get.back(); // Just close dialog, user will fill manually
-            },
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(),
-          child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
-        ),
-      ],
     );
   }
 }

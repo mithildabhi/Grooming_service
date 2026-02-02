@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:salon_booking/views/user/user_my_reviews_screen.dart';
 
 import '../bindings/user_binding.dart';
 
@@ -52,7 +53,10 @@ class UserRoutes {
       name: '/appointment-details',
       page: () => const UserAppointmentDetailsScreen(),
     ),
-
+  GetPage(
+    name: '/my-reviews',
+    page: () => const UserMyReviewsScreen(),
+  ),
     GetPage(
       name: '/rate-experience',
       page: () => const UserRateExperienceScreen(),
