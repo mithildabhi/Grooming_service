@@ -11,6 +11,8 @@ analyzer:
   errors:
     depend_on_referenced_packages: ignore
     deprecated_member_use: ignore
+    prefer_interpolation_to_compose_strings: ignore
+    unused_field: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

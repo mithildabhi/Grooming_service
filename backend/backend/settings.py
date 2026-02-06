@@ -58,9 +58,13 @@ INSTALLED_APPS = [
     'staff',
     'chatbot',
     'customers',
+    'hairstyle_ml',
 
 ]
 AUTH_USER_MODEL = 'accounts.User'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 from datetime import timedelta
 REST_FRAMEWORK = {
