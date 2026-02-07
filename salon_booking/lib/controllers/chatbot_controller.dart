@@ -1,8 +1,8 @@
-// lib/controllers/chatbot_controller.dart - ENHANCED VERSION
+// lib/controllers/chatbot_controller.dart - ADMIN CHATBOT CONTROLLER
 // ignore_for_file: avoid_print
 
 import 'package:get/get.dart';
-import '../services/chatbot_api.dart';
+import '../services/admin_chatbot_api.dart';
 
 class ChatMessage {
   final String text;
@@ -113,7 +113,7 @@ class ChatbotController extends GetxController {
   Future<void> loadAnalytics() async {
     try {
       analyticsLoading.value = true;
-      final data = await ChatbotApi.getSalonAnalytics();
+      final data = await AdminChatbotApi.getSalonAnalytics();
       analytics.value = data;
       print('✅ Analytics loaded: ${data.salonName}');
     } catch (e) {
@@ -133,7 +133,7 @@ class ChatbotController extends GetxController {
       isLoading.value = true;
       
       // Get AI response from backend (with all salon data)
-      final response = await ChatbotApi.sendMessage(text);
+      final response = await AdminChatbotApi.sendMessage(text);
       
       // Add bot response
       messages.add(ChatMessage(text: response, isUser: false));
@@ -158,7 +158,7 @@ class ChatbotController extends GetxController {
   void clearChat() {
     messages.clear();
     onInit(); // Reload welcome message
-    ChatbotApi.clearChatHistory();
+    AdminChatbotApi.clearChatHistory();
   }
   
   // === QUICK ACTION METHODS ===

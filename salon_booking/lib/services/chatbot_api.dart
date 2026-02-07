@@ -1,12 +1,14 @@
-// lib/services/chatbot_api.dart - ENHANCED VERSION
+// lib/services/chatbot_api.dart - USER CHATBOT API SERVICE
+// 👤 USER/CUSTOMER CHATBOT - Uses /chatbot/user/* endpoints
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../config/api_config.dart';
-import '../controllers/chatbot_controller.dart';
 
+/// User/Customer Chatbot API - Uses user-specific endpoints
+/// NOTE: For ADMIN chatbot, use AdminChatbotApi instead!
 class ChatbotApi {
   static String get baseUrl => ApiConfig.baseUrl;
 
@@ -23,15 +25,15 @@ class ChatbotApi {
     };
   }
 
-  /// Send message to chatbot - Backend has full salon context
+  /// Send message to USER chatbot - Backend has user context
   static Future<String> sendMessage(String message) async {
     try {
       final headers = await _getHeaders();
       
-      print('🤖 Sending: $message');
+      print('🤖 [USER] Sending: $message');
       
       final response = await http.post(
-        Uri.parse('$baseUrl/chatbot/'),
+        Uri.parse('$baseUrl/chatbot/user/'),
         headers: headers,
         body: jsonEncode({
           'message': message,
@@ -39,7 +41,7 @@ class ChatbotApi {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('📥 Status: ${response.statusCode}');
+      print('📥 [USER] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -56,38 +58,15 @@ class ChatbotApi {
     }
   }
 
-  /// Get comprehensive salon analytics
-  static Future<SalonAnalytics> getSalonAnalytics() async {
-    try {
-      final headers = await _getHeaders();
-      
-      print('📊 Fetching salon analytics...');
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/chatbot/analytics/'),
-        headers: headers,
-      ).timeout(const Duration(seconds: 15));
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('✅ Analytics loaded');
-        return SalonAnalytics.fromJson(data['analytics']);
-      } else {
-        throw Exception('Failed to load analytics: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('❌ Analytics error: $e');
-      rethrow;
-    }
-  }
 
-  /// Get contextual quick suggestions
+  /// Get contextual quick suggestions for USER
   static Future<List<String>> getQuickSuggestions() async {
     try {
       final headers = await _getHeaders();
       
       final response = await http.get(
-        Uri.parse('$baseUrl/chatbot/suggestions/'),
+        Uri.parse('$baseUrl/chatbot/user/suggestions/'),
         headers: headers,
       ).timeout(const Duration(seconds: 10));
 
@@ -103,13 +82,13 @@ class ChatbotApi {
     }
   }
 
-  /// Clear chat history
+  /// Clear USER chat history
   static Future<bool> clearChatHistory() async {
     try {
       final headers = await _getHeaders();
       
       final response = await http.delete(
-        Uri.parse('$baseUrl/chatbot/clear/'),
+        Uri.parse('$baseUrl/chatbot/user/clear/'),
         headers: headers,
       ).timeout(const Duration(seconds: 10));
 

@@ -74,3 +74,4 @@ firebase/*.json
 db.sqlite3
 
 media/
+_deprecated/

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:glassmotion_navbar/glassmotion_navbar.dart';
 
-import 'dashboard_screen.dart';
+import 'admin_home_screen.dart';
 import 'admin_bookings_screen.dart';
 import 'chatbot_screen.dart';
 import 'employee_screen.dart';
@@ -31,7 +31,7 @@ class _AdminShellState extends State<AdminShell> {
   void initState() {
     super.initState();
     _pages =  [
-      DashboardScreen(),
+      AdminHomeScreen(),
       AdminBookingsScreen(),
       ChatbotScreen(), 
       EmployeeScreen(),

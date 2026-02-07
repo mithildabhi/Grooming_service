@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:glassmotion_navbar/glassmotion_navbar.dart';
 
-import 'dashboard_screen.dart';
+import 'admin_home_screen.dart';
 import 'admin_bookings_screen.dart';
 import 'services_screen.dart';
 import 'employee_screen.dart';
@@ -54,7 +54,7 @@ class _AdminBottomNavState extends State<AdminBottomNav> {
     if (index == selected) return;
 
     final pages = [
-      const DashboardScreen(),
+      const AdminHomeScreen(),
       AdminBookingsScreen(),
       const ServicesScreen(),
       const EmployeeScreen(),
