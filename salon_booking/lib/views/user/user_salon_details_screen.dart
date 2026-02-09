@@ -16,6 +16,7 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/ui/glass_card.dart';
 import '../../widgets/ui/primary_button.dart';
 import '../../widgets/ui/rating_stars.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class UserSalonDetailsScreen extends StatefulWidget {
   const UserSalonDetailsScreen({super.key});
@@ -1264,7 +1265,7 @@ class _UserSalonDetailsScreenState extends State<UserSalonDetailsScreen> {
     if (await canLaunchUrl(launchUri)) {
       await launchUrl(launchUri);
     } else {
-      Get.snackbar('Error', 'Could not make phone call');
+      CustomSnackbar.show(title: 'Error', message: 'Could not make phone call', isError: true);
     }
   }
 
@@ -1276,16 +1277,15 @@ class _UserSalonDetailsScreenState extends State<UserSalonDetailsScreen> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      Get.snackbar('Error', 'Could not open maps');
+      CustomSnackbar.show(title: 'Error', message: 'Could not open maps', isError: true);
     }
   }
 
   void _shareSalon(SalonModel salon) {
     // Implement share functionality
-    Get.snackbar(
-      'Share',
-      'Share functionality will be implemented',
-      snackPosition: SnackPosition.BOTTOM,
+    CustomSnackbar.show(
+      title: 'Share',
+      message: 'Share functionality will be implemented',
     );
   }
 }

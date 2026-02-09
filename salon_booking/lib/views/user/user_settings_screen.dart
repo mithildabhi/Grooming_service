@@ -9,6 +9,7 @@ import '../../theme/app_text_styles.dart';
 
 import '../../widgets/ui/glass_card.dart';
 import '../../widgets/ui/section_header.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class UserSettingsScreen extends StatelessWidget {
   const UserSettingsScreen({super.key});
@@ -36,10 +37,9 @@ class UserSettingsScreen extends StatelessWidget {
             icon: Icons.notifications_none,
             label: 'Notifications',
             onTap: () {
-              Get.snackbar(
-                'Notifications',
-                'Notification settings coming soon',
-                snackPosition: SnackPosition.BOTTOM,
+              CustomSnackbar.show(
+                title: 'Notifications',
+                message: 'Notification settings coming soon',
               );
             },
           ),
@@ -47,10 +47,9 @@ class UserSettingsScreen extends StatelessWidget {
             icon: Icons.lock_outline,
             label: 'Privacy',
             onTap: () {
-              Get.snackbar(
-                'Privacy',
-                'Privacy settings coming soon',
-                snackPosition: SnackPosition.BOTTOM,
+              CustomSnackbar.show(
+                title: 'Privacy',
+                message: 'Privacy settings coming soon',
               );
             },
           ),
@@ -58,10 +57,9 @@ class UserSettingsScreen extends StatelessWidget {
             icon: Icons.palette_outlined,
             label: 'Appearance',
             onTap: () {
-              Get.snackbar(
-                'Appearance',
-                'Appearance settings coming soon',
-                snackPosition: SnackPosition.BOTTOM,
+              CustomSnackbar.show(
+                title: 'Appearance',
+                message: 'Appearance settings coming soon',
               );
             },
           ),

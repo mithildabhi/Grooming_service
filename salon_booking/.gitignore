@@ -83,3 +83,7 @@ android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 salon_booking/android/.gradle/
 /android/
+
+```gitignore
+pubspec.yaml
+```

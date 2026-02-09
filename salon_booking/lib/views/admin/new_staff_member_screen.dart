@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/admin_controller.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class NewStaffMemberScreen extends StatefulWidget {
   const NewStaffMemberScreen({super.key});
@@ -45,34 +46,28 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
 
   Future<void> _saveStaff() async {
     if (nameCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter full name',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter full name',
+        isError: true,
       );
       return;
     }
 
     if (emailCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter email',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter email',
+        isError: true,
       );
       return;
     }
 
     if (phoneCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter phone number',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter phone number',
+        isError: true,
       );
       return;
     }

@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:salon_booking/controllers/admin_controller.dart';
 import 'package:salon_booking/models/salon_profile.dart';
 import 'package:salon_booking/controllers/location_controller.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -110,12 +111,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       if (!success) {
-        Get.snackbar(
-          'Location Error',
-          'Could not get your location. Please check GPS settings.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade50,
-          colorText: Colors.red.shade700,
+        CustomSnackbar.show(
+          title: 'Location Error',
+          message: 'Could not get your location. Please check GPS settings.',
+          isError: true,
         );
         return;
       }
@@ -161,21 +160,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
         });
 
-        Get.snackbar(
-          'Location Retrieved',
-          'City: ${addressData['city']}, State: ${addressData['state']}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade50,
-          colorText: Colors.green.shade700,
-          duration: const Duration(seconds: 3),
+        CustomSnackbar.show(
+          title: 'Location Retrieved',
+          message: 'City: ${addressData['city']}, State: ${addressData['state']}',
+          isSuccess: true,
         );
       } else {
-        Get.snackbar(
-          'Location Error',
-          'Could not determine address from your location',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade50,
-          colorText: Colors.orange.shade700,
+        CustomSnackbar.show(
+          title: 'Location Error',
+          message: 'Could not determine address from your location',
+          isError: true,
         );
       }
     } catch (e) {
@@ -183,12 +177,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Get.back();
       }
       
-      Get.snackbar(
-        'Error',
-        'Failed to get location: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade700,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to get location: $e',
+        isError: true,
       );
     }
   }

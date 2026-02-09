@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../widgets/custom_snackbar.dart';
 import '../controllers/auth_controller.dart';
 import 'package:salon_booking/theme/app_colors.dart';
 
@@ -67,7 +68,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                   ),
                   onPressed: () {
                     if (!GetUtils.isEmail(email.text)) {
-                      Get.snackbar("Error", "Enter valid email");
+                      CustomSnackbar.show(title: "Error", message: "Enter valid email", isError: true);
                       return;
                     }
                     auth.resetPassword(email.text.trim());

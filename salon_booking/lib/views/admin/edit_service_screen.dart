@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/admin_controller.dart';
 import '../../models/service_model.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EditServiceScreen extends StatefulWidget {
   const EditServiceScreen({super.key});
@@ -119,34 +120,28 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
 
     // Validation
     if (nameCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter service name',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter service name',
+        isError: true,
       );
       return;
     }
 
     if (priceCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter price',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter price',
+        isError: true,
       );
       return;
     }
 
     if (durationCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter duration',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter duration',
+        isError: true,
       );
       return;
     }
@@ -432,23 +427,19 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
                     isActive: val,
                   );
                   
-                  Get.snackbar(
-                    'Success',
-                    'Service status updated',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: const Color(0xFF22E6D3),
-                    colorText: Colors.black,
+                  CustomSnackbar.show(
+                    title: 'Success',
+                    message: 'Service status updated',
+                    isSuccess: true,
                     duration: const Duration(seconds: 2),
                   );
                 } catch (e) {
                   // Revert on error
                   enabled.value = !val;
-                  Get.snackbar(
-                    'Error',
-                    'Failed to update status',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.redAccent,
-                    colorText: Colors.white,
+                  CustomSnackbar.show(
+                    title: 'Error',
+                    message: 'Failed to update status',
+                    isError: true,
                   );
                 }
               }

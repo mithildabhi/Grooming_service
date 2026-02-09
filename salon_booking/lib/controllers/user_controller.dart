@@ -9,6 +9,7 @@ import '../config/api_config.dart';
 import '../models/customer_model.dart';
 import 'auth_controller.dart';
 import 'booking_controller.dart';
+import '../widgets/custom_snackbar.dart';
 
 class UserController extends GetxController {
   // ========================
@@ -190,7 +191,9 @@ class UserController extends GetxController {
       final firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) {
         print('❌ USER: No Firebase user found');
-        Get.snackbar('Error', 'Please log in again');
+        print('❌ USER: No Firebase user found');
+        CustomSnackbar.show(title: 'Error', message: 'Please log in again', isError: true);
+        return false;
         return false;
       }
 
@@ -233,7 +236,7 @@ class UserController extends GetxController {
 
       if (updateData.isEmpty) {
         print('⚠️ USER: No changes to update');
-        Get.snackbar('Info', 'No changes to save');
+        CustomSnackbar.show(title: 'Info', message: 'No changes to save');
         return false;
       }
 
@@ -260,11 +263,12 @@ class UserController extends GetxController {
         
         print('✅ USER: Profile updated successfully');
         
-        Get.snackbar(
-          'Success',
-          'Profile updated successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
+        print('✅ USER: Profile updated successfully');
+        
+        CustomSnackbar.show(
+          title: 'Success',
+          message: 'Profile updated successfully',
+          isSuccess: true,
         );
         
         return true;
@@ -288,11 +292,10 @@ class UserController extends GetxController {
           }
         } catch (_) {}
         
-        Get.snackbar(
-          'Error',
-          errorMessage,
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 3),
+        CustomSnackbar.show(
+          title: 'Error',
+          message: errorMessage,
+          isError: true,
         );
         
         return false;
@@ -300,11 +303,10 @@ class UserController extends GetxController {
     } catch (e) {
       print('❌ USER: Update error: $e');
       
-      Get.snackbar(
-        'Error',
-        'Network error. Please check your connection.',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
+      CustomSnackbar.show(
+        title: 'Error', 
+        message: 'Network error. Please check your connection.', 
+        isError: true,
       );
       
       return false;

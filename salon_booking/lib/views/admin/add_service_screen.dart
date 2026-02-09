@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/admin_controller.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class AddServiceScreen extends StatefulWidget {
   const AddServiceScreen({super.key});
@@ -85,34 +86,28 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   Future<void> _saveService() async {
     // Validation
     if (nameCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter service name',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter service name',
+        isError: true,
       );
       return;
     }
 
     if (priceCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter price',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter price',
+        isError: true,
       );
       return;
     }
 
     if (durationCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter duration',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please enter duration',
+        isError: true,
       );
       return;
     }

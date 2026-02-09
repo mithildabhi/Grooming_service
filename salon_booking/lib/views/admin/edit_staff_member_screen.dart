@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/admin_controller.dart';
 import '../../models/employee_model.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EditStaffMemberScreen extends StatefulWidget {
   const EditStaffMemberScreen({super.key});
@@ -74,12 +75,10 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
     if (nameCtrl.text.trim().isEmpty || 
         emailCtrl.text.trim().isEmpty || 
         phoneCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please fill all required fields',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please fill all required fields',
+        isError: true,
       );
       return;
     }

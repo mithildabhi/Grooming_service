@@ -13,6 +13,7 @@ import '../models/service_model.dart';
 
 import '../services/service_api.dart';
 import '../services/salon_api_service.dart';
+import '../widgets/custom_snackbar.dart';
 
 class AdminController extends GetxController {
   // =========================
@@ -148,10 +149,10 @@ Future<void> _initIfAdmin() async {
       }
     } catch (e) {
       print('❌ Error loading profile: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load salon profile',
-        snackPosition: SnackPosition.BOTTOM,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to load salon profile',
+        isError: true,
       );
     } finally {
       isLoadingProfile.value = false;
@@ -171,24 +172,20 @@ Future<void> _initIfAdmin() async {
 
       print('✅ Profile saved successfully: ${savedProfile.name}');
 
-      Get.snackbar(
-        'Success',
-        'Salon profile saved successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22E6D3),
-        colorText: Colors.black,
+      CustomSnackbar.show(
+        title: 'Success',
+        message: 'Salon profile saved successfully',
+        isSuccess: true,
       );
 
       // Return to previous screen
       Get.back();
     } catch (e) {
       print('❌ Error saving profile: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to save profile: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to save profile: $e',
+        isError: true,
         duration: const Duration(seconds: 4),
       );
       rethrow;
@@ -214,12 +211,10 @@ Future<void> _initIfAdmin() async {
       print('✅ Loaded ${servicesList.length} services');
     } catch (e) {
       print('❌ Error fetching services: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load services',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to load services',
+        isError: true,
       );
     } finally {
       isLoadingServices.value = false;
@@ -249,21 +244,17 @@ Future<void> _initIfAdmin() async {
 
       Get.back(); // Close the add screen
 
-      Get.snackbar(
-        'Success',
-        'Service added successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22E6D3),
-        colorText: Colors.black,
+      CustomSnackbar.show(
+        title: 'Success',
+        message: 'Service added successfully',
+        isSuccess: true,
       );
     } catch (e) {
       print('❌ Error adding service: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to add service: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to add service: $e',
+        isError: true,
         duration: const Duration(seconds: 4),
       );
       rethrow;
@@ -299,21 +290,17 @@ Future<void> _initIfAdmin() async {
 
       Get.back(); // Close the edit screen
 
-      Get.snackbar(
-        'Success',
-        'Service updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22E6D3),
-        colorText: Colors.black,
+      CustomSnackbar.show(
+        title: 'Success',
+        message: 'Service updated successfully',
+        isSuccess: true,
       );
     } catch (e) {
       print('❌ Error updating service: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update service: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to update service: $e',
+        isError: true,
         duration: const Duration(seconds: 4),
       );
       rethrow;
@@ -333,21 +320,17 @@ Future<void> _initIfAdmin() async {
 
       Get.back(); // Close the edit screen
 
-      Get.snackbar(
-        'Deleted',
-        'Service removed successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22E6D3),
-        colorText: Colors.black,
+      CustomSnackbar.show(
+        title: 'Deleted',
+        message: 'Service removed successfully',
+        isSuccess: true,
       );
     } catch (e) {
       print('❌ Error deleting service: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to delete service: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to delete service: $e',
+        isError: true,
         duration: const Duration(seconds: 4),
       );
       rethrow;
@@ -407,16 +390,16 @@ Future<void> _initIfAdmin() async {
   Future<void> deleteBooking(dynamic bookingId) async {
     try {
       bookingsList.removeWhere((b) => b['id'] == bookingId);
-      Get.snackbar(
-        'Deleted',
-        'Booking deleted successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      CustomSnackbar.show(
+        title: 'Deleted',
+        message: 'Booking deleted successfully',
+        isSuccess: true,
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete booking',
-        snackPosition: SnackPosition.BOTTOM,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to delete booking',
+        isError: true,
       );
     }
   }
@@ -435,12 +418,10 @@ Future<void> _initIfAdmin() async {
       print('✅ Loaded ${staffList.length} staff members');
     } catch (e) {
       print('❌ Error fetching staff: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load staff',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to load staff',
+        isError: true,
       );
     } finally {
       isLoadingStaff.value = false;
@@ -474,21 +455,17 @@ Future<void> _initIfAdmin() async {
 
       Get.back(); // Close the add screen
 
-      Get.snackbar(
-        'Success',
-        'Staff member added successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22E6D3),
-        colorText: Colors.black,
+      CustomSnackbar.show(
+        title: 'Success',
+        message: 'Staff member added successfully',
+        isSuccess: true,
       );
     } catch (e) {
       print('❌ Error adding staff: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to add staff: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to add staff: $e',
+        isError: true,
         duration: const Duration(seconds: 4),
       );
       rethrow;
@@ -526,21 +503,17 @@ Future<void> _initIfAdmin() async {
 
       Get.back(); // Close the edit screen
 
-      Get.snackbar(
-        'Success',
-        'Staff member updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22E6D3),
-        colorText: Colors.black,
+      CustomSnackbar.show(
+        title: 'Success',
+        message: 'Staff member updated successfully',
+        isSuccess: true,
       );
     } catch (e) {
       print('❌ Error updating staff: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update staff: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to update staff: $e',
+        isError: true,
         duration: const Duration(seconds: 4),
       );
       rethrow;
@@ -560,21 +533,17 @@ Future<void> _initIfAdmin() async {
 
       Get.back(); // Close the edit screen
 
-      Get.snackbar(
-        'Deleted',
-        'Staff member removed successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF22E6D3),
-        colorText: Colors.black,
+      CustomSnackbar.show(
+        title: 'Deleted',
+        message: 'Staff member removed successfully',
+        isSuccess: true,
       );
     } catch (e) {
       print('❌ Error deleting staff: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to delete staff: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to delete staff: $e',
+        isError: true,
         duration: const Duration(seconds: 4),
       );
       rethrow;

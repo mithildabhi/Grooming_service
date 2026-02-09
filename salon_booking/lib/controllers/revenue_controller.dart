@@ -3,6 +3,8 @@
 
 import 'package:get/get.dart';
 import '../services/revenue_api.dart';
+import 'package:flutter/material.dart';
+import '../widgets/custom_snackbar.dart';
 
 class RevenueController extends GetxController {
   // ========================
@@ -88,7 +90,7 @@ class RevenueController extends GetxController {
       print('   This Month: ₹$monthRevenue');
     } catch (e) {
       print('❌ Revenue fetch error: $e');
-      Get.snackbar('Error', 'Failed to load revenue data');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load revenue data', isError: true);
     } finally {
       isLoading.value = false;
     }
@@ -104,7 +106,7 @@ class RevenueController extends GetxController {
       print('✅ Daily revenue loaded: ${dailyRevenue.length} days');
     } catch (e) {
       print('❌ Daily revenue error: $e');
-      Get.snackbar('Error', 'Failed to load daily revenue');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load daily revenue', isError: true);
     }
   }
 
@@ -115,7 +117,7 @@ class RevenueController extends GetxController {
       print('✅ Weekly revenue loaded: ${weeklyRevenue.length} weeks');
     } catch (e) {
       print('❌ Weekly revenue error: $e');
-      Get.snackbar('Error', 'Failed to load weekly revenue');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load weekly revenue', isError: true);
     }
   }
 
@@ -126,7 +128,7 @@ class RevenueController extends GetxController {
       print('✅ Monthly revenue loaded: ${monthlyRevenue.length} months');
     } catch (e) {
       print('❌ Monthly revenue error: $e');
-      Get.snackbar('Error', 'Failed to load monthly revenue');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load monthly revenue', isError: true);
     }
   }
 
@@ -137,7 +139,7 @@ class RevenueController extends GetxController {
       print('✅ Service revenue loaded: ${serviceRevenue.length} services');
     } catch (e) {
       print('❌ Service revenue error: $e');
-      Get.snackbar('Error', 'Failed to load service revenue');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load service revenue', isError: true);
     }
   }
 
@@ -148,7 +150,7 @@ class RevenueController extends GetxController {
       print('✅ Staff performance loaded: ${staffPerformance.length} staff');
     } catch (e) {
       print('❌ Staff performance error: $e');
-      Get.snackbar('Error', 'Failed to load staff performance');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load staff performance', isError: true);
     }
   }
 
@@ -159,7 +161,7 @@ class RevenueController extends GetxController {
       print('✅ Category revenue loaded: ${categoryRevenue.length} categories');
     } catch (e) {
       print('❌ Category revenue error: $e');
-      Get.snackbar('Error', 'Failed to load category revenue');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load category revenue', isError: true);
     }
   }
 
@@ -170,7 +172,7 @@ class RevenueController extends GetxController {
       print('✅ Peak hours loaded: ${peakHours.length} hours');
     } catch (e) {
       print('❌ Peak hours error: $e');
-      Get.snackbar('Error', 'Failed to load peak hours');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load peak hours', isError: true);
     }
   }
 

@@ -11,7 +11,9 @@ import '../models/booking_model.dart';
 import '../models/salon_model.dart';
 import '../models/service_model.dart';
 import '../models/employee_model.dart';
+import '../models/employee_model.dart';
 import '../services/booking_api.dart';
+import '../widgets/custom_snackbar.dart';
 
 class BookingController extends GetxController {
   // ========================
@@ -91,11 +93,16 @@ class BookingController extends GetxController {
   List<BookingModel> get upcomingBookings {
     final now = DateTime.now();
     return userBookings.where((b) {
-      final d = DateTime.tryParse(b.date);
-      return d != null &&
-          d.isAfter(now) &&
-          b.status != 'CANCELLED' &&
-          b.status != 'COMPLETED';
+      if (b.status == 'CANCELLED' || b.status == 'COMPLETED') {
+        return false;
+      }
+
+      final bookingDateTime = _getBookingDateTime(b);
+      if (bookingDateTime == null) return false;
+
+      // Show if the appointment hasn't ended yet
+      final endDateTime = bookingDateTime.add(Duration(minutes: b.durationMinutes));
+      return endDateTime.isAfter(now);
     }).toList();
   }
 
@@ -103,12 +110,36 @@ class BookingController extends GetxController {
   List<BookingModel> get pastBookings {
     final now = DateTime.now();
     return userBookings.where((b) {
-      final d = DateTime.tryParse(b.date);
-      return d != null &&
-          (d.isBefore(now) ||
-              b.status == 'CANCELLED' ||
-              b.status == 'COMPLETED');
+      if (b.status == 'CANCELLED' || b.status == 'COMPLETED') {
+        return true;
+      }
+
+      final bookingDateTime = _getBookingDateTime(b);
+      if (bookingDateTime == null) return false;
+
+      // Show if the appointment has ended
+      final endDateTime = bookingDateTime.add(Duration(minutes: b.durationMinutes));
+      return endDateTime.isBefore(now);
     }).toList();
+  }
+
+  /// Helper to parse full DateTime from booking
+  DateTime? _getBookingDateTime(BookingModel b) {
+    try {
+      final date = DateTime.parse(b.date);
+      final timeParts = b.time.split(':');
+      
+      return DateTime(
+        date.year,
+        date.month,
+        date.day,
+        int.parse(timeParts[0]),
+        int.parse(timeParts[1]),
+      );
+    } catch (e) {
+      print('Error parsing booking datetime for ID ${b.id}: $e');
+      return null;
+    }
   }
 
   // ========================
@@ -231,6 +262,7 @@ class BookingController extends GetxController {
   // ========================
   void selectDate(DateTime date) {
     selectedDate.value = date;
+    selectedTime.value = ''; // ✅ Reset time when date changes
     generateTimeSlots(date);
     print('📅 Date selected: $date');
   }
@@ -318,7 +350,7 @@ class BookingController extends GetxController {
         selectedService.value == null ||
         selectedDate.value == null ||
         selectedTime.value.isEmpty) {
-      Get.snackbar('Error', 'Please complete all booking details');
+      CustomSnackbar.show(title: 'Error', message: 'Please complete all booking details', isError: true);
       return false;
     }
     return true;
@@ -358,13 +390,15 @@ class BookingController extends GetxController {
         currentBooking.value = BookingModel.fromJson(result['booking']);
       }
 
-      Get.snackbar('Success', 'Booking created successfully');
+      print('✅ Booking created: $result');
+      
+      CustomSnackbar.show(title: 'Success', message: 'Booking created successfully', isSuccess: true);
       await fetchUserBookings();
       await fetchBookings();
       return true;
     } catch (e) {
       print('❌ Create booking error: $e');
-      Get.snackbar('Error', e.toString());
+      CustomSnackbar.show(title: 'Error', message: e.toString(), isError: true);
       return false;
     } finally {
       isCreatingBooking.value = false;
@@ -385,7 +419,7 @@ class BookingController extends GetxController {
       print('⏳ Remaining: ${remainingBookings.length}');
     } catch (e) {
       print('❌ Fetch bookings error: $e');
-      Get.snackbar('Error', 'Failed to load bookings');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load bookings', isError: true);
     } finally {
       isLoading.value = false;
     }
@@ -457,12 +491,10 @@ class BookingController extends GetxController {
       await fetchBookings();
       print('✅ CONTROLLER: Bookings refreshed');
 
-      Get.snackbar(
-        'Success',
-        'Booking status updated to $status',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.1),
-        duration: const Duration(seconds: 2),
+      CustomSnackbar.show(
+        title: 'Success', 
+        message: 'Booking status updated to $status',
+        isSuccess: true,
       );
 
       print('═══════════════════════════════════════');
@@ -483,12 +515,10 @@ class BookingController extends GetxController {
 
       print('❌ CONTROLLER: Update status error: $e');
 
-      Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withOpacity(0.1),
-        duration: const Duration(seconds: 4),
+      CustomSnackbar.show(
+        title: 'Error',
+        message: e.toString().replaceAll('Exception: ', ''),
+        isError: true,
       );
     }
   }
@@ -588,22 +618,15 @@ class BookingController extends GetxController {
         userBookings.refresh();
       }
 
-      Get.snackbar(
-        'Thank you!',
-        'Your review has been submitted',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade50,
-        colorText: Colors.green.shade700,
+      CustomSnackbar.show(
+        title: 'Thank you!', 
+        message: 'Your review has been submitted', 
+        isSuccess: true,
       );
     } catch (e) {
       debugPrint('❌ submitReview error: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to submit review',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade700,
-      );
+      Get.back(); // close dialog
+      CustomSnackbar.show(title: 'Error', message: 'Failed to submit review', isError: true);
     }
   }
 }

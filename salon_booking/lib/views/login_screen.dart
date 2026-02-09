@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../widgets/custom_snackbar.dart';
 import '../controllers/auth_controller.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
@@ -71,7 +72,7 @@ class LoginScreen extends StatelessWidget {
                   text: "Login →",
                   onTap: () {
                     if (email.text.isEmpty || password.text.isEmpty) {
-                      Get.snackbar("Error", "All fields required");
+                      CustomSnackbar.show(title: "Error", message: "All fields required", isError: true);
                       return;
                     }
                     auth.login(email.text.trim(), password.text.trim());

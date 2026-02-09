@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/revenue_controller.dart';
+import '../../controllers/revenue_controller.dart';
 import 'package:intl/intl.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class AdminRevenueScreen extends StatelessWidget {
   AdminRevenueScreen({super.key});
@@ -520,10 +522,9 @@ class AdminRevenueScreen extends StatelessWidget {
   // ===========================
   void _showDateRangePicker(BuildContext context) {
     // TODO: Implement date range picker for custom reports
-    Get.snackbar(
-      'Coming Soon',
-      'Custom date range selection will be available soon',
-      snackPosition: SnackPosition.BOTTOM,
+    CustomSnackbar.show(
+      title: 'Coming Soon',
+      message: 'Custom date range selection will be available soon',
     );
   }
 }

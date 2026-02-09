@@ -11,6 +11,7 @@ import '../models/salon_model.dart';
 import '../models/service_model.dart';
 import 'user_controller.dart';
 import 'location_controller.dart';
+import '../widgets/custom_snackbar.dart';
 
 class UserHomeController extends GetxController {
   // ========================
@@ -162,10 +163,10 @@ class UserHomeController extends GetxController {
         }
         
         if (!success) {
-          Get.snackbar(
-            'Location Required',
-            'Please enable location to find nearby salons',
-            snackPosition: SnackPosition.BOTTOM,
+          CustomSnackbar.show(
+            title: 'Location Required',
+            message: 'Please enable location to find nearby salons',
+            isError: true,
             duration: const Duration(seconds: 3),
           );
           return;
@@ -178,10 +179,10 @@ class UserHomeController extends GetxController {
       // ✅ Fetch salons with GPS coordinates
       await fetchSalons();
       
-      Get.snackbar(
-        'Location Enabled',
-        'Showing salons near you',
-        snackPosition: SnackPosition.BOTTOM,
+      CustomSnackbar.show(
+        title: 'Location Enabled',
+        message: 'Showing salons near you',
+        isSuccess: true,
         duration: const Duration(seconds: 2),
       );
     }
@@ -197,10 +198,10 @@ class UserHomeController extends GetxController {
       final locationCtrl = Get.find<LocationController>();
       
       if (!locationCtrl.hasLocation) {
-        Get.snackbar(
-          'Location Required',
-          'Please enable location services',
-          snackPosition: SnackPosition.BOTTOM,
+        CustomSnackbar.show(
+          title: 'Location Required',
+          message: 'Please enable location services',
+          isError: true,
         );
         return;
       }
@@ -243,10 +244,9 @@ class UserHomeController extends GetxController {
         
         if (salons.isEmpty) {
           errorMessage.value = 'No salons found within ${searchRadius}km';
-          Get.snackbar(
-            'No Salons Found',
-            'Try increasing the search radius or selecting a specific city',
-            snackPosition: SnackPosition.BOTTOM,
+          CustomSnackbar.show(
+            title: 'No Salons Found',
+            message: 'Try increasing the search radius or selecting a specific city',
           );
         }
       } else {
@@ -255,10 +255,10 @@ class UserHomeController extends GetxController {
       
     } catch (e) {
       print('❌ HOME: Error fetching nearby salons: $e');
-      Get.snackbar(
-        'Error',
-        'Could not load nearby salons',
-        snackPosition: SnackPosition.BOTTOM,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Could not load nearby salons',
+        isError: true,
       );
     } finally {
       isLoading.value = false;
@@ -435,10 +435,10 @@ class UserHomeController extends GetxController {
       hasError.value = true;
       errorMessage.value = 'Failed to load salons';
       
-      Get.snackbar(
-        'Error',
-        'Failed to load salons: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to load salons: ${e.toString()}',
+        isError: true,
         duration: const Duration(seconds: 3),
       );
     } finally {
@@ -464,12 +464,11 @@ class UserHomeController extends GetxController {
     await fetchSalons(city: city);
     
     // Show feedback
-    Get.snackbar(
-      'Location Changed',
-      city == 'All Cities' 
+    CustomSnackbar.show(
+      title: 'Location Changed',
+      message: city == 'All Cities' 
         ? 'Showing salons from all cities'
         : 'Showing salons in $city',
-      snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 2),
     );
   }

@@ -10,6 +10,7 @@ import '../../theme/app_text_styles.dart';
 
 import '../../widgets/ui/glass_card.dart';
 import '../../widgets/ui/primary_button.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class UserAppointmentDetailsScreen extends StatelessWidget {
   const UserAppointmentDetailsScreen({super.key});
@@ -197,7 +198,7 @@ class UserAppointmentDetailsScreen extends StatelessWidget {
                     label: 'Cancel Appointment',
                     onPressed: () async {
                       if (booking.id == null) {
-                        Get.snackbar('Error', 'Invalid booking');
+                        CustomSnackbar.show(title: 'Error', message: 'Invalid booking', isError: true);
                         return;
                       }
 

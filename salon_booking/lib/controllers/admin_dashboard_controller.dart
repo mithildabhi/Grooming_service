@@ -2,6 +2,7 @@
 import 'package:get/get.dart';
 import 'revenue_controller.dart';
 import 'booking_controller.dart';
+import '../widgets/custom_snackbar.dart';
 
 class AdminDashboardController extends GetxController {
   // Initialize controllers if they don't exist
@@ -107,7 +108,7 @@ class AdminDashboardController extends GetxController {
       ]);
     } catch (e) {
       // Error fetching dashboard data
-      Get.snackbar('Error', 'Failed to load dashboard data');
+      CustomSnackbar.show(title: 'Error', message: 'Failed to load dashboard data', isError: true);
     } finally {
       isLoading.value = false;
     }

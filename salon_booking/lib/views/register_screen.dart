@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../widgets/custom_snackbar.dart';
 import '../controllers/auth_controller.dart';
 import 'package:salon_booking/theme/app_colors.dart';
 
@@ -89,23 +90,23 @@ class RegisterScreen extends StatelessWidget {
               onTap: () {
                 // ✅ VALIDATE ALL FIELDS
                 if (name.text.trim().isEmpty) {
-                  Get.snackbar("Error", "Please enter your name");
+                  CustomSnackbar.show(title: "Error", message: "Please enter your name", isError: true);
                   return;
                 }
                 if (email.text.trim().isEmpty) {
-                  Get.snackbar("Error", "Please enter your email");
+                  CustomSnackbar.show(title: "Error", message: "Please enter your email", isError: true);
                   return;
                 }
                 if (phone.text.trim().isEmpty) {
-                  Get.snackbar("Error", "Please enter your phone number");
+                  CustomSnackbar.show(title: "Error", message: "Please enter your phone number", isError: true);
                   return;
                 }
                 if (password.text.trim().isEmpty) {
-                  Get.snackbar("Error", "Please enter a password");
+                  CustomSnackbar.show(title: "Error", message: "Please enter a password", isError: true);
                   return;
                 }
                 if (phone.text.trim().length < 10) {
-                  Get.snackbar("Error", "Please enter a valid phone number");
+                  CustomSnackbar.show(title: "Error", message: "Please enter a valid phone number", isError: true);
                   return;
                 }
 

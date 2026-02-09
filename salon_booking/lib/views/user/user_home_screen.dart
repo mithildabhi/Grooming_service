@@ -16,6 +16,7 @@ import '../../widgets/ui/primary_button.dart';
 import '../../widgets/ui/chip_pill.dart';
 import '../../widgets/ui/section_header.dart';
 import '../../widgets/city_selector_widget.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({super.key});
@@ -263,7 +264,7 @@ class _AiPickCard extends StatelessWidget {
                 label: 'Book Now',
                 onPressed: () {
                   // TODO: Navigate to booking screen
-                  Get.snackbar('Info', 'AI Pick booking coming soon!');
+                  CustomSnackbar.show(title: 'Info', message: 'AI Pick booking coming soon!');
                 },
               ),
             ],

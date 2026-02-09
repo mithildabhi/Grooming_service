@@ -14,6 +14,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 
 import '../../widgets/ui/glass_card.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class UserMyReviewsScreen extends StatefulWidget {
   const UserMyReviewsScreen({super.key});
@@ -168,19 +169,17 @@ class _UserMyReviewsScreenState extends State<UserMyReviewsScreen> {
     if (confirmed == true) {
       try {
         await ReviewApi.deleteReview(reviewId);
-        Get.snackbar(
-          'Success',
-          'Review deleted successfully',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+        CustomSnackbar.show(
+          title: 'Success',
+          message: 'Review deleted successfully',
+          isSuccess: true,
         );
         _loadMyReviews(); // Refresh list
       } catch (e) {
-        Get.snackbar(
-          'Error',
-          'Failed to delete review: $e',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+        CustomSnackbar.show(
+          title: 'Error',
+          message: 'Failed to delete review: $e',
+          isError: true,
         );
       }
     }

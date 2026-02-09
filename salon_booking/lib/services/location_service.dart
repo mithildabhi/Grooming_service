@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../widgets/custom_snackbar.dart';
 
 class LocationService {
   // ========================
@@ -45,10 +46,10 @@ class LocationService {
       
       if (!serviceEnabled) {
         if (showErrorDialog) {
-          Get.snackbar(
-            'Location Disabled',
-            'Please enable location services',
-            snackPosition: SnackPosition.BOTTOM,
+          CustomSnackbar.show(
+            title: 'Location Disabled',
+            message: 'Please enable location services',
+            isError: true,
             duration: const Duration(seconds: 3),
           );
         }
@@ -63,10 +64,10 @@ class LocationService {
         
         if (permission == LocationPermission.denied) {
           if (showErrorDialog) {
-            Get.snackbar(
-              'Permission Denied',
-              'Location permission is required',
-              snackPosition: SnackPosition.BOTTOM,
+            CustomSnackbar.show(
+              title: 'Permission Denied',
+              message: 'Location permission is required',
+              isError: true,
               duration: const Duration(seconds: 3),
             );
           }
@@ -94,10 +95,10 @@ class LocationService {
       print('❌ Error getting location: $e');
       
       if (showErrorDialog) {
-        Get.snackbar(
-          'Location Error',
-          'Could not get your location',
-          snackPosition: SnackPosition.BOTTOM,
+        CustomSnackbar.show(
+          title: 'Location Error',
+          message: 'Could not get your location',
+          isError: true,
           duration: const Duration(seconds: 3),
         );
       }

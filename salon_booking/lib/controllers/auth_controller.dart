@@ -12,7 +12,9 @@ import '../services/auth_service.dart';
 import 'admin_controller.dart';
 import 'booking_controller.dart';
 import '../services/django_api_service.dart';
+import '../services/django_api_service.dart';
 import 'user_controller.dart';
+import '../widgets/custom_snackbar.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -49,7 +51,8 @@ class AuthController extends GetxController {
       _redirectByRole();
     } catch (e) {
       print("❌ LOGIN ERROR: $e");
-      Get.snackbar('Login failed', e.toString());
+      print("❌ LOGIN ERROR: $e");
+      CustomSnackbar.show(title: 'Login failed', message: e.toString(), isError: true);
       rethrow;
     }
   }
@@ -194,11 +197,12 @@ class AuthController extends GetxController {
 
           print('🎯 Registration complete, redirecting as: ${this.role.value}');
 
-          Get.snackbar(
-            'Success',
-            'Account created successfully!',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 2),
+          Get.offAllNamed(AppRoutes.userHome);
+          
+          CustomSnackbar.show(
+            title: 'Success',
+            message: 'Account created successfully!',
+            isSuccess: true,
           );
 
           _redirectByRole();
@@ -208,12 +212,10 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       print('❌ Registration error: $e');
-      Get.snackbar(
-        'Registration Failed',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+      CustomSnackbar.show(
+        title: 'Registration Failed',
+        message: e.toString(),
+        isError: true,
       );
       rethrow;
     }
@@ -234,9 +236,9 @@ class AuthController extends GetxController {
   Future<void> resetPassword(String email) async {
     try {
       await _authService.resetPassword(email);
-      Get.snackbar('Success', 'Password reset email sent');
+      CustomSnackbar.show(title: 'Success', message: 'Password reset email sent', isSuccess: true);
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      CustomSnackbar.show(title: 'Error', message: e.toString(), isError: true);
     }
   }
 

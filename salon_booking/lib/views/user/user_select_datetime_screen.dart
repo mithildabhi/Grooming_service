@@ -36,6 +36,11 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
     final args = Get.arguments;
     salon = args is SalonModel ? args : null;
     
+    // ✅ Ensure controller has the correct salon
+    if (salon != null) {
+      bookingController.selectedSalon.value = salon;
+    }
+    
     // ✅ FIX: AUTO-SELECT TODAY'S DATE on screen load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final today = DateTime.now();
@@ -43,7 +48,7 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
         selectedDate = today;
       });
       // ✅ Generate time slots for today automatically
-      bookingController.generateTimeSlots(today);
+      bookingController.selectDate(today);
       print('✅ Auto-selected today: ${today.toString().split(' ')[0]}');
       print('⏰ Current time: ${today.hour}:${today.minute}');
     });
@@ -319,7 +324,7 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                                         selectedTime = null; // Reset time when date changes
                                       });
                                       // ✅ Generate time slots with filtering
-                                      bookingController.generateTimeSlots(date);
+                                      bookingController.selectDate(date);
                                     }
                                   : null,
                               child: Container(

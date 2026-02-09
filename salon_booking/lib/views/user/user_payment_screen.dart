@@ -12,6 +12,7 @@ import '../../theme/app_text_styles.dart';
 
 import '../../widgets/ui/glass_card.dart';
 import '../../widgets/ui/primary_button.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class UserPaymentScreen extends StatefulWidget {
   const UserPaymentScreen({super.key});
@@ -288,7 +289,7 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                   onPressed: () async {
                     final user = FirebaseAuth.instance.currentUser;
                     if (user == null) {
-                      Get.snackbar('Error', 'Please login to continue');
+                      CustomSnackbar.show(title: 'Error', message: 'Please login to continue', isError: true);
                       return;
                     }
 

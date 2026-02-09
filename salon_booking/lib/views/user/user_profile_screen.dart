@@ -12,6 +12,7 @@ import '../../theme/app_text_styles.dart';
 
 import '../../widgets/ui/glass_card.dart';
 import '../../widgets/ui/section_header.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -193,10 +194,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 icon: Icons.help_outline,
                 label: 'Help & Support',
                 onTap: () {
-                  Get.snackbar(
-                    'Help',
-                    'Contact support at support@salonapp.com',
-                    snackPosition: SnackPosition.BOTTOM,
+                  CustomSnackbar.show(
+                    title: 'Help',
+                    message: 'Contact support at support@salonapp.com',
                   );
                 },
               ),
