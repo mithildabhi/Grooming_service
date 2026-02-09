@@ -1,1 +1,1 @@
-web: gunicorn salon_booking.wsgi
+web: gunicorn backend.wsgi
