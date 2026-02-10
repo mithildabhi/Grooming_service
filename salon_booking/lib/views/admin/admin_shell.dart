@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:glassmotion_navbar/glassmotion_navbar.dart';
 
 import 'admin_home_screen.dart';
@@ -22,7 +23,10 @@ class _AdminShellState extends State<AdminShell> {
   static const _navItems = <GlassNavItem>[
     GlassNavItem(icon: Icons.home_rounded, label: 'Home'),
     GlassNavItem(icon: Icons.calendar_month_rounded, label: 'Bookings'),
-    GlassNavItem(icon: Icons.psychology_rounded, label: 'AI Assistant'), // Changed from Services
+    GlassNavItem(
+      icon: Icons.psychology_rounded,
+      label: 'AI Assistant',
+    ), // Changed from Services
     GlassNavItem(icon: Icons.people_rounded, label: 'Staff'),
     GlassNavItem(icon: Icons.person_rounded, label: 'Profile'),
   ];
@@ -30,10 +34,10 @@ class _AdminShellState extends State<AdminShell> {
   @override
   void initState() {
     super.initState();
-    _pages =  [
+    _pages = [
       AdminHomeScreen(),
       AdminBookingsScreen(),
-      ChatbotScreen(), 
+      SizedBox(),
       EmployeeScreen(),
       ProfileScreen(),
     ];
@@ -59,6 +63,10 @@ class _AdminShellState extends State<AdminShell> {
           items: _navItems,
           selectedIndex: _currentIndex,
           onItemTapped: (index) {
+            if (index == 2) {
+              Get.to(() => const ChatbotScreen());
+              return;
+            }
             if (index != _currentIndex) {
               setState(() => _currentIndex = index);
             }
@@ -67,7 +75,7 @@ class _AdminShellState extends State<AdminShell> {
           // Center tap can still do something else if needed
           onCenterTap: () {
             // Open chatbot on center tap too
-            setState(() => _currentIndex = 2);
+            Get.to(() => const ChatbotScreen());
           },
 
           accentColor: const Color(0xFF19F6E8),

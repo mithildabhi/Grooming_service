@@ -313,9 +313,9 @@ def create_review(request):
     
     Body:
     {
-        "booking_id": 123,  // OR service_id
+        "booking_id": 123,  // OR service_id OR salon_id
         "rating": 5,
-        "title": "Great experience!",
+        "title": "Great experience!",  // Optional
         "comment": "Loved the service...",
         "service_quality_rating": 5,  // Optional
         "staff_behavior_rating": 5,   // Optional
@@ -323,40 +323,97 @@ def create_review(request):
         "value_for_money_rating": 5,  // Optional
         "images": []                   // Optional
     }
+    
+    Returns:
+        201 — review created
+        400 — validation error (missing fields, invalid booking, etc.)
+        409 — duplicate review for this booking
+        500 — only for unexpected server errors
     """
+    from django.db import IntegrityError
+    from rest_framework.exceptions import ValidationError
+    import traceback
+    
     try:
         serializer = ReviewCreateSerializer(
             data=request.data,
             context={'request': request}
         )
         
-        if serializer.is_valid():
-            review = serializer.save()
-            
-            # Return created review
-            detail_serializer = ReviewDetailSerializer(
-                review,
-                context={'request': request}
-            )
-            
+        if not serializer.is_valid():
+            print(f"⚠️ Review validation errors: {serializer.errors}")
             return Response(
-                {
-                    'message': 'Review submitted successfully',
-                    'review': detail_serializer.data
-                },
-                status=status.HTTP_201_CREATED
+                {'error': _flatten_errors(serializer.errors)},
+                status=status.HTTP_400_BAD_REQUEST
             )
         
+        try:
+            review = serializer.save()
+        except ValidationError as ve:
+            # ValidationError raised inside create() for business logic:
+            # - "already reviewed this booking"
+            # - "can only review completed bookings"
+            # - "booking not found"
+            error_msg = ve.detail if hasattr(ve, 'detail') else str(ve)
+            if isinstance(error_msg, list):
+                error_msg = error_msg[0] if error_msg else str(ve)
+            error_str = str(error_msg)
+            print(f"⚠️ Review business error: {error_str}")
+            
+            # Return 409 for duplicate review
+            if 'already reviewed' in error_str.lower():
+                return Response(
+                    {'error': error_str},
+                    status=status.HTTP_409_CONFLICT
+                )
+            
+            return Response(
+                {'error': error_str},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except IntegrityError as ie:
+            # DB constraint: unique_review_per_booking
+            print(f"⚠️ Review IntegrityError: {ie}")
+            return Response(
+                {'error': 'You have already submitted a review for this booking.'},
+                status=status.HTTP_409_CONFLICT
+            )
+        
+        # Return created review
+        detail_serializer = ReviewDetailSerializer(
+            review,
+            context={'request': request}
+        )
+        
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            detail_serializer.data,
+            status=status.HTTP_201_CREATED
         )
         
     except Exception as e:
+        print(f"❌ UNEXPECTED create_review error: {e}")
+        traceback.print_exc()
         return Response(
-            {'error': str(e)},
+            {'error': 'An unexpected error occurred. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+def _flatten_errors(errors):
+    """Flatten DRF error dict into a single human-readable string."""
+    messages = []
+    if isinstance(errors, dict):
+        for field, field_errors in errors.items():
+            if isinstance(field_errors, list):
+                for err in field_errors:
+                    messages.append(f"{field}: {err}" if field != 'non_field_errors' else str(err))
+            else:
+                messages.append(f"{field}: {field_errors}")
+    elif isinstance(errors, list):
+        messages = [str(e) for e in errors]
+    else:
+        messages = [str(errors)]
+    return '; '.join(messages) if messages else 'Validation error'
 
 
 @api_view(['PUT', 'PATCH'])

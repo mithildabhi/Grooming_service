@@ -21,8 +21,12 @@ class AdminBookingsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
-        title: const Text('Bookings', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
+        titleSpacing: 20,
+        centerTitle: false,
+        title: const Text(
+          'Bookings',
+          style: TextStyle(color: Colors.white, fontSize: 23),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -32,9 +36,7 @@ class AdminBookingsScreen extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: accent),
-          );
+          return const Center(child: CircularProgressIndicator(color: accent));
         }
 
         final bookings = _getFilteredBookings();
@@ -72,8 +74,8 @@ class AdminBookingsScreen extends StatelessWidget {
         return controller.cancelledBookings;
       case 4: // Service Time Passed (NEW)
         return controller.bookings.where((booking) {
-          return booking.status == 'CONFIRMED' && 
-                 controller.isBookingPast(booking);
+          return booking.status == 'CONFIRMED' &&
+              controller.isBookingPast(booking);
         }).toList();
       default: // All
         return controller.bookings;
@@ -87,7 +89,8 @@ class AdminBookingsScreen extends StatelessWidget {
     return Obx(() {
       // Calculate service time passed count
       final passedCount = controller.bookings.where((booking) {
-        return booking.status == 'CONFIRMED' && controller.isBookingPast(booking);
+        return booking.status == 'CONFIRMED' &&
+            controller.isBookingPast(booking);
       }).length;
 
       return SingleChildScrollView(
@@ -96,25 +99,51 @@ class AdminBookingsScreen extends StatelessWidget {
           children: [
             _filterChip('All', 0, controller.totalBookingsCount, Icons.apps),
             const SizedBox(width: 8),
-            _filterChip('Remaining', 1, controller.remainingBookings.length, Icons.schedule),
+            _filterChip(
+              'Remaining',
+              1,
+              controller.remainingBookings.length,
+              Icons.schedule,
+            ),
             const SizedBox(width: 8),
-            _filterChip('Completed', 2, controller.completedCount, Icons.check_circle),
+            _filterChip(
+              'Completed',
+              2,
+              controller.completedCount,
+              Icons.check_circle,
+            ),
             const SizedBox(width: 8),
-            _filterChip('Cancelled', 3, controller.cancelledCount, Icons.cancel),
+            _filterChip(
+              'Cancelled',
+              3,
+              controller.cancelledCount,
+              Icons.cancel,
+            ),
             const SizedBox(width: 8),
             // ✅ NEW: Service Time Passed Filter
-            _filterChip('Time Passed', 4, passedCount, Icons.warning, 
-                        color: Colors.orange),
+            _filterChip(
+              'Time Passed',
+              4,
+              passedCount,
+              Icons.warning,
+              color: Colors.orange,
+            ),
           ],
         ),
       );
     });
   }
 
-  Widget _filterChip(String label, int index, int count, IconData icon, {Color? color}) {
+  Widget _filterChip(
+    String label,
+    int index,
+    int count,
+    IconData icon, {
+    Color? color,
+  }) {
     final isSelected = selectedFilter.value == index;
     final chipColor = color ?? accent;
-    
+
     return GestureDetector(
       onTap: () => selectedFilter.value = index,
       child: Container(
@@ -130,11 +159,7 @@ class AdminBookingsScreen extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? Colors.black : chipColor,
-            ),
+            Icon(icon, size: 18, color: isSelected ? Colors.black : chipColor),
             const SizedBox(width: 6),
             Text(
               label,
@@ -185,18 +210,15 @@ class AdminBookingsScreen extends StatelessWidget {
           border: isPast && booking.status == 'CONFIRMED'
               ? Border.all(color: Colors.orange, width: 2)
               : booking.status == 'CANCELLED'
-                  ? Border.all(color: Colors.red.withOpacity(0.5), width: 1.5)
-                  : null,
+              ? Border.all(color: Colors.red.withOpacity(0.5), width: 1.5)
+              : null,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
               backgroundColor: statusColor.withOpacity(0.2),
-              child: Icon(
-                _getStatusIcon(booking.status),
-                color: statusColor,
-              ),
+              child: Icon(_getStatusIcon(booking.status), color: statusColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -248,36 +270,43 @@ class AdminBookingsScreen extends StatelessWidget {
                     style: const TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                   // ✅ IMPROVED: Service time passed warning
-if (isPast && booking.status == 'CONFIRMED')
-  Container(
-    margin: const EdgeInsets.only(top: 8),
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.orange.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.orange.withOpacity(0.5)),
-    ),
-    child: Row(
-      children: const [
-        Icon(Icons.warning_amber, color: Colors.orange, size: 16),
-        SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            'Service time passed - Update status',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.orange,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-
-
+                  if (isPast && booking.status == 'CONFIRMED')
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.warning_amber,
+                            color: Colors.orange,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Service time passed - Update status',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -307,13 +336,14 @@ if (isPast && booking.status == 'CONFIRMED')
       icon: const Icon(Icons.more_vert, color: Colors.white54),
       color: card,
       onSelected: (value) {
-      final bookingId = int.tryParse(booking.id.toString());
-      if (bookingId == null) return;
-        
+        final bookingId = int.tryParse(booking.id.toString());
+        if (bookingId == null) return;
+
         if (value == 'COMPLETED') {
           _confirmAction(
             title: 'Mark as Completed?',
-            message: 'This will mark the booking as completed and add ₹${booking.price.toStringAsFixed(0)} to revenue.',
+            message:
+                'This will mark the booking as completed and add ₹${booking.price.toStringAsFixed(0)} to revenue.',
             onConfirm: () => controller.updateStatus(bookingId, 'COMPLETED'),
           );
         } else if (value == 'CANCELLED') {
@@ -442,7 +472,7 @@ if (isPast && booking.status == 'CONFIRMED')
   // ===========================
   void _showDetails(BookingModel booking) {
     final isPast = controller.isBookingPast(booking);
-    
+
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
@@ -519,7 +549,8 @@ if (isPast && booking.status == 'CONFIRMED')
     return Obx(() {
       // Calculate service time passed count
       final passedCount = controller.bookings.where((booking) {
-        return booking.status == 'CONFIRMED' && controller.isBookingPast(booking);
+        return booking.status == 'CONFIRMED' &&
+            controller.isBookingPast(booking);
       }).length;
 
       return Container(
@@ -552,7 +583,11 @@ if (isPast && booking.status == 'CONFIRMED')
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                    const Icon(
+                      Icons.warning_amber,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '$passedCount booking${passedCount > 1 ? 's' : ''} time passed',
@@ -647,10 +682,7 @@ if (isPast && booking.status == 'CONFIRMED')
         children: [
           SizedBox(
             width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white54),
-            ),
+            child: Text(label, style: const TextStyle(color: Colors.white54)),
           ),
           Expanded(
             child: Text(
@@ -738,7 +770,13 @@ if (isPast && booking.status == 'CONFIRMED')
     try {
       final d = DateTime.parse(date);
       final t = time.split(':');
-      final dt = DateTime(d.year, d.month, d.day, int.parse(t[0]), int.parse(t[1]));
+      final dt = DateTime(
+        d.year,
+        d.month,
+        d.day,
+        int.parse(t[0]),
+        int.parse(t[1]),
+      );
       return DateFormat('dd MMM yyyy • hh:mm a').format(dt);
     } catch (_) {
       return '$date $time';

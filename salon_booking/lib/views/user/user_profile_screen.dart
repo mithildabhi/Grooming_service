@@ -41,11 +41,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _navigateToEditProfile() async {
     // Navigate to edit profile
     await Get.toNamed('/edit-profile');
-    
+
     // ✅ When returning from edit profile, refresh the data
     print('⬅️ Returned from edit profile, refreshing...');
     await _loadProfileData();
-    
+
     // Force UI rebuild
     if (mounted) {
       setState(() {});
@@ -57,7 +57,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -176,7 +179,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               _ProfileItem(
                 icon: Icons.edit_outlined,
                 label: 'Edit Profile',
-                onTap: _navigateToEditProfile,  // ✅ Use custom navigation
+                onTap: _navigateToEditProfile, // ✅ Use custom navigation
               ),
               _ProfileItem(
                 icon: Icons.settings_outlined,
@@ -205,16 +208,81 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 label: 'About App',
                 onTap: () {
                   Get.dialog(
-                    AlertDialog(
-                      title: const Text('About'),
-                      content: const Text('Salon Booking App v1.0.0'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Get.back(),
-                          child: const Text('OK'),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.info_outline,
+                                  color: AppColors.primary,
+                                  size: 48,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                'About',
+                                style: AppTextStyles.heading.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'Salon Booking App',
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.textPrimary,
+                                  decoration: TextDecoration.none,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Version 1.0.0',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textMuted,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () => Get.back(),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'OK',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
+                    barrierDismissible: true,
                   );
                 },
               ),

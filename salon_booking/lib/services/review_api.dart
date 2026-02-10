@@ -15,10 +15,10 @@ class ReviewApi {
   static Future<Map<String, String>> _getHeaders() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('User not authenticated');
-    
+
     final token = await user.getIdToken();
     if (token == null) throw Exception('Failed to get authentication token');
-    
+
     return {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -26,9 +26,7 @@ class ReviewApi {
   }
 
   static Future<Map<String, String>> _getPublicHeaders() async {
-    return {
-      'Content-Type': 'application/json',
-    };
+    return {'Content-Type': 'application/json'};
   }
 
   /// ✅ FIXED: Get salon reviews with proper error handling
@@ -43,7 +41,7 @@ class ReviewApi {
   }) async {
     try {
       final headers = await _getPublicHeaders();
-      
+
       // Build query parameters
       List<String> params = [];
       if (rating != null) params.add('rating=$rating');
@@ -52,22 +50,21 @@ class ReviewApi {
       params.add('sort=$sort');
       params.add('page=$page');
       params.add('page_size=$pageSize');
-      
+
       final queryString = params.join('&');
       final url = '$baseUrl/reviews/salon/$salonId/?$queryString';
-      
+
       print('📖 Fetching salon reviews: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       print('📊 Reviews response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         // ✅ FIXED: Parse reviews with proper type handling
         final List<ReviewModel> reviews = [];
         if (data['results'] != null) {
@@ -80,7 +77,7 @@ class ReviewApi {
             }
           }
         }
-        
+
         return {
           'reviews': reviews,
           'count': data['count'] ?? 0,
@@ -100,15 +97,14 @@ class ReviewApi {
   static Future<ReviewStats> getSalonReviewStats(int salonId) async {
     try {
       final headers = await _getPublicHeaders();
-      
+
       final url = '$baseUrl/reviews/salon/$salonId/stats/';
-      
+
       print('📊 Fetching review stats: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -130,17 +126,17 @@ class ReviewApi {
   }) async {
     try {
       final headers = await _getPublicHeaders();
-      
-      final url = '$baseUrl/reviews/service/$serviceId/?page=$page&page_size=$pageSize';
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final url =
+          '$baseUrl/reviews/service/$serviceId/?page=$page&page_size=$pageSize';
+
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         final List<ReviewModel> reviews = [];
         if (data['results'] != null) {
           for (var reviewJson in data['results']) {
@@ -151,7 +147,7 @@ class ReviewApi {
             }
           }
         }
-        
+
         return {
           'reviews': reviews,
           'count': data['count'] ?? 0,
@@ -174,19 +170,18 @@ class ReviewApi {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       final url = '$baseUrl/reviews/my-reviews/?page=$page&page_size=$pageSize';
-      
+
       print('📖 Fetching my reviews: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         final List<ReviewModel> reviews = [];
         if (data['results'] != null) {
           for (var reviewJson in data['results']) {
@@ -197,7 +192,7 @@ class ReviewApi {
             }
           }
         }
-        
+
         return reviews;
       } else if (response.statusCode == 401) {
         throw Exception('Please login to view your reviews');
@@ -210,7 +205,7 @@ class ReviewApi {
     }
   }
 
-  /// ✅ FIXED: Create review with proper validation
+  /// ✅ PRODUCTION-READY: Create review with proper validation & error handling
   static Future<ReviewModel> createReview({
     required int rating,
     required String comment,
@@ -225,43 +220,78 @@ class ReviewApi {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       // ✅ Must have at least one: booking_id, service_id, or salon_id
       if (bookingId == null && serviceId == null && salonId == null) {
         throw Exception('Must specify booking, service, or salon');
       }
-      
-      final body = {
+
+      // ✅ Validate rating
+      if (rating < 1 || rating > 5) {
+        throw Exception('Rating must be between 1 and 5');
+      }
+
+      // ✅ Validate comment
+      final trimmedComment = comment.trim();
+      if (trimmedComment.isEmpty) {
+        throw Exception('Please add a comment for your review');
+      }
+
+      // ✅ Build body — only include non-null, non-empty values
+      final body = <String, dynamic>{
         'rating': rating,
-        'comment': comment,
-        'title': title,
-        if (bookingId != null) 'booking_id': bookingId,
-        if (serviceId != null) 'service_id': serviceId,
-        if (salonId != null) 'salon_id': salonId,
-        if (serviceQualityRating != null) 'service_quality_rating': serviceQualityRating,
-        if (staffBehaviorRating != null) 'staff_behavior_rating': staffBehaviorRating,
-        if (ambianceRating != null) 'ambiance_rating': ambianceRating,
-        if (valueForMoneyRating != null) 'value_for_money_rating': valueForMoneyRating,
+        'comment': trimmedComment,
       };
-      
+
+      // Only send title if non-empty
+      final trimmedTitle = title.trim();
+      if (trimmedTitle.isNotEmpty) {
+        body['title'] = trimmedTitle;
+      }
+
+      if (bookingId != null) body['booking_id'] = bookingId;
+      if (serviceId != null) body['service_id'] = serviceId;
+      if (salonId != null) body['salon_id'] = salonId;
+      if (serviceQualityRating != null)
+        body['service_quality_rating'] = serviceQualityRating;
+      if (staffBehaviorRating != null)
+        body['staff_behavior_rating'] = staffBehaviorRating;
+      if (ambianceRating != null) body['ambiance_rating'] = ambianceRating;
+      if (valueForMoneyRating != null)
+        body['value_for_money_rating'] = valueForMoneyRating;
+
       print('✍️ Creating review: $body');
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/reviews/create/'),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/reviews/create/'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
 
       print('📝 Create review response: ${response.statusCode}');
+      print('📝 Response body: ${response.body}');
 
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return ReviewModel.fromJson(data);
+      } else if (response.statusCode == 409) {
+        // Duplicate review
+        final error = jsonDecode(response.body);
+        throw Exception(
+          error['error'] ?? 'You have already reviewed this booking',
+        );
       } else if (response.statusCode == 400) {
         final error = jsonDecode(response.body);
         throw Exception(error['error'] ?? 'Invalid review data');
+      } else if (response.statusCode == 401) {
+        throw Exception('Please login to submit a review');
       } else {
-        throw Exception('Failed to create review: ${response.statusCode}');
+        // Log unexpected errors for debugging
+        print('❌ Unexpected review response: ${response.statusCode}');
+        print('❌ Body: ${response.body}');
+        throw Exception('Failed to create review. Please try again.');
       }
     } catch (e) {
       print('❌ Error creating review: $e');
@@ -282,22 +312,27 @@ class ReviewApi {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       final body = {
         'rating': rating,
         'comment': comment,
         'title': title,
-        if (serviceQualityRating != null) 'service_quality_rating': serviceQualityRating,
-        if (staffBehaviorRating != null) 'staff_behavior_rating': staffBehaviorRating,
+        if (serviceQualityRating != null)
+          'service_quality_rating': serviceQualityRating,
+        if (staffBehaviorRating != null)
+          'staff_behavior_rating': staffBehaviorRating,
         if (ambianceRating != null) 'ambiance_rating': ambianceRating,
-        if (valueForMoneyRating != null) 'value_for_money_rating': valueForMoneyRating,
+        if (valueForMoneyRating != null)
+          'value_for_money_rating': valueForMoneyRating,
       };
-      
-      final response = await http.put(
-        Uri.parse('$baseUrl/reviews/$reviewId/update/'),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/reviews/$reviewId/update/'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -315,11 +350,13 @@ class ReviewApi {
   static Future<void> deleteReview(int reviewId) async {
     try {
       final headers = await _getHeaders();
-      
-      final response = await http.delete(
-        Uri.parse('$baseUrl/reviews/$reviewId/delete/'),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/reviews/$reviewId/delete/'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
         throw Exception('Failed to delete review');
@@ -337,14 +374,16 @@ class ReviewApi {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       final body = {'is_helpful': isHelpful};
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/reviews/$reviewId/helpful/'),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/reviews/$reviewId/helpful/'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -369,17 +408,16 @@ class ReviewApi {
   }) async {
     try {
       final headers = await _getHeaders();
-      
-      final body = {
-        'reason': reason,
-        'description': description,
-      };
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/reviews/$reviewId/report/'),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 30));
+
+      final body = {'reason': reason, 'description': description};
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/reviews/$reviewId/report/'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
         final error = jsonDecode(response.body);

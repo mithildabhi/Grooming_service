@@ -4,7 +4,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:get/get.dart';
 import '../../services/user_chatbot_api.dart';
 import '../../services/hairstyle_service.dart';
 import '../../theme/app_colors.dart';
@@ -92,7 +91,6 @@ What would you like to do today?""";
 
       // ✅ FIXED: No suggestions in ChatbotResponse, load separately
       await _loadSuggestions();
-      
     } catch (e) {
       _addBotMessage('Sorry, I encountered an error. Please try again.');
       debugPrint('Error: $e');
@@ -117,35 +115,37 @@ What would you like to do today?""";
 
   void _addUserMessage(String text) {
     setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(text: text, isUser: true, timestamp: DateTime.now()),
+      );
     });
     _scrollToBottom();
   }
 
   void _addBotMessage(String text, {bool showImageUploadOptions = false}) {
     setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: false,
-        timestamp: DateTime.now(),
-        showImageUploadOptions: showImageUploadOptions,
-      ));
+      _messages.add(
+        ChatMessage(
+          text: text,
+          isUser: false,
+          timestamp: DateTime.now(),
+          showImageUploadOptions: showImageUploadOptions,
+        ),
+      );
     });
     _scrollToBottom();
   }
 
   void _addAnalysisResult(HairstyleAnalysisResult result) {
     setState(() {
-      _messages.add(ChatMessage(
-        text: _formatAnalysisResult(result),
-        isUser: false,
-        timestamp: DateTime.now(),
-        analysisResult: result,
-      ));
+      _messages.add(
+        ChatMessage(
+          text: _formatAnalysisResult(result),
+          isUser: false,
+          timestamp: DateTime.now(),
+          analysisResult: result,
+        ),
+      );
     });
     _scrollToBottom();
   }
@@ -157,31 +157,36 @@ What would you like to do today?""";
 
     final buffer = StringBuffer();
     buffer.writeln('✨ **Analysis Complete!**\n');
-    
+
     buffer.writeln('🎭 **Your Face Shape:** ${result.faceShape}\n');
-    
+
     if (result.currentHairstyle != null) {
-      buffer.writeln('💇 **Current Hair:** ${result.currentHairstyle!.description}\n');
+      buffer.writeln(
+        '💇 **Current Hair:** ${result.currentHairstyle!.description}\n',
+      );
     }
-    
+
     if (result.recommendations != null && result.recommendations!.isNotEmpty) {
       buffer.writeln('⭐ **Recommended Hairstyles:**\n');
       for (int i = 0; i < result.recommendations!.length; i++) {
         final rec = result.recommendations![i];
         buffer.writeln('**${i + 1}. ${rec.name}**');
         buffer.writeln('   ${rec.description}');
-        buffer.writeln('   • Difficulty: ${rec.difficulty} | Maintenance: ${rec.maintenance}\n');
+        buffer.writeln(
+          '   • Difficulty: ${rec.difficulty} | Maintenance: ${rec.maintenance}\n',
+        );
       }
     }
-    
+
     if (result.stylingTips != null && result.stylingTips!.isNotEmpty) {
       buffer.writeln('\n💡 **Styling Tips:**');
       for (final tip in result.stylingTips!) {
         buffer.writeln('• $tip');
       }
     }
-    
-    if (result.recommendedProducts != null && result.recommendedProducts!.isNotEmpty) {
+
+    if (result.recommendedProducts != null &&
+        result.recommendedProducts!.isNotEmpty) {
       buffer.writeln('\n🛍️ **Recommended Products:**');
       for (final product in result.recommendedProducts!) {
         buffer.writeln('• $product');
@@ -205,32 +210,71 @@ What would you like to do today?""";
 
   Future<void> _showGenderSelectionDialog() async {
     if (!mounted) return;
-    
+
     final gender = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Gender'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('This helps us provide better recommendations:'),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.male, color: Colors.blue),
-              title: const Text('Male'),
-              onTap: () => Navigator.pop(context, 'male'),
+      builder: (context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: GlassCard(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person_outline,
+                    color: AppColors.primary,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Select Gender',
+                  style: AppTextStyles.heading.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'This helps us provide better recommendations:',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                    decoration: TextDecoration.none,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _GenderOption(
+                  icon: Icons.male,
+                  label: 'Male',
+                  color: Colors.blue,
+                  onTap: () => Navigator.pop(context, 'male'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _GenderOption(
+                  icon: Icons.female,
+                  label: 'Female',
+                  color: Colors.pink,
+                  onTap: () => Navigator.pop(context, 'female'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _GenderOption(
+                  icon: Icons.people,
+                  label: 'Prefer not to say',
+                  color: Colors.purple,
+                  onTap: () => Navigator.pop(context, 'unisex'),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.female, color: Colors.pink),
-              title: const Text('Female'),
-              onTap: () => Navigator.pop(context, 'female'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.people, color: Colors.purple),
-              title: const Text('Prefer not to say'),
-              onTap: () => Navigator.pop(context, 'unisex'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -288,12 +332,14 @@ What would you like to do today?""";
 
   Future<void> _analyzeHairstyle(File imageFile) async {
     setState(() {
-      _messages.add(ChatMessage(
-        text: '📷 Uploaded photo for hairstyle analysis',
-        isUser: true,
-        timestamp: DateTime.now(),
-        imageFile: imageFile,
-      ));
+      _messages.add(
+        ChatMessage(
+          text: '📷 Uploaded photo for hairstyle analysis',
+          isUser: true,
+          timestamp: DateTime.now(),
+          imageFile: imageFile,
+        ),
+      );
       _isAnalyzing = true;
     });
 
@@ -319,14 +365,14 @@ What would you like to do today?""";
           _messages.removeLast();
         }
       });
-      
+
       _addBotMessage(
         '❌ Failed to analyze your photo.\n\n'
         'Please try again with:\n'
         '• Good lighting\n'
         '• Clear front-facing photo\n'
         '• No sunglasses or hats\n\n'
-        'Error: ${e.toString()}'
+        'Error: ${e.toString()}',
       );
     } finally {
       if (mounted) {
@@ -373,7 +419,7 @@ What would you like to do today?""";
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                
+
                 Text(
                   'Upload Photo for Hairstyle Analysis',
                   style: AppTextStyles.heading.copyWith(
@@ -388,7 +434,7 @@ What would you like to do today?""";
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                
+
                 // Gallery Option
                 GestureDetector(
                   onTap: () {
@@ -443,9 +489,9 @@ What would you like to do today?""";
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: AppSpacing.sm),
-                
+
                 // Camera Option
                 GestureDetector(
                   onTap: () {
@@ -500,9 +546,9 @@ What would you like to do today?""";
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: AppSpacing.md),
-                
+
                 // Tips
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -546,6 +592,7 @@ What would you like to do today?""";
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: AppColors.primary),
         title: Row(
           children: [
             Container(
@@ -588,7 +635,9 @@ What would you like to do today?""";
             tooltip: 'View History',
             onPressed: () async {
               try {
-                final history = await HairstyleService.getAnalysisHistory(limit: 10);
+                final history = await HairstyleService.getAnalysisHistory(
+                  limit: 10,
+                );
                 if (mounted) {
                   _showHistoryDialog(history);
                 }
@@ -781,9 +830,9 @@ What would you like to do today?""";
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // Text Input
                   Expanded(
                     child: Container(
@@ -814,9 +863,9 @@ What would you like to do today?""";
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // Send Button
                   GestureDetector(
                     onTap: () => _sendMessage(_messageController.text),
@@ -825,10 +874,7 @@ What would you like to do today?""";
                       height: 48,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            Color(0xFF7B27FF),
-                          ],
+                          colors: [AppColors.primary, Color(0xFF7B27FF)],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
@@ -859,8 +905,9 @@ What would you like to do today?""";
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
-        mainAxisAlignment:
-            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: message.isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
@@ -880,11 +927,7 @@ What would you like to do today?""";
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.smart_toy,
-                color: Colors.white,
-                size: 22,
-              ),
+              child: const Icon(Icons.smart_toy, color: Colors.white, size: 22),
             ),
             const SizedBox(width: AppSpacing.sm),
           ],
@@ -899,10 +942,7 @@ What would you like to do today?""";
                   decoration: BoxDecoration(
                     gradient: message.isUser
                         ? const LinearGradient(
-                            colors: [
-                              AppColors.primary,
-                              Color(0xFF7B27FF),
-                            ],
+                            colors: [AppColors.primary, Color(0xFF7B27FF)],
                           )
                         : null,
                     color: message.isUser ? null : AppColors.surface,
@@ -937,7 +977,7 @@ What would you like to do today?""";
                         ),
                         const SizedBox(height: AppSpacing.sm),
                       ],
-                      
+
                       Text(
                         message.text,
                         style: AppTextStyles.body.copyWith(
@@ -947,14 +987,14 @@ What would you like to do today?""";
                           height: 1.4,
                         ),
                       ),
-                      
+
                       if (message.showImageUploadOptions) ...[
                         const SizedBox(height: AppSpacing.md),
                         Wrap(
                           spacing: 8,
                           children: [
                             _buildQuickActionButton(
-                             Icons.photo_library,
+                              Icons.photo_library,
                               'Gallery',
                               const LinearGradient(
                                 colors: [Color(0xFF536DFE), Color(0xFF7C4DFF)],
@@ -1023,10 +1063,7 @@ What would you like to do today?""";
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(12),
@@ -1059,56 +1096,173 @@ What would you like to do today?""";
   void _showHistoryDialog(List<HairstyleHistoryItem> history) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Analysis History'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: history.isEmpty
-              ? const Center(child: Text('No analysis history'))
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: history.length,
-                  itemBuilder: (context, index) {
-                    final item = history[index];
-                    return ListTile(
-                      leading: item.imageUrl != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                item.imageUrl!,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : const Icon(Icons.face),
-                      title: Text(item.faceShape ?? 'Unknown'),
-                      subtitle: Text(
-                        '${item.recommendationsCount} recommendations\n'
-                        '${_formatDate(DateTime.parse(item.createdAt))}',
-                      ),
-                      isThreeLine: true,
-                      onTap: () async {
-                        try {
-                          final detail = await HairstyleService.getAnalysisDetail(item.id);
-                          if (mounted) {
-                            Navigator.pop(context);
-                            _addAnalysisResult(detail);
-                          }
-                        } catch (e) {
-                          _showErrorSnackbar('Failed to load details');
-                        }
-                      },
-                    );
-                  },
+      builder: (context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: GlassCard(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.history,
+                    color: AppColors.primary,
+                    size: 48,
+                  ),
                 ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Analysis History',
+                  style: AppTextStyles.heading.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.maxFinite,
+                  height: 300,
+                  child: history.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No analysis history',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.textMuted,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: history.length,
+                          itemBuilder: (context, index) {
+                            final item = history[index];
+                            return Container(
+                              margin: const EdgeInsets.only(
+                                bottom: AppSpacing.sm,
+                              ),
+                              child: GlassCard(
+                                onTap: () async {
+                                  try {
+                                    final detail =
+                                        await HairstyleService.getAnalysisDetail(
+                                          item.id,
+                                        );
+                                    if (mounted) {
+                                      Navigator.pop(context);
+                                      _addAnalysisResult(detail);
+                                    }
+                                  } catch (e) {
+                                    _showErrorSnackbar(
+                                      'Failed to load details',
+                                    );
+                                  }
+                                },
+                                padding: const EdgeInsets.all(AppSpacing.sm),
+                                child: Row(
+                                  children: [
+                                    if (item.imageUrl != null)
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          item.imageUrl!,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withOpacity(
+                                            0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.face,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.faceShape ?? 'Unknown',
+                                            style: AppTextStyles.body.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${item.recommendationsCount} recommendations',
+                                            style: AppTextStyles.caption
+                                                .copyWith(
+                                                  color: AppColors.textMuted,
+                                                ),
+                                          ),
+                                          Text(
+                                            _formatDate(
+                                              DateTime.parse(item.createdAt),
+                                            ),
+                                            style: AppTextStyles.caption
+                                                .copyWith(
+                                                  color: AppColors.textMuted,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Close',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1144,4 +1298,60 @@ class ChatMessage {
     this.showImageUploadOptions = false,
     this.analysisResult,
   });
+}
+
+/* ───────────────── GENDER OPTION WIDGET ───────────────── */
+
+class _GenderOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _GenderOption({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: GlassCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppColors.textMuted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -17,6 +17,8 @@ import '../../widgets/ui/chip_pill.dart';
 import '../../widgets/ui/section_header.dart';
 import '../../widgets/city_selector_widget.dart';
 import '../../widgets/custom_snackbar.dart';
+import 'user_profile_screen.dart';
+import 'user_explore_screen.dart';
 
 class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({super.key});
@@ -46,11 +48,11 @@ class UserHomeScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 const _SearchBar(),
                 const SizedBox(height: AppSpacing.md),
-                
+
                 // ✅ City Selector
                 const CitySelectorWidget(),
                 const SizedBox(height: AppSpacing.lg),
-                
+
                 Obx(() {
                   final up = bookingController.upcomingBookings;
                   if (up.isNotEmpty) {
@@ -70,15 +72,17 @@ class UserHomeScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 const _CategoryRow(),
                 const SizedBox(height: AppSpacing.lg),
-                
+
                 // ✅ Show city in header
-                Obx(() => SectionHeader(
-                  title: controller.hasCityFilter
-                      ? 'Salons in ${controller.selectedCity.value}'
-                      : 'Nearby Salons',
-                )),
+                Obx(
+                  () => SectionHeader(
+                    title: controller.hasCityFilter
+                        ? 'Salons in ${controller.selectedCity.value}'
+                        : 'Nearby Salons',
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.sm),
-                
+
                 Obx(() {
                   final list = controller.nearbySalons;
                   if (list.isEmpty) {
@@ -112,22 +116,34 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final UserController userController = Get.find<UserController>();
-    
+
     return Row(
       children: [
-        Obx(() => CircleAvatar(
-          radius: 28,
-          backgroundColor: AppColors.primary.withOpacity(0.15),
-          child: userController.userName.value.isNotEmpty
-              ? Text(
-                  userController.userName.value[0].toUpperCase(),
-                  style: AppTextStyles.subHeading.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-              : const Icon(Icons.person, color: AppColors.primary, size: 24),
-        )),
+        GestureDetector(
+          onTap: () {
+            // Navigate to profile screen
+            Get.to(() => const UserProfileScreen());
+          },
+          child: Obx(
+            () => CircleAvatar(
+              radius: 28,
+              backgroundColor: AppColors.primary.withOpacity(0.15),
+              child: userController.userName.value.isNotEmpty
+                  ? Text(
+                      userController.userName.value[0].toUpperCase(),
+                      style: AppTextStyles.subHeading.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.person,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+            ),
+          ),
+        ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
@@ -140,14 +156,16 @@ class _Header extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Obx(() => Text(
-                userController.userName.value.isNotEmpty
-                    ? userController.userName.value
-                    : 'Welcome 👋',
-                style: AppTextStyles.subHeading.copyWith(
-                  fontWeight: FontWeight.bold,
+              Obx(
+                () => Text(
+                  userController.userName.value.isNotEmpty
+                      ? userController.userName.value
+                      : 'Welcome 👋',
+                  style: AppTextStyles.subHeading.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
         ),
@@ -182,7 +200,7 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       onTap: () {
-        Get.toNamed('/user', arguments: {'tab': 1});
+        Get.to(() => const UserExploreScreen());
       },
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -195,9 +213,7 @@ class _SearchBar extends StatelessWidget {
           Expanded(
             child: Text(
               'Find services, stylists, or salons…',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textMuted,
-              ),
+              style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
             ),
           ),
           Container(
@@ -237,9 +253,7 @@ class _AiPickCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Recommended based on your preferences',
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.textMuted,
-            ),
+            style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
@@ -264,7 +278,10 @@ class _AiPickCard extends StatelessWidget {
                 label: 'Book Now',
                 onPressed: () {
                   // TODO: Navigate to booking screen
-                  CustomSnackbar.show(title: 'Info', message: 'AI Pick booking coming soon!');
+                  CustomSnackbar.show(
+                    title: 'Info',
+                    message: 'AI Pick booking coming soon!',
+                  );
                 },
               ),
             ],
@@ -286,31 +303,19 @@ class _CategoryRow extends StatelessWidget {
       children: [
         // ✅ FIXED: Remove isSelected parameter - ChipPill doesn't support it
         Expanded(
-          child: ChipPill(
-            label: 'Haircut',
-            onTap: () {},
-          ),
+          child: ChipPill(label: 'Haircut', onTap: () {}),
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: ChipPill(
-            label: 'Spa',
-            onTap: () {},
-          ),
+          child: ChipPill(label: 'Spa', onTap: () {}),
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: ChipPill(
-            label: 'Makeup',
-            onTap: () {},
-          ),
+          child: ChipPill(label: 'Makeup', onTap: () {}),
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: ChipPill(
-            label: 'Nails',
-            onTap: () {},
-          ),
+          child: ChipPill(label: 'Nails', onTap: () {}),
         ),
       ],
     );
@@ -418,8 +423,20 @@ class _UpcomingAppointmentCard extends StatelessWidget {
   String _getMonth(String date) {
     try {
       final d = DateTime.parse(date);
-      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const months = [
+        'JAN',
+        'FEB',
+        'MAR',
+        'APR',
+        'MAY',
+        'JUN',
+        'JUL',
+        'AUG',
+        'SEP',
+        'OCT',
+        'NOV',
+        'DEC',
+      ];
       return months[d.month - 1];
     } catch (e) {
       return 'OCT';
@@ -447,11 +464,8 @@ class _UpcomingAppointmentCard extends StatelessWidget {
 class _NearbyEmptyState extends StatelessWidget {
   final String city;
   final VoidCallback? onChangeCity;
-  
-  const _NearbyEmptyState({
-    required this.city,
-    this.onChangeCity,
-  });
+
+  const _NearbyEmptyState({required this.city, this.onChangeCity});
 
   @override
   Widget build(BuildContext context) {
@@ -481,9 +495,7 @@ class _NearbyEmptyState extends StatelessWidget {
               onPressed: onChangeCity,
               icon: const Icon(Icons.public, size: 16),
               label: const Text('View All Cities'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
             ),
           ],
         ],
@@ -620,7 +632,7 @@ class _NearbySalonCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            salon.city.isNotEmpty 
+                            salon.city.isNotEmpty
                                 ? '${salon.city} · ${salon.address}'
                                 : salon.address,
                             style: AppTextStyles.caption,

@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -11,7 +10,6 @@ import '../config/api_config.dart';
 import '../services/auth_service.dart';
 import 'admin_controller.dart';
 import 'booking_controller.dart';
-import '../services/django_api_service.dart';
 import '../services/django_api_service.dart';
 import 'user_controller.dart';
 import '../widgets/custom_snackbar.dart';

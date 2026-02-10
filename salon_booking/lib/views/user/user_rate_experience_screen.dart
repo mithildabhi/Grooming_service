@@ -42,21 +42,25 @@ class _UserRateExperienceScreenState extends State<UserRateExperienceScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: const Text('Rate Experience', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Rate Experience',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: AppColors.background,
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: const Center(
-          child: Text('No booking found'),
-        ),
+        body: const Center(child: Text('No booking found')),
       );
     }
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Rate Experience', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Rate Experience',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -184,12 +188,27 @@ class _UserRateExperienceScreenState extends State<UserRateExperienceScreen> {
               enabled: selectedRating > 0 && (booking?.id != null) == true,
               onPressed: () async {
                 if (booking?.id == null) return;
+
+                final wasRated = booking!.isRated;
+
                 await bookingController.submitReview(
                   bookingId: booking!.id!,
                   rating: selectedRating,
                   feedback: feedbackController.text.trim(),
                 );
-                Get.back();
+
+                // Navigate back only if review was successfully submitted
+                // (isRated changed from false to true, or isSubmittingReview is done)
+                final updatedBooking = bookingController.userBookings
+                    .firstWhereOrNull((b) => b.id == booking!.id);
+                if (updatedBooking != null &&
+                    updatedBooking.isRated &&
+                    !wasRated) {
+                  // Pop back to the appointments screen (past appointment details)
+                  Get.until(
+                    (route) => route.settings.name == '/user' || route.isFirst,
+                  );
+                }
               },
             ),
           ),
@@ -222,10 +241,7 @@ class _Stars extends StatelessWidget {
   final int selectedRating;
   final Function(int) onRatingChanged;
 
-  const _Stars({
-    required this.selectedRating,
-    required this.onRatingChanged,
-  });
+  const _Stars({required this.selectedRating, required this.onRatingChanged});
 
   @override
   Widget build(BuildContext context) {

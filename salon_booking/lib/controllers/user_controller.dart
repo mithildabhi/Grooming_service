@@ -194,7 +194,6 @@ class UserController extends GetxController {
         print('❌ USER: No Firebase user found');
         CustomSnackbar.show(title: 'Error', message: 'Please log in again', isError: true);
         return false;
-        return false;
       }
 
       final idToken = await firebaseUser.getIdToken();

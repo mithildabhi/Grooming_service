@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print
 
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salon_booking/controllers/auth_controller.dart';
 import 'package:salon_booking/models/employee_model.dart';

@@ -11,8 +11,8 @@ import '../models/booking_model.dart';
 import '../models/salon_model.dart';
 import '../models/service_model.dart';
 import '../models/employee_model.dart';
-import '../models/employee_model.dart';
 import '../services/booking_api.dart';
+import '../services/review_api.dart';
 import '../widgets/custom_snackbar.dart';
 
 class BookingController extends GetxController {
@@ -101,7 +101,9 @@ class BookingController extends GetxController {
       if (bookingDateTime == null) return false;
 
       // Show if the appointment hasn't ended yet
-      final endDateTime = bookingDateTime.add(Duration(minutes: b.durationMinutes));
+      final endDateTime = bookingDateTime.add(
+        Duration(minutes: b.durationMinutes),
+      );
       return endDateTime.isAfter(now);
     }).toList();
   }
@@ -118,7 +120,9 @@ class BookingController extends GetxController {
       if (bookingDateTime == null) return false;
 
       // Show if the appointment has ended
-      final endDateTime = bookingDateTime.add(Duration(minutes: b.durationMinutes));
+      final endDateTime = bookingDateTime.add(
+        Duration(minutes: b.durationMinutes),
+      );
       return endDateTime.isBefore(now);
     }).toList();
   }
@@ -128,7 +132,7 @@ class BookingController extends GetxController {
     try {
       final date = DateTime.parse(b.date);
       final timeParts = b.time.split(':');
-      
+
       return DateTime(
         date.year,
         date.month,
@@ -198,7 +202,7 @@ class BookingController extends GetxController {
 
     // ✅ ONLY load bookings if already logged in
     final auth = Get.find<AuthController>();
-    
+
     // ✅ Check CURRENT login state first
     if (auth.isLoggedIn.value == true) {
       print('✅ BOOKING: User already logged in, loading bookings');
@@ -288,26 +292,28 @@ class BookingController extends GetxController {
       availableTimeSlots.clear();
 
       final now = DateTime.now();
-      
+
       // ✅ Check if selected date is TODAY
-      final isToday = date.year == now.year &&
+      final isToday =
+          date.year == now.year &&
           date.month == now.month &&
           date.day == now.day;
 
       print('📅 Generating time slots for: ${date.toString().split(' ')[0]}');
       print('🔍 Is today: $isToday');
-      
+
       if (isToday) {
         print('⏰ Current time: ${now.hour}:${now.minute}');
       }
 
       List<String> slots = [];
-      
+
       // Generate slots from 9 AM to 9 PM (21:00)
       for (int hour = 9; hour <= 21; hour++) {
         for (int minute = 0; minute < 60; minute += 30) {
-          final timeSlot = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-          
+          final timeSlot =
+              '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
           // ✅ FILTER PAST TIMES IF TODAY
           if (isToday) {
             // Skip if this slot is in the past
@@ -315,14 +321,14 @@ class BookingController extends GetxController {
               print('⏭️ Skipping past hour: $timeSlot');
               continue;
             }
-            
+
             // If same hour, check minutes
             if (hour == now.hour && minute <= now.minute) {
               print('⏭️ Skipping past minute: $timeSlot');
               continue;
             }
           }
-          
+
           slots.add(timeSlot);
         }
       }
@@ -350,7 +356,11 @@ class BookingController extends GetxController {
         selectedService.value == null ||
         selectedDate.value == null ||
         selectedTime.value.isEmpty) {
-      CustomSnackbar.show(title: 'Error', message: 'Please complete all booking details', isError: true);
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Please complete all booking details',
+        isError: true,
+      );
       return false;
     }
     return true;
@@ -391,8 +401,12 @@ class BookingController extends GetxController {
       }
 
       print('✅ Booking created: $result');
-      
-      CustomSnackbar.show(title: 'Success', message: 'Booking created successfully', isSuccess: true);
+
+      CustomSnackbar.show(
+        title: 'Success',
+        message: 'Booking created successfully',
+        isSuccess: true,
+      );
       await fetchUserBookings();
       await fetchBookings();
       return true;
@@ -419,7 +433,11 @@ class BookingController extends GetxController {
       print('⏳ Remaining: ${remainingBookings.length}');
     } catch (e) {
       print('❌ Fetch bookings error: $e');
-      CustomSnackbar.show(title: 'Error', message: 'Failed to load bookings', isError: true);
+      CustomSnackbar.show(
+        title: 'Error',
+        message: 'Failed to load bookings',
+        isError: true,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -492,7 +510,7 @@ class BookingController extends GetxController {
       print('✅ CONTROLLER: Bookings refreshed');
 
       CustomSnackbar.show(
-        title: 'Success', 
+        title: 'Success',
         message: 'Booking status updated to $status',
         isSuccess: true,
       );
@@ -535,8 +553,9 @@ class BookingController extends GetxController {
         bookings.refresh();
       }
 
-      final userBookingIndex =
-          userBookings.indexWhere((b) => b.id == bookingId);
+      final userBookingIndex = userBookings.indexWhere(
+        (b) => b.id == bookingId,
+      );
       if (userBookingIndex != -1) {
         final booking = userBookings[userBookingIndex];
         userBookings[userBookingIndex] = booking.copyWith(
@@ -596,37 +615,112 @@ class BookingController extends GetxController {
       selectedTime.value.isNotEmpty;
 
   // ========================
-  // ⭐ USER REVIEW (UI ONLY FOR NOW - Will integrate ReviewAPI next)
+  // ⭐ USER REVIEW — Production-ready
   // ========================
+  final RxBool isSubmittingReview = false.obs;
+
   Future<void> submitReview({
     required int bookingId,
     required int rating,
     required String feedback,
   }) async {
+    // ✅ Prevent double-tap
+    if (isSubmittingReview.value) {
+      debugPrint('⚠️ Review submission already in progress');
+      return;
+    }
+
     try {
+      isSubmittingReview.value = true;
+
       debugPrint('═══════════════════════════════════════');
-      debugPrint('⭐ REVIEW SUBMITTED');
+      debugPrint('⭐ SUBMITTING REVIEW TO BACKEND');
       debugPrint('Booking ID: $bookingId');
       debugPrint('Rating: $rating');
       debugPrint('Feedback: $feedback');
       debugPrint('═══════════════════════════════════════');
 
-      // Update local booking as rated (frontend only)
+      // ✅ Validate: find booking to get salonId and serviceId
+      final booking = userBookings.firstWhereOrNull((b) => b.id == bookingId);
+      if (booking == null) {
+        CustomSnackbar.show(
+          title: 'Error',
+          message: 'Booking not found. Please refresh and try again.',
+          isError: true,
+        );
+        return;
+      }
+
+      if (booking.salonId == 0) {
+        CustomSnackbar.show(
+          title: 'Error',
+          message: 'Salon information missing for this booking.',
+          isError: true,
+        );
+        return;
+      }
+
+      // ✅ Check if already rated locally
+      if (booking.isRated) {
+        CustomSnackbar.show(
+          title: 'Already Reviewed',
+          message: 'You have already reviewed this booking.',
+          isError: true,
+        );
+        return;
+      }
+
+      await ReviewApi.createReview(
+        rating: rating,
+        comment: feedback,
+        bookingId: bookingId,
+        salonId: booking.salonId,
+        serviceId: booking.serviceId != 0 ? booking.serviceId : null,
+      );
+
+      // ✅ Update local booking as rated
       final index = userBookings.indexWhere((b) => b.id == bookingId);
       if (index != -1) {
         userBookings[index] = userBookings[index].copyWith(isRated: true);
         userBookings.refresh();
       }
 
+      // Also update in admin bookings list
+      final adminIndex = bookings.indexWhere((b) => b.id == bookingId);
+      if (adminIndex != -1) {
+        bookings[adminIndex] = bookings[adminIndex].copyWith(isRated: true);
+        bookings.refresh();
+      }
+
       CustomSnackbar.show(
-        title: 'Thank you!', 
-        message: 'Your review has been submitted', 
+        title: 'Thank you!',
+        message: 'Your review has been submitted',
         isSuccess: true,
       );
     } catch (e) {
       debugPrint('❌ submitReview error: $e');
-      Get.back(); // close dialog
-      CustomSnackbar.show(title: 'Error', message: 'Failed to submit review', isError: true);
+
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+
+      // ✅ User-friendly error messages
+      if (errorMsg.contains('already reviewed') ||
+          errorMsg.contains('already submitted')) {
+        // Mark as rated locally to prevent retries
+        final index = userBookings.indexWhere((b) => b.id == bookingId);
+        if (index != -1) {
+          userBookings[index] = userBookings[index].copyWith(isRated: true);
+          userBookings.refresh();
+        }
+        CustomSnackbar.show(
+          title: 'Already Reviewed',
+          message: 'You have already reviewed this booking.',
+          isError: true,
+        );
+      } else {
+        CustomSnackbar.show(title: 'Error', message: errorMsg, isError: true);
+      }
+    } finally {
+      isSubmittingReview.value = false;
     }
   }
 }

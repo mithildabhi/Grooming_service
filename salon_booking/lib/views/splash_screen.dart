@@ -83,11 +83,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
     print('🚀 SPLASH: Navigating to $route');
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        Get.offAllNamed(route);
-      }
-    });
+    // ✅ Direct navigation - more reliable than postFrameCallback
+    Get.offAllNamed(route);
   }
 
   @override
@@ -119,10 +116,6 @@ class _SplashScreenState extends State<SplashScreen> {
               Text(
                 "Beauty & Wellness, Simplified",
                 style: TextStyle(color: Colors.white70),
-              ),
-              SizedBox(height: 30),
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ],
           ),

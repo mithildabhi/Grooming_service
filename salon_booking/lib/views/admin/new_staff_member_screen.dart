@@ -18,12 +18,18 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
   final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final phoneCtrl = TextEditingController();
-  
+
   String selectedRole = 'Stylist';
   String selectedSkill = 'Hair Styling';
   final List<String> selectedDays = ['Mon', 'Tue', 'Fri', 'Sat'];
 
-  final List<String> roles = ['Stylist', 'Barber', 'Specialist', 'Manager', 'Receptionist'];
+  final List<String> roles = [
+    'Stylist',
+    'Barber',
+    'Specialist',
+    'Manager',
+    'Receptionist',
+  ];
   final List<String> skills = [
     'Hair Styling',
     'Hair Cutting',
@@ -32,9 +38,17 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
     'Spa',
     'Massage',
     'Nails',
-    'Makeup'
+    'Makeup',
   ];
-  final List<String> allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final List<String> allDays = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
 
   @override
   void dispose() {
@@ -81,9 +95,8 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
         phone: phoneCtrl.text.trim(),
         role: selectedRole,
         primarySkill: selectedSkill,
-        workingDays: selectedDays, 
+        workingDays: selectedDays,
         isActive: true,
-        
       );
     } catch (e) {
       // Error handled in controller
@@ -107,15 +120,13 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
       ),
       body: Obx(() {
         if (ctrl.isLoadingStaff.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: accent),
-          );
+          return const Center(child: CircularProgressIndicator(color: accent));
         }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16).copyWith(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 100,
-          ),
+          padding: const EdgeInsets.all(
+            16,
+          ).copyWith(bottom: MediaQuery.of(context).viewInsets.bottom + 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -124,13 +135,33 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
               _sectionTitle("Basic Information"),
               const SizedBox(height: 12),
               _inputField("Full Name", nameCtrl, Icons.person),
-              _inputField("Email", emailCtrl, Icons.email, keyboardType: TextInputType.emailAddress),
-              _inputField("Phone Number", phoneCtrl, Icons.phone, keyboardType: TextInputType.phone),
+              _inputField(
+                "Email",
+                emailCtrl,
+                Icons.email,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              _inputField(
+                "Phone Number",
+                phoneCtrl,
+                Icons.phone,
+                keyboardType: TextInputType.phone,
+              ),
               const SizedBox(height: 20),
               _sectionTitle("Role & Skills"),
               const SizedBox(height: 12),
-              _dropdownField("Role", selectedRole, roles, (val) => setState(() => selectedRole = val)),
-              _dropdownField("Primary Skill", selectedSkill, skills, (val) => setState(() => selectedSkill = val)),
+              _dropdownField(
+                "Role",
+                selectedRole,
+                roles,
+                (val) => setState(() => selectedRole = val),
+              ),
+              _dropdownField(
+                "Primary Skill",
+                selectedSkill,
+                skills,
+                (val) => setState(() => selectedSkill = val),
+              ),
               const SizedBox(height: 20),
               _sectionTitle("Working Hours"),
               const SizedBox(height: 12),
@@ -238,8 +269,12 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
     );
   }
 
-  Widget _inputField(String label, TextEditingController c, IconData icon,
-      {TextInputType keyboardType = TextInputType.text}) {
+  Widget _inputField(
+    String label,
+    TextEditingController c,
+    IconData icon, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
@@ -261,7 +296,12 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
     );
   }
 
-  Widget _dropdownField(String label, String value, List<String> items, Function(String) onChanged) {
+  Widget _dropdownField(
+    String label,
+    String value,
+    List<String> items,
+    Function(String) onChanged,
+  ) {
     return GestureDetector(
       onTap: () => _showPicker(label, items, value, onChanged),
       child: Container(
@@ -288,38 +328,50 @@ class _NewStaffMemberScreenState extends State<NewStaffMemberScreen> {
     );
   }
 
-  void _showPicker(String label, List<String> items, String currentValue, Function(String) onChanged) {
+  void _showPicker(
+    String label,
+    List<String> items,
+    String currentValue,
+    Function(String) onChanged,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Select $label',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      builder: (context) => SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select $label',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ...items.map((item) => ListTile(
-              title: Text(item, style: const TextStyle(color: Colors.white)),
-              trailing: currentValue == item
-                  ? const Icon(Icons.check, color: accent)
-                  : const SizedBox.shrink(),
-              onTap: () {
-                onChanged(item);
-                Navigator.pop(context);
-              },
-            )),
-          ],
+              const SizedBox(height: 16),
+              ...items.map(
+                (item) => ListTile(
+                  title: Text(
+                    item,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  trailing: currentValue == item
+                      ? const Icon(Icons.check, color: accent)
+                      : const SizedBox.shrink(),
+                  onTap: () {
+                    onChanged(item);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

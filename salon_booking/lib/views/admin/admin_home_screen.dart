@@ -46,11 +46,7 @@ class AdminHomeScreen extends StatelessWidget {
                         children: [
                           const Text(
                             "Dashboard",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 23),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -69,7 +65,7 @@ class AdminHomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 24),
 
                   /// 🔮 AI Optimization Card
@@ -111,7 +107,8 @@ class AdminHomeScreen extends StatelessWidget {
                       ),
                       DashboardStatCard(
                         title: "Completion Rate",
-                        value: "${controller.completionRate.toStringAsFixed(0)}%",
+                        value:
+                            "${controller.completionRate.toStringAsFixed(0)}%",
                         icon: Icons.check_circle_outline,
                         color: accent,
                         subtitle: "RATE",
@@ -168,10 +165,10 @@ class AdminHomeScreen extends StatelessWidget {
                   /// 📋 Recent Bookings
                   _buildSectionHeader("Recent Bookings"),
                   const SizedBox(height: 12),
-                  ...controller.recentBookings.map((booking) => 
-                    _buildBookingTile(booking)
+                  ...controller.recentBookings.map(
+                    (booking) => _buildBookingTile(booking),
                   ),
-                  
+
                   if (controller.recentBookings.isEmpty)
                     Container(
                       padding: const EdgeInsets.all(32),
@@ -189,7 +186,6 @@ class AdminHomeScreen extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildSectionHeader(String title) {
     return Text(
@@ -213,10 +209,7 @@ class AdminHomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: accent.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: accent.withOpacity(0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,7 +302,7 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               );
             }
-            
+
             return WeeklyRevenueChart(
               dailyData: dailyData.cast<Map<String, dynamic>>(),
               barColor: accent,
@@ -354,11 +347,7 @@ class AdminHomeScreen extends StatelessWidget {
                 "₹${controller.weekRevenue.toStringAsFixed(0)}",
                 Colors.blue,
               ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.white12,
-              ),
+              Container(height: 40, width: 1, color: Colors.white12),
               _buildForecastItem(
                 "This Month",
                 "₹${controller.monthRevenue.toStringAsFixed(0)}",
@@ -385,10 +374,7 @@ class AdminHomeScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white60,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: Colors.white60, fontSize: 12),
         ),
       ],
     );
@@ -488,7 +474,7 @@ class AdminHomeScreen extends StatelessWidget {
 
   Widget _buildBookingTile(dynamic booking) {
     final statusColor = _getStatusColor(booking.status);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -504,11 +490,7 @@ class AdminHomeScreen extends StatelessWidget {
               color: statusColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              Icons.calendar_today,
-              color: statusColor,
-              size: 20,
-            ),
+            child: Icon(Icons.calendar_today, color: statusColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -525,10 +507,7 @@ class AdminHomeScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   "${booking.serviceName} • ${booking.time}",
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],
             ),

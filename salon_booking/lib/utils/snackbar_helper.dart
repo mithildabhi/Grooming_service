@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../widgets/custom_snackbar.dart';
 
 class SnackbarHelper {

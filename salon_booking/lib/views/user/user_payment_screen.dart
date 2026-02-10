@@ -22,7 +22,7 @@ class UserPaymentScreen extends StatefulWidget {
 }
 
 class _UserPaymentScreenState extends State<UserPaymentScreen> {
-  String selectedPaymentMethod = 'cash';  // Default to cash
+  String selectedPaymentMethod = 'cash'; // Default to cash
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,9 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
     final BookingController bookingController = Get.find<BookingController>();
     final UserController userController = Get.find<UserController>();
 
-    final SalonModel? salon = args['salon'] is SalonModel ? args['salon'] as SalonModel : null;
+    final SalonModel? salon = args['salon'] is SalonModel
+        ? args['salon'] as SalonModel
+        : null;
     final String? date = args['date'] as String?;
     final String? dateDisplay = args['dateDisplay'] as String?;
     final String? time = args['time'] as String?;
@@ -82,7 +84,9 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Image.network(
-                            salon.imageUrl.isNotEmpty ? salon.imageUrl : 'https://via.placeholder.com/60',
+                            salon.imageUrl.isNotEmpty
+                                ? salon.imageUrl
+                                : 'https://via.placeholder.com/60',
                             width: 60,
                             height: 60,
                             fit: BoxFit.cover,
@@ -90,7 +94,10 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                               width: 60,
                               height: 60,
                               color: AppColors.surface,
-                              child: const Icon(Icons.spa, color: AppColors.primary),
+                              child: const Icon(
+                                Icons.spa,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
                         ),
@@ -144,12 +151,16 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
 
                   // Online Payment Section Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.sm,
+                    ),
                     child: Row(
                       children: [
                         Expanded(child: Divider(color: AppColors.divider)),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
                           child: Text(
                             'OR PAY ONLINE',
                             style: AppTextStyles.caption.copyWith(
@@ -191,7 +202,8 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                     title: 'Net Banking',
                     subtitle: 'All major banks supported',
                     isSelected: selectedPaymentMethod == 'netbanking',
-                    onTap: () => setState(() => selectedPaymentMethod = 'netbanking'),
+                    onTap: () =>
+                        setState(() => selectedPaymentMethod = 'netbanking'),
                   ),
 
                   const SizedBox(height: AppSpacing.lg),
@@ -210,15 +222,22 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       children: [
-                        _PriceRow(label: 'Service', value: '₹${amount.toStringAsFixed(0)}'),
+                        _PriceRow(
+                          label: 'Service',
+                          value: '₹${amount.toStringAsFixed(0)}',
+                        ),
                         const SizedBox(height: 8),
-                        _PriceRow(label: 'Convenience Fee', value: selectedPaymentMethod == 'cash' ? '₹0' : '₹10'),
+                        _PriceRow(
+                          label: 'Convenience Fee',
+                          value: selectedPaymentMethod == 'cash' ? '₹0' : '₹10',
+                        ),
                         const SizedBox(height: 8),
                         _PriceRow(label: 'Tax', value: '₹0'),
                         const Divider(height: 24),
                         _PriceRow(
                           label: 'Total Amount',
-                          value: '₹${(amount + (selectedPaymentMethod == 'cash' ? 0 : 10)).toStringAsFixed(0)}',
+                          value:
+                              '₹${(amount + (selectedPaymentMethod == 'cash' ? 0 : 10)).toStringAsFixed(0)}',
                           isTotal: true,
                         ),
                       ],
@@ -234,16 +253,24 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                          border: Border.all(
+                            color: Colors.green.withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline, color: Colors.green, size: 20),
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.green,
+                              size: 20,
+                            ),
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
                                 'No advance payment needed. Pay at the salon after your service.',
-                                style: AppTextStyles.caption.copyWith(color: Colors.green),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: Colors.green,
+                                ),
                               ),
                             ),
                           ],
@@ -268,7 +295,12 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Total', style: AppTextStyles.body.copyWith(color: AppColors.textMuted)),
+                    Text(
+                      'Total',
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                     Text(
                       '₹${(amount + (selectedPaymentMethod == 'cash' ? 0 : 10)).toStringAsFixed(0)}',
                       style: AppTextStyles.heading.copyWith(
@@ -279,64 +311,101 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Obx(() => PrimaryButton(
-                  label: bookingController.isCreatingBooking.value
-                      ? 'Processing...'
-                      : selectedPaymentMethod == 'cash'
-                          ? 'Confirm Booking'
-                          : 'Pay ₹${(amount + 10).toStringAsFixed(0)}',
-                  enabled: !bookingController.isCreatingBooking.value,
-                  onPressed: () async {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user == null) {
-                      CustomSnackbar.show(title: 'Error', message: 'Please login to continue', isError: true);
-                      return;
-                    }
+                Obx(
+                  () => PrimaryButton(
+                    label: bookingController.isCreatingBooking.value
+                        ? 'Processing...'
+                        : selectedPaymentMethod == 'cash'
+                        ? 'Confirm Booking'
+                        : 'Pay ₹${(amount + 10).toStringAsFixed(0)}',
+                    enabled: !bookingController.isCreatingBooking.value,
+                    onPressed: () async {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        CustomSnackbar.show(
+                          title: 'Error',
+                          message: 'Please login to continue',
+                          isError: true,
+                        );
+                        return;
+                      }
 
-                    // For online payments, show a mock payment processing
-                    if (selectedPaymentMethod != 'cash') {
-                      Get.dialog(
-                        AlertDialog(
-                          backgroundColor: AppColors.surface,
-                          title: Text('Processing Payment', style: TextStyle(color: Colors.white)),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(color: AppColors.primary),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Please wait while we process your payment...',
-                                style: TextStyle(color: AppColors.textMuted),
-                                textAlign: TextAlign.center,
+                      // For online payments, show a mock payment processing
+                      if (selectedPaymentMethod != 'cash') {
+                        Get.dialog(
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(AppSpacing.lg),
+                              child: GlassCard(
+                                padding: const EdgeInsets.all(AppSpacing.lg),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withOpacity(
+                                          0.15,
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.primary,
+                                        strokeWidth: 3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      'Processing Payment',
+                                      style: AppTextStyles.heading.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.sm),
+                                    Text(
+                                      'Please wait while we process your payment...',
+                                      style: AppTextStyles.body.copyWith(
+                                        color: AppColors.textPrimary,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                        barrierDismissible: false,
+                          barrierDismissible: false,
+                        );
+                        await Future.delayed(const Duration(seconds: 2));
+                        Get.back(); // Close dialog
+                      }
+
+                      final success = await bookingController.createBooking(
+                        customerName: userController.userName.value.isNotEmpty
+                            ? userController.userName.value
+                            : user.displayName ?? 'User',
+                        customerPhone: userController.userPhone.value.isNotEmpty
+                            ? userController.userPhone.value
+                            : user.phoneNumber ?? '',
                       );
-                      await Future.delayed(const Duration(seconds: 2));
-                      Get.back(); // Close dialog
-                    }
 
-                    final success = await bookingController.createBooking(
-                      customerName: userController.userName.value.isNotEmpty
-                          ? userController.userName.value
-                          : user.displayName ?? 'User',
-                      customerPhone: userController.userPhone.value.isNotEmpty
-                          ? userController.userPhone.value
-                          : user.phoneNumber ?? '',
-                    );
-
-                    if (success) {
-                      Get.offNamed('/booking-success', arguments: {
-                        'salon': salon,
-                        'date': dateDisplay ?? date,
-                        'time': time,
-                        'paymentMethod': selectedPaymentMethod,
-                      });
-                    }
-                  },
-                )),
+                      if (success) {
+                        Get.offNamed(
+                          '/booking-success',
+                          arguments: {
+                            'salon': salon,
+                            'date': dateDisplay ?? date,
+                            'time': time,
+                            'paymentMethod': selectedPaymentMethod,
+                          },
+                        );
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -382,15 +451,11 @@ class _PaymentMethodCard extends StatelessWidget {
                   : AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              color: AppColors.primary,
-              size: 24,
-            ),
+            child: Icon(icon, color: AppColors.primary, size: 24),
           ),
-          
+
           const SizedBox(width: AppSpacing.md),
-          
+
           // ✅ FIXED: Flexible text content to prevent overflow
           Expanded(
             child: Column(
@@ -411,12 +476,15 @@ class _PaymentMethodCard extends StatelessWidget {
                         maxLines: 1,
                       ),
                     ),
-                    
+
                     // Badge (if present)
                     if (badge != null) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(4),
@@ -433,9 +501,9 @@ class _PaymentMethodCard extends StatelessWidget {
                     ],
                   ],
                 ),
-                
+
                 const SizedBox(height: 2),
-                
+
                 // Subtitle
                 Text(
                   subtitle,
@@ -449,9 +517,9 @@ class _PaymentMethodCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(width: AppSpacing.sm),
-          
+
           // Radio Button
           Container(
             width: 22,
@@ -503,18 +571,14 @@ class _PriceRow extends StatelessWidget {
           child: Text(
             label,
             style: isTotal
-                ? AppTextStyles.subHeading.copyWith(
-                    fontWeight: FontWeight.bold,
-                  )
+                ? AppTextStyles.subHeading.copyWith(fontWeight: FontWeight.bold)
                 : AppTextStyles.body,
           ),
         ),
         Text(
           value,
           style: isTotal
-              ? AppTextStyles.heading.copyWith(
-                  color: AppColors.primary,
-                )
+              ? AppTextStyles.heading.copyWith(color: AppColors.primary)
               : AppTextStyles.subHeading,
         ),
       ],

@@ -14,15 +14,13 @@ class UserAppointmentsScreen extends StatefulWidget {
   const UserAppointmentsScreen({super.key});
 
   @override
-  State<UserAppointmentsScreen> createState() =>
-      _UserAppointmentsScreenState();
+  State<UserAppointmentsScreen> createState() => _UserAppointmentsScreenState();
 }
 
 class _UserAppointmentsScreenState extends State<UserAppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  final BookingController bookingController =
-      Get.find<BookingController>();
+  final BookingController bookingController = Get.find<BookingController>();
 
   @override
   void initState() {
@@ -45,27 +43,32 @@ class _UserAppointmentsScreenState extends State<UserAppointmentsScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Appointments', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'My Appointments',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          Obx(() => IconButton(
-            icon: bookingController.isLoading.value
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(Icons.refresh, color: Colors.white),
-            onPressed: bookingController.isLoading.value
-                ? null
-                : () => bookingController.fetchUserBookings(),
-            tooltip: 'Refresh',
-          )),
+          Obx(
+            () => IconButton(
+              icon: bookingController.isLoading.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.refresh, color: Colors.white),
+              onPressed: bookingController.isLoading.value
+                  ? null
+                  : () => bookingController.fetchUserBookings(),
+              tooltip: 'Refresh',
+            ),
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -87,24 +90,16 @@ class _UserAppointmentsScreenState extends State<UserAppointmentsScreen>
         child: Obx(() {
           if (bookingController.isLoading.value) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
 
           return TabBarView(
             controller: _tabController,
             children: [
-              _AppointmentList(
-                bookings: bookingController.upcomingBookings,
-              ),
-              _AppointmentList(
-                bookings: bookingController.completedBookings,
-              ),
-              _AppointmentList(
-                bookings: bookingController.cancelledBookings,
-              ),
+              _AppointmentList(bookings: bookingController.upcomingBookings),
+              _AppointmentList(bookings: bookingController.completedBookings),
+              _AppointmentList(bookings: bookingController.cancelledBookings),
             ],
           );
         }),
@@ -127,21 +122,11 @@ class _AppointmentList extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.event_busy,
-              size: 64,
-              color: AppColors.textMuted,
-            ),
+            Icon(Icons.event_busy, size: 64, color: AppColors.textMuted),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              'No appointments found',
-              style: AppTextStyles.subHeading,
-            ),
+            Text('No appointments found', style: AppTextStyles.subHeading),
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Book your first appointment',
-              style: AppTextStyles.caption,
-            ),
+            Text('Book your first appointment', style: AppTextStyles.caption),
           ],
         ),
       );
@@ -177,10 +162,7 @@ class _AppointmentCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  AppColors.primary,
-                  AppColors.primary.withOpacity(0.7),
-                ],
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
               ),
               borderRadius: BorderRadius.circular(16),
             ),
@@ -220,10 +202,7 @@ class _AppointmentCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  booking.serviceName,
-                  style: AppTextStyles.body,
-                ),
+                Text(booking.serviceName, style: AppTextStyles.body),
                 const SizedBox(height: 4),
                 Row(
                   children: [
@@ -244,8 +223,9 @@ class _AppointmentCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(booking.status)
-                            .withOpacity(0.15),
+                        color: _getStatusColor(
+                          booking.status,
+                        ).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -284,8 +264,20 @@ class _AppointmentCard extends StatelessWidget {
   String _getMonth(String date) {
     try {
       final d = DateTime.parse(date);
-      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const months = [
+        'JAN',
+        'FEB',
+        'MAR',
+        'APR',
+        'MAY',
+        'JUN',
+        'JUL',
+        'AUG',
+        'SEP',
+        'OCT',
+        'NOV',
+        'DEC',
+      ];
       return months[d.month - 1];
     } catch (e) {
       return 'OCT';

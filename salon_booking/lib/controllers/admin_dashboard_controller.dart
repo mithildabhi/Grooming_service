@@ -117,6 +117,7 @@ class AdminDashboardController extends GetxController {
   // ========================
   // REFRESH
   // ========================
+  @override
   Future<void> refresh() async {
     await fetchDashboardData();
   }

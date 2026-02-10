@@ -24,15 +24,18 @@ class _UserMainShellState extends State<UserMainShell> {
   static const List<Widget> _pages = [
     UserHomeScreen(),
     UserExploreScreen(),
-    UserAiAssistantScreen(),      // AI is now at index 2 (center)
-    UserAppointmentsScreen(),     // Appointments moved to index 3
+    SizedBox(), // AI is now at index 2 (center)
+    UserAppointmentsScreen(), // Appointments moved to index 3
     UserProfileScreen(),
   ];
 
   static const List<GlassNavItem> _navItems = [
     GlassNavItem(icon: Icons.home_rounded, label: 'Home'),
     GlassNavItem(icon: Icons.search_rounded, label: 'Explore'),
-    GlassNavItem(icon: Icons.auto_awesome_rounded, label: 'AI'),  // Center + button
+    GlassNavItem(
+      icon: Icons.auto_awesome_rounded,
+      label: 'AI',
+    ), // Center + button
     GlassNavItem(icon: Icons.calendar_month_rounded, label: 'Bookings'),
     GlassNavItem(icon: Icons.person_rounded, label: 'Profile'),
   ];
@@ -67,23 +70,24 @@ class _UserMainShellState extends State<UserMainShell> {
         backgroundColor: AppColors.background,
 
         /// ✅ KEEP STATE ALIVE
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _pages),
 
         /// ✅ GLASS NAVBAR with AI at center (+)
         bottomNavigationBar: GlassMotionNavBar(
           items: _navItems,
           selectedIndex: _currentIndex,
           onItemTapped: (index) {
+            if (index == 2) {
+              Get.to(() => const UserAiAssistantScreen());
+              return;
+            }
             if (index != _currentIndex) {
               setState(() => _currentIndex = index);
             }
           },
 
           onCenterTap: () {
-            setState(() => _currentIndex = 2); // AI is now at index 2
+            Get.to(() => const UserAiAssistantScreen());
           },
 
           accentColor: AppColors.primary,

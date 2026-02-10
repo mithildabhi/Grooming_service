@@ -34,7 +34,10 @@ class UserAppointmentDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Appointment Details', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Appointment Details',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -55,8 +58,9 @@ class UserAppointmentDetailsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(booking.status)
-                                .withOpacity(0.15),
+                            color: _getStatusColor(
+                              booking.status,
+                            ).withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -70,10 +74,7 @@ class UserAppointmentDetailsScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Status',
-                                style: AppTextStyles.caption,
-                              ),
+                              Text('Status', style: AppTextStyles.caption),
                               const SizedBox(height: 4),
                               Text(
                                 booking.status,
@@ -193,33 +194,120 @@ class UserAppointmentDetailsScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                if (booking.status == 'CONFIRMED' || booking.status == 'PENDING')
+                if (booking.status == 'CONFIRMED' ||
+                    booking.status == 'PENDING')
                   PrimaryButton(
                     label: 'Cancel Appointment',
                     onPressed: () async {
                       if (booking.id == null) {
-                        CustomSnackbar.show(title: 'Error', message: 'Invalid booking', isError: true);
+                        CustomSnackbar.show(
+                          title: 'Error',
+                          message: 'Invalid booking',
+                          isError: true,
+                        );
                         return;
                       }
 
                       final confirmed = await Get.dialog<bool>(
-                        AlertDialog(
-                          backgroundColor: AppColors.surface,
-                          title: const Text('Cancel Appointment'),
-                          content: const Text(
-                            'Are you sure you want to cancel this appointment?',
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: GlassCard(
+                              padding: const EdgeInsets.all(AppSpacing.lg),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.cancel_outlined,
+                                      color: Colors.orange,
+                                      size: 48,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Cancel Appointment',
+                                    style: AppTextStyles.heading.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    'Are you sure you want to cancel this appointment?',
+                                    style: AppTextStyles.body.copyWith(
+                                      color: AppColors.textPrimary,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: AppSpacing.lg),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: OutlinedButton(
+                                          onPressed: () =>
+                                              Get.back(result: false),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor:
+                                                AppColors.textPrimary,
+                                            side: const BorderSide(
+                                              color: AppColors.divider,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 14,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'No',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () =>
+                                              Get.back(result: true),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.orange,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 14,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Yes, Cancel',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Get.back(result: false),
-                              child: const Text('No'),
-                            ),
-                            TextButton(
-                              onPressed: () => Get.back(result: true),
-                              child: const Text('Yes, Cancel'),
-                            ),
-                          ],
                         ),
+                        barrierDismissible: true,
                       );
 
                       if (confirmed == true) {
@@ -232,22 +320,8 @@ class UserAppointmentDetailsScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   PrimaryButton(
                     label: 'Rate Experience',
-                    onPressed: () => Get.toNamed('/rate-experience', arguments: booking),
-                  ),
-                  
-                  // ✅ ADD THIS: Review specific service
-                  const SizedBox(height: AppSpacing.sm),
-                  OutlinedButton(
-                    onPressed: () {
-                      // Allow reviewing service even if booking rated
-                      Get.toNamed('/review-service', arguments: {
-                        'serviceId': booking.serviceId,
-                        'salonId': booking.salonId,
-                        'serviceName': booking.serviceName,
-                        'salonName': booking.salonName,
-                      });
-                    },
-                    child: const Text('Review This Service'),
+                    onPressed: () =>
+                        Get.toNamed('/rate-experience', arguments: booking),
                   ),
                 ],
               ],
@@ -308,16 +382,11 @@ class _DetailItem extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: AppColors.textMuted),
         const SizedBox(width: AppSpacing.sm),
-        Text(
-          '$label: ',
-          style: AppTextStyles.caption,
-        ),
+        Text('$label: ', style: AppTextStyles.caption),
         Expanded(
           child: Text(
             value,
-            style: AppTextStyles.body.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
       ],

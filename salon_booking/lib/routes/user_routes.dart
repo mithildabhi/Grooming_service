@@ -5,6 +5,7 @@ import '../bindings/user_binding.dart';
 
 import '../views/user/user_main_shell.dart';
 import '../views/user/user_salon_details_screen.dart';
+import '../views/user/user_salon_reviews_screen.dart';
 import '../views/user/user_select_datetime_screen.dart';
 import '../views/user/user_review_booking_screen.dart';
 import '../views/user/user_payment_screen.dart';
@@ -24,10 +25,8 @@ class UserRoutes {
       binding: UserBinding(),
     ),
 
-    GetPage(
-      name: '/salon-details',
-      page: () => const UserSalonDetailsScreen(),
-    ),
+    GetPage(name: '/salon-details', page: () => const UserSalonDetailsScreen()),
+    GetPage(name: '/salon-reviews', page: () => const UserSalonReviewsScreen()),
 
     GetPage(
       name: '/select-datetime',
@@ -39,10 +38,7 @@ class UserRoutes {
       page: () => const UserReviewBookingScreen(),
     ),
 
-    GetPage(
-      name: '/payment',
-      page: () => const UserPaymentScreen(),
-    ),
+    GetPage(name: '/payment', page: () => const UserPaymentScreen()),
 
     GetPage(
       name: '/booking-success',
@@ -53,27 +49,17 @@ class UserRoutes {
       name: '/appointment-details',
       page: () => const UserAppointmentDetailsScreen(),
     ),
-  GetPage(
-    name: '/my-reviews',
-    page: () => const UserMyReviewsScreen(),
-  ),
+    GetPage(name: '/my-reviews', page: () => const UserMyReviewsScreen()),
     GetPage(
       name: '/rate-experience',
       page: () => const UserRateExperienceScreen(),
     ),
 
-    GetPage(
-      name: '/edit-profile',
-      page: () => const UserEditProfileScreen(),
-    ),
+    GetPage(name: '/edit-profile', page: () => const UserEditProfileScreen()),
 
-    GetPage(
-      name: '/settings',
-      page: () => const UserSettingsScreen(),
-    ),
+    GetPage(name: '/settings', page: () => const UserSettingsScreen()),
   ];
 
   /// ✅ REQUIRED for main.dart spread operator
   static List<GetPage> get pages => routes;
 }
-

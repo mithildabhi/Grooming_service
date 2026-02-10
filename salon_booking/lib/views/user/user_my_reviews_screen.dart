@@ -63,10 +63,7 @@ class _UserMyReviewsScreenState extends State<UserMyReviewsScreen> {
       appBar: AppBar(
         title: const Text(
           'My Reviews',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -77,93 +74,156 @@ class _UserMyReviewsScreenState extends State<UserMyReviewsScreen> {
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading reviews',
-                          style: AppTextStyles.subHeading,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          error!,
-                          style: AppTextStyles.caption,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadMyReviews,
-                          child: const Text('Retry'),
-                        ),
-                      ],
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
                     ),
-                  )
-                : reviews.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.rate_review_outlined,
-                              size: 64,
-                              color: AppColors.textMuted,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No Reviews Yet',
-                              style: AppTextStyles.subHeading,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Your reviews will appear here',
-                              style: AppTextStyles.caption,
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        itemCount: reviews.length,
-                        itemBuilder: (context, index) {
-                          final review = reviews[index];
-                          return _MyReviewCard(
-                            review: review,
-                            onDelete: () => _deleteReview(review.id),
-                            onEdit: () => _editReview(review),
-                          );
-                        },
-                      ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading reviews',
+                      style: AppTextStyles.subHeading,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error!,
+                      style: AppTextStyles.caption,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadMyReviews,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            : reviews.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.rate_review_outlined,
+                      size: 64,
+                      color: AppColors.textMuted,
+                    ),
+                    const SizedBox(height: 16),
+                    Text('No Reviews Yet', style: AppTextStyles.subHeading),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your reviews will appear here',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                itemCount: reviews.length,
+                itemBuilder: (context, index) {
+                  final review = reviews[index];
+                  return _MyReviewCard(
+                    review: review,
+                    onDelete: () => _deleteReview(review.id),
+                    onEdit: () => _editReview(review),
+                  );
+                },
+              ),
       ),
     );
   }
 
   Future<void> _deleteReview(int reviewId) async {
     final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Delete Review'),
-        content: const Text(
-          'Are you sure you want to delete this review? This action cannot be undone.',
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: GlassCard(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Delete Review',
+                  style: AppTextStyles.heading.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Are you sure you want to delete this review? This action cannot be undone.',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                    decoration: TextDecoration.none,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(result: false),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textPrimary,
+                          side: const BorderSide(color: AppColors.divider),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(result: true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
       ),
+      barrierDismissible: true,
     );
 
     if (confirmed == true) {
@@ -326,18 +386,13 @@ class _MyReviewCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 review.title,
-                style: AppTextStyles.body.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
 
             // Comment
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              review.comment,
-              style: AppTextStyles.body,
-            ),
+            Text(review.comment, style: AppTextStyles.body),
 
             // Owner Reply
             if (review.ownerReply != null && review.ownerReply!.isNotEmpty) ...[
@@ -347,9 +402,7 @@ class _MyReviewCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.blue.withOpacity(0.3),
-                  ),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,27 +435,17 @@ class _MyReviewCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                Text(
-                  review.timeAgo,
-                  style: AppTextStyles.caption,
-                ),
+                Text(review.timeAgo, style: AppTextStyles.caption),
                 if (review.isEdited) ...[
                   const SizedBox(width: 8),
                   const Text(
                     '• Edited',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
                 const Spacer(),
                 if (review.helpfulCount > 0) ...[
-                  Icon(
-                    Icons.thumb_up,
-                    size: 14,
-                    color: AppColors.textMuted,
-                  ),
+                  Icon(Icons.thumb_up, size: 14, color: AppColors.textMuted),
                   const SizedBox(width: 4),
                   Text(
                     review.helpfulCount.toString(),
