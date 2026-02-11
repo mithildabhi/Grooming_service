@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../controllers/admin_controller.dart';
 import '../../models/service_model.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../widgets/ui/glass_card.dart';
+import '../../theme/app_spacing.dart';
 
 class EditServiceScreen extends StatefulWidget {
   const EditServiceScreen({super.key});
@@ -41,10 +43,10 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Get service from arguments
     service = Get.arguments as ServiceModel?;
-    
+
     if (service != null) {
       nameCtrl = TextEditingController(text: service!.name);
       priceCtrl = TextEditingController(text: service!.price.toString());
@@ -82,34 +84,40 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Select Category',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      builder: (context) => SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Category',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ...categories.map((cat) => Obx(() => ListTile(
-              title: Text(
-                cat['label']!,
-                style: const TextStyle(color: Colors.white),
+              const SizedBox(height: 16),
+              ...categories.map(
+                (cat) => Obx(
+                  () => ListTile(
+                    title: Text(
+                      cat['label']!,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    trailing: category.value == cat['value']
+                        ? const Icon(Icons.check, color: accent)
+                        : const SizedBox.shrink(),
+                    onTap: () {
+                      category.value = cat['value']!;
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
               ),
-              trailing: category.value == cat['value']
-                  ? const Icon(Icons.check, color: accent)
-                  : const SizedBox.shrink(),
-              onTap: () {
-                category.value = cat['value']!;
-                Navigator.pop(context);
-              },
-            ))),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -167,28 +175,86 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
     if (service == null) return;
 
     // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: card,
-        title: const Text(
-          'Delete Service',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Are you sure you want to delete this service? This action cannot be undone.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+    final confirm = await Get.dialog<bool>(
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: GlassCard(
+            color: card,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber,
+                    color: Colors.redAccent,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                const Text(
+                  'Delete Service',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const Text(
+                  'Are you sure you want to delete this service? This action cannot be undone.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    decoration: TextDecoration.none,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(result: false),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white70,
+                          side: const BorderSide(color: Colors.white24),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text("Cancel"),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(result: true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text("Delete"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
+        ),
       ),
     );
 
@@ -210,7 +276,10 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
         appBar: AppBar(
           backgroundColor: bg,
           elevation: 0,
-          title: const Text('Edit Service', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Edit Service',
+            style: TextStyle(color: Colors.white),
+          ),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(
@@ -237,9 +306,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
       ),
       body: Obx(() {
         if (ctrl.isLoadingServices.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: accent),
-          );
+          return const Center(child: CircularProgressIndicator(color: accent));
         }
 
         return SingleChildScrollView(
@@ -254,10 +321,18 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
               const SizedBox(height: 12),
 
               _inputField('Service Name', nameCtrl, Icons.cut),
-              _inputField('Price (₹)', priceCtrl, Icons.currency_rupee,
-                  keyboardType: TextInputType.number),
-              _inputField('Duration (minutes)', durationCtrl, Icons.access_time,
-                  keyboardType: TextInputType.number),
+              _inputField(
+                'Price (₹)',
+                priceCtrl,
+                Icons.currency_rupee,
+                keyboardType: TextInputType.number,
+              ),
+              _inputField(
+                'Duration (minutes)',
+                durationCtrl,
+                Icons.access_time,
+                keyboardType: TextInputType.number,
+              ),
 
               _dropdownTile(),
 
@@ -396,58 +471,60 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
   );
 
   Widget _statusTile(String title, RxBool enabled) {
-    return Obx(() => Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+    return Obx(
+      () => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
             ),
-          ),
-          Switch(
-            value: enabled.value,
-            activeColor: accent,
-            onChanged: (val) async {
-              // Update the switch immediately for better UX
-              enabled.value = val;
-              
-              // If it's the Active toggle, update backend immediately
-              if (title == 'Active' && service != null) {
-                try {
-                  final ctrl = Get.find<AdminController>();
-                  await ctrl.toggleServiceStatus(
-                    serviceId: service!.id,
-                    isActive: val,
-                  );
-                  
-                  CustomSnackbar.show(
-                    title: 'Success',
-                    message: 'Service status updated',
-                    isSuccess: true,
-                    duration: const Duration(seconds: 2),
-                  );
-                } catch (e) {
-                  // Revert on error
-                  enabled.value = !val;
-                  CustomSnackbar.show(
-                    title: 'Error',
-                    message: 'Failed to update status',
-                    isError: true,
-                  );
+            Switch(
+              value: enabled.value,
+              activeColor: accent,
+              onChanged: (val) async {
+                // Update the switch immediately for better UX
+                enabled.value = val;
+
+                // If it's the Active toggle, update backend immediately
+                if (title == 'Active' && service != null) {
+                  try {
+                    final ctrl = Get.find<AdminController>();
+                    await ctrl.toggleServiceStatus(
+                      serviceId: service!.id,
+                      isActive: val,
+                    );
+
+                    CustomSnackbar.show(
+                      title: 'Success',
+                      message: 'Service status updated',
+                      isSuccess: true,
+                      duration: const Duration(seconds: 2),
+                    );
+                  } catch (e) {
+                    // Revert on error
+                    enabled.value = !val;
+                    CustomSnackbar.show(
+                      title: 'Error',
+                      message: 'Failed to update status',
+                      isError: true,
+                    );
+                  }
                 }
-              }
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _actionButtons() {

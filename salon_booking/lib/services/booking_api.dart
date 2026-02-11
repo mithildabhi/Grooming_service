@@ -11,30 +11,30 @@ class BookingApi {
 
   static Future<Map<String, String>> _getHeaders() async {
     print('🔵 _getHeaders: Starting...');
-    
+
     try {
       final user = FirebaseAuth.instance.currentUser;
       print('🔵 _getHeaders: Current user: ${user?.uid ?? "null"}');
-      
+
       if (user == null) {
         print('❌ _getHeaders: No user authenticated');
         throw Exception('User not authenticated');
       }
-      
+
       print('🔵 _getHeaders: Getting ID token...');
       final token = await user.getIdToken();
       print('✅ _getHeaders: Token obtained (length: ${token?.length ?? 0})');
-      
+
       if (token == null || token.isEmpty) {
         print('❌ _getHeaders: Token is null or empty');
         throw Exception('Failed to get authentication token');
       }
-      
+
       final headers = {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       };
-      
+
       print('✅ _getHeaders: Headers created successfully');
       return headers;
     } catch (e, stackTrace) {
@@ -45,26 +45,28 @@ class BookingApi {
   }
 
   /// Get all bookings for salon owner
-  static Future<List<dynamic>> getBookings({String? date, String? status}) async {
+  static Future<List<dynamic>> getBookings({
+    String? date,
+    String? status,
+  }) async {
     try {
       final headers = await _getHeaders();
-      
+
       String url = '$baseUrl/bookings/';
       List<String> queryParams = [];
-      
+
       if (date != null) queryParams.add('date=$date');
       if (status != null) queryParams.add('status=$status');
-      
+
       if (queryParams.isNotEmpty) {
         url += '?${queryParams.join('&')}';
       }
-      
+
       print('📥 Fetching bookings from: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       print('📊 Bookings response status: ${response.statusCode}');
       print('📦 Response body: ${response.body}');
@@ -77,7 +79,11 @@ class BookingApi {
         throw Exception('Unauthorized - Please login again');
       } else {
         final error = jsonDecode(response.body);
-        throw Exception(error['error'] ?? error['detail'] ?? 'Failed to load bookings: ${response.statusCode}');
+        throw Exception(
+          error['error'] ??
+              error['detail'] ??
+              'Failed to load bookings: ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('❌ Booking fetch error: $e');
@@ -89,11 +95,10 @@ class BookingApi {
   static Future<Map<String, dynamic>> getStatistics() async {
     try {
       final headers = await _getHeaders();
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/bookings/statistics/'),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .get(Uri.parse('$baseUrl/bookings/statistics/'), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -114,16 +119,16 @@ class BookingApi {
   }) async {
     try {
       final headers = await _getHeaders();
-      
-      String url = '$baseUrl/bookings/available-slots/?date=$date&service_id=$serviceId';
+
+      String url =
+          '$baseUrl/bookings/available-slots/?date=$date&service_id=$serviceId';
       if (staffId != null) url += '&staff_id=$staffId';
-      
+
       print('🕐 Fetching slots: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -148,7 +153,7 @@ class BookingApi {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       final body = {
         'service': serviceId,
         'booking_date': bookingDate,
@@ -158,14 +163,16 @@ class BookingApi {
         if (customerPhone != null) 'customer_phone': customerPhone,
         if (notes != null) 'notes': notes,
       };
-      
+
       print('📝 Creating booking: $body');
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/bookings/create/'),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/bookings/create/'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
 
       print('📥 Create response: ${response.statusCode}');
       print('📦 Response body: ${response.body}');
@@ -178,10 +185,14 @@ class BookingApi {
         throw Exception('Unauthorized - Please login again');
       } else if (response.statusCode == 400) {
         final error = jsonDecode(response.body);
-        throw Exception(error['error'] ?? error['detail'] ?? 'Invalid booking data');
+        throw Exception(
+          error['error'] ?? error['detail'] ?? 'Invalid booking data',
+        );
       } else {
         final error = jsonDecode(response.body);
-        throw Exception(error['error'] ?? error['detail'] ?? 'Failed to create booking');
+        throw Exception(
+          error['error'] ?? error['detail'] ?? 'Failed to create booking',
+        );
       }
     } catch (e) {
       print('❌ Create booking error: $e');
@@ -190,25 +201,30 @@ class BookingApi {
   }
 
   /// Update booking status - FIXED VERSION
-  static Future<void> updateBookingStatus(dynamic bookingId, String status) async {
+  static Future<void> updateBookingStatus(
+    dynamic bookingId,
+    String status,
+  ) async {
     print('🔵 API: updateBookingStatus called');
     print('   Input ID: $bookingId (${bookingId.runtimeType})');
     print('   Input Status: $status');
-    
+
     try {
       print('🔵 API: Getting headers...');
       final headers = await _getHeaders();
       print('✅ API: Headers obtained');
       print('   Headers: $headers');
-      
+
       // Convert bookingId to int if it's a string
       print('🔵 API: Converting ID to int...');
-      final int id = bookingId is int ? bookingId : int.parse(bookingId.toString());
+      final int id = bookingId is int
+          ? bookingId
+          : int.parse(bookingId.toString());
       print('✅ API: ID converted to $id');
-      
+
       final url = '$baseUrl/bookings/$id/status/';
       final body = jsonEncode({'status': status});
-      
+
       print('🔄 API: Updating booking status:');
       print('   Base URL: $baseUrl');
       print('   Full URL: $url');
@@ -216,19 +232,17 @@ class BookingApi {
       print('   Status: $status');
       print('   Body: $body');
       print('   Headers: $headers');
-      
+
       print('🔵 API: Making HTTP PUT request...');
-      final response = await http.put(
-        Uri.parse(url),
-        headers: headers,
-        body: body,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          print('⏱️ API: Request timeout!');
-          throw Exception('Request timeout - please check your connection');
-        },
-      );
+      final response = await http
+          .put(Uri.parse(url), headers: headers, body: body)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              print('⏱️ API: Request timeout!');
+              throw Exception('Request timeout - please check your connection');
+            },
+          );
 
       print('📥 API: Response received!');
       print('   Status Code: ${response.statusCode}');
@@ -249,7 +263,9 @@ class BookingApi {
         try {
           final error = jsonDecode(response.body);
           print('   Error details: $error');
-          throw Exception(error['error'] ?? error['detail'] ?? error.toString());
+          throw Exception(
+            error['error'] ?? error['detail'] ?? error.toString(),
+          );
         } catch (e) {
           print('   Could not parse error: $e');
           throw Exception('Invalid status value');
@@ -259,7 +275,9 @@ class BookingApi {
         try {
           final error = jsonDecode(response.body);
           print('   Error details: $error');
-          throw Exception(error['error'] ?? error['detail'] ?? error.toString());
+          throw Exception(
+            error['error'] ?? error['detail'] ?? error.toString(),
+          );
         } catch (e) {
           print('   Could not parse error: $e');
           throw Exception('Failed to update status (${response.statusCode})');
@@ -278,11 +296,10 @@ class BookingApi {
   static Future<void> deleteBooking(int bookingId) async {
     try {
       final headers = await _getHeaders();
-      
-      final response = await http.delete(
-        Uri.parse('$baseUrl/bookings/$bookingId/'),
-        headers: headers,
-      ).timeout(const Duration(seconds: 30));
+
+      final response = await http
+          .delete(Uri.parse('$baseUrl/bookings/$bookingId/'), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       print('📥 Delete response: ${response.statusCode}');
 

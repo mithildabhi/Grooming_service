@@ -7,6 +7,8 @@ import 'package:salon_booking/views/admin/employee_screen.dart';
 import 'package:salon_booking/views/admin/services_screen.dart';
 import 'package:salon_booking/views/admin/settings_screen.dart';
 import '../../controllers/admin_controller.dart';
+import '../../widgets/ui/glass_card.dart';
+import '../../theme/app_spacing.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -57,9 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: Obx(() {
         if (adminCtrl.isLoadingProfile.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: accent),
-          );
+          return const Center(child: CircularProgressIndicator(color: accent));
         }
 
         return SingleChildScrollView(
@@ -230,41 +230,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onPressed: () {
                     Get.dialog(
-                      AlertDialog(
-                        backgroundColor: card,
-                        title: const Text(
-                          "Logout",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        content: const Text(
-                          "Are you sure you want to logout?",
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Get.back(),
-                            child: const Text(
-                              "Cancel",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              Get.back();
-                              Get.dialog(
-                                const Center(
-                                  child: CircularProgressIndicator(color: accent),
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: GlassCard(
+                            color: card,
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.logout,
+                                    color: Colors.redAccent,
+                                    size: 48,
+                                  ),
                                 ),
-                                barrierDismissible: false,
-                              );
-                              await adminCtrl.logout();
-                            },
-                            child: const Text(
-                              "Logout",
-                              style: TextStyle(color: Colors.redAccent),
+                                const SizedBox(height: AppSpacing.md),
+                                const Text(
+                                  "Logout",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                const Text(
+                                  "Are you sure you want to logout?",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 16,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () => Get.back(),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white70,
+                                          side: const BorderSide(
+                                            color: Colors.white24,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text("Cancel"),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () async {
+                                          Get.back();
+                                          Get.dialog(
+                                            const Center(
+                                              child: CircularProgressIndicator(
+                                                color: accent,
+                                              ),
+                                            ),
+                                            barrierDismissible: false,
+                                          );
+                                          await adminCtrl.logout();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.redAccent,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text("Logout"),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     );
                   },

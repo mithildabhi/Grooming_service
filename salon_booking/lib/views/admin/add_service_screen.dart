@@ -50,34 +50,40 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Select Category',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      builder: (context) => SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Category',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ...categories.map((cat) => Obx(() => ListTile(
-              title: Text(
-                cat['label']!,
-                style: const TextStyle(color: Colors.white),
+              const SizedBox(height: 16),
+              ...categories.map(
+                (cat) => Obx(
+                  () => ListTile(
+                    title: Text(
+                      cat['label']!,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    trailing: category.value == cat['value']
+                        ? const Icon(Icons.check, color: accent)
+                        : const SizedBox.shrink(),
+                    onTap: () {
+                      category.value = cat['value']!;
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
               ),
-              trailing: category.value == cat['value']
-                  ? const Icon(Icons.check, color: accent)
-                  : const SizedBox.shrink(),
-              onTap: () {
-                category.value = cat['value']!;
-                Navigator.pop(context);
-              },
-            ))),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -142,9 +148,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       ),
       body: Obx(() {
         if (ctrl.isLoadingServices.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: accent),
-          );
+          return const Center(child: CircularProgressIndicator(color: accent));
         }
 
         return SingleChildScrollView(
@@ -159,10 +163,18 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               const SizedBox(height: 12),
 
               _input("Service Name", nameCtrl, Icons.cut),
-              _input("Price (₹)", priceCtrl, Icons.currency_rupee, 
-                  keyboardType: TextInputType.number),
-              _input("Duration (minutes)", durationCtrl, Icons.access_time,
-                  keyboardType: TextInputType.number),
+              _input(
+                "Price (₹)",
+                priceCtrl,
+                Icons.currency_rupee,
+                keyboardType: TextInputType.number,
+              ),
+              _input(
+                "Duration (minutes)",
+                durationCtrl,
+                Icons.access_time,
+                keyboardType: TextInputType.number,
+              ),
               _dropdownTile(),
               _multiline("Description", descCtrl),
 
@@ -182,10 +194,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                   onPressed: _saveService,
                   child: const Text(
                     "Save Service",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ),
@@ -226,8 +235,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   );
 
   Widget _input(
-    String label, 
-    TextEditingController c, 
+    String label,
+    TextEditingController c,
     IconData icon, {
     TextInputType keyboardType = TextInputType.text,
   }) => Padding(

@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../controllers/admin_controller.dart';
 import '../../models/employee_model.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../widgets/ui/glass_card.dart';
+import '../../theme/app_spacing.dart';
 
 class EditStaffMemberScreen extends StatefulWidget {
   const EditStaffMemberScreen({super.key});
@@ -25,7 +27,13 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
   late List<String> selectedDays;
   late bool isActive;
 
-  final List<String> roles = ['Stylist', 'Barber', 'Specialist', 'Manager', 'Receptionist'];
+  final List<String> roles = [
+    'Stylist',
+    'Barber',
+    'Specialist',
+    'Manager',
+    'Receptionist',
+  ];
   final List<String> skills = [
     'Hair Styling',
     'Hair Cutting',
@@ -34,22 +42,30 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
     'Spa',
     'Massage',
     'Nails',
-    'Makeup'
+    'Makeup',
   ];
-  final List<String> allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final List<String> allDays = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
 
   @override
   void initState() {
     super.initState();
     staff = Get.arguments as EmployeeModel;
-    
+
     nameCtrl = TextEditingController(text: staff.fullName);
     emailCtrl = TextEditingController(text: staff.email);
     phoneCtrl = TextEditingController(text: staff.phone);
     selectedRole = _capitalizeFirst(staff.role);
     selectedSkill = _formatSkill(staff.primarySkill);
     selectedDays = List.from(staff.workingDays);
-    isActive = staff.isActive;  
+    isActive = staff.isActive;
   }
 
   String _capitalizeFirst(String text) {
@@ -58,9 +74,10 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
   }
 
   String _formatSkill(String skill) {
-    return skill.split('_').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
+    return skill
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
   @override
@@ -72,8 +89,8 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
   }
 
   Future<void> _updateStaff() async {
-    if (nameCtrl.text.trim().isEmpty || 
-        emailCtrl.text.trim().isEmpty || 
+    if (nameCtrl.text.trim().isEmpty ||
+        emailCtrl.text.trim().isEmpty ||
         phoneCtrl.text.trim().isEmpty) {
       CustomSnackbar.show(
         title: 'Error',
@@ -101,28 +118,86 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
   }
 
   Future<void> _deleteStaff() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: card,
-        title: const Text(
-          'Delete Staff Member',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          'Are you sure you want to remove ${staff.fullName}? This action cannot be undone.',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+    final confirm = await Get.dialog<bool>(
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: GlassCard(
+            color: card,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber,
+                    color: Colors.redAccent,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                const Text(
+                  'Delete Staff Member',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Are you sure you want to remove ${staff.fullName}? This action cannot be undone.',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    decoration: TextDecoration.none,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(result: false),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white70,
+                          side: const BorderSide(color: Colors.white24),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text("Cancel"),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(result: true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text("Delete"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
+        ),
       ),
     );
 
@@ -153,9 +228,7 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
       ),
       body: Obx(() {
         if (ctrl.isLoadingStaff.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: accent),
-          );
+          return const Center(child: CircularProgressIndicator(color: accent));
         }
 
         return SingleChildScrollView(
@@ -175,18 +248,34 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
               _sectionTitle("Edit Information"),
               const SizedBox(height: 12),
               _inputField("Full Name", nameCtrl, Icons.person),
-              _inputField("Email", emailCtrl, Icons.email, 
-                  keyboardType: TextInputType.emailAddress),
-              _inputField("Phone Number", phoneCtrl, Icons.phone, 
-                  keyboardType: TextInputType.phone),
+              _inputField(
+                "Email",
+                emailCtrl,
+                Icons.email,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              _inputField(
+                "Phone Number",
+                phoneCtrl,
+                Icons.phone,
+                keyboardType: TextInputType.phone,
+              ),
 
               const SizedBox(height: 20),
               _sectionTitle("Role & Skills"),
               const SizedBox(height: 12),
-              _dropdownField("Role", selectedRole, roles, 
-                  (val) => setState(() => selectedRole = val)),
-              _dropdownField("Primary Skill", selectedSkill, skills, 
-                  (val) => setState(() => selectedSkill = val)),
+              _dropdownField(
+                "Role",
+                selectedRole,
+                roles,
+                (val) => setState(() => selectedRole = val),
+              ),
+              _dropdownField(
+                "Primary Skill",
+                selectedSkill,
+                skills,
+                (val) => setState(() => selectedSkill = val),
+              ),
 
               const SizedBox(height: 20),
               _sectionTitle("Working Schedule"),
@@ -228,7 +317,9 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
                 radius: 30,
                 backgroundColor: accent.withOpacity(0.2),
                 child: Text(
-                  staff.fullName.isNotEmpty ? staff.fullName[0].toUpperCase() : 'S',
+                  staff.fullName.isNotEmpty
+                      ? staff.fullName[0].toUpperCase()
+                      : 'S',
                   style: const TextStyle(
                     color: accent,
                     fontSize: 24,
@@ -277,7 +368,7 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
     final status = staff.performanceStatus;
     final score = staff.performanceScore;
     Color statusColor;
-    
+
     switch (status) {
       case 'Top Performer':
         statusColor = Colors.greenAccent;
@@ -318,13 +409,9 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: _statBox("Status", status, statusColor),
-              ),
+              Expanded(child: _statBox("Status", status, statusColor)),
               const SizedBox(width: 12),
-              Expanded(
-                child: _statBox("Score", score, statusColor),
-              ),
+              Expanded(child: _statBox("Score", score, statusColor)),
             ],
           ),
           const SizedBox(height: 12),
@@ -362,10 +449,7 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
           ),
           const SizedBox(height: 4),
           Text(
@@ -392,8 +476,12 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
     );
   }
 
-  Widget _inputField(String label, TextEditingController c, IconData icon,
-      {TextInputType keyboardType = TextInputType.text}) {
+  Widget _inputField(
+    String label,
+    TextEditingController c,
+    IconData icon, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
@@ -415,8 +503,12 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
     );
   }
 
-  Widget _dropdownField(String label, String value, List<String> items, 
-      Function(String) onChanged) {
+  Widget _dropdownField(
+    String label,
+    String value,
+    List<String> items,
+    Function(String) onChanged,
+  ) {
     return GestureDetector(
       onTap: () => _showPicker(label, items, value, onChanged),
       child: Container(
@@ -443,39 +535,50 @@ class _EditStaffMemberScreenState extends State<EditStaffMemberScreen> {
     );
   }
 
-  void _showPicker(String label, List<String> items, String currentValue, 
-      Function(String) onChanged) {
+  void _showPicker(
+    String label,
+    List<String> items,
+    String currentValue,
+    Function(String) onChanged,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Select $label',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      builder: (context) => SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select $label',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ...items.map((item) => ListTile(
-              title: Text(item, style: const TextStyle(color: Colors.white)),
-              trailing: currentValue == item
-                  ? const Icon(Icons.check, color: accent)
-                  : const SizedBox.shrink(),
-              onTap: () {
-                onChanged(item);
-                Navigator.pop(context);
-              },
-            )),
-          ],
+              const SizedBox(height: 16),
+              ...items.map(
+                (item) => ListTile(
+                  title: Text(
+                    item,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  trailing: currentValue == item
+                      ? const Icon(Icons.check, color: accent)
+                      : const SizedBox.shrink(),
+                  onTap: () {
+                    onChanged(item);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

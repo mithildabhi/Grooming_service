@@ -22,6 +22,51 @@ class AdminHomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: bg,
+        elevation: 0,
+        titleSpacing: 20,
+        centerTitle: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Dashboard",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              "Welcome back, Admin",
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: controller.refresh,
+            icon: const Icon(Icons.refresh, color: Colors.white),
+          ),
+          const SizedBox(width: 8),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: Obx(
+            () => controller.isLoading.value
+                ? const LinearProgressIndicator(
+                    color: accent,
+                    backgroundColor: Colors.transparent,
+                    minHeight: 2,
+                  )
+                : const SizedBox(height: 2),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value && controller.recentBookings.isEmpty) {
@@ -34,39 +79,11 @@ class AdminHomeScreen extends StatelessWidget {
             onRefresh: controller.refresh,
             color: accent,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// 👋 Header
-                  Row(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Dashboard",
-                            style: TextStyle(color: Colors.white, fontSize: 23),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Welcome back, Admin",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: controller.refresh,
-                        icon: const Icon(Icons.refresh, color: Colors.white),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
 
                   /// 🔮 AI Optimization Card
                   _buildAIOptimizationCard(controller),

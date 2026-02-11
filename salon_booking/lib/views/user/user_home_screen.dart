@@ -333,6 +333,10 @@ class _UpcomingAppointmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       padding: EdgeInsets.zero,
+      onTap: () {
+        // Navigate to Appointment Details screen
+        Get.toNamed('/appointment-details', arguments: booking);
+      },
       child: Row(
         children: [
           Container(
