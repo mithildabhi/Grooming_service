@@ -1,14 +1,11 @@
-// lib/views/admin/profile_screen.dart
-// ✅ UPDATED: Billing & Payouts now opens Revenue Dashboard
-
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salon_booking/views/admin/employee_screen.dart';
 import 'package:salon_booking/views/admin/services_screen.dart';
 import 'package:salon_booking/views/admin/settings_screen.dart';
+import 'package:salon_booking/views/admin/salon_controls/salon_controls_screen.dart';
 import '../../controllers/admin_controller.dart';
-import '../../widgets/ui/glass_card.dart';
-import '../../theme/app_spacing.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,9 +15,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // Brand Colors
   static const Color bg = Color(0xFF0B0F14);
-  static const Color card = Color(0xFF121A22);
   static const Color accent = Color(0xFF19F6E8);
+  static const Color cardColor = Color(0xFF151E27);
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Colors.white54;
 
   @override
   void initState() {
@@ -39,330 +39,280 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: bg,
-        elevation: 0,
-        title: const Text(
-          "Admin Profile",
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: adminCtrl.openEditProfile,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: adminCtrl.loadSalonProfile,
-          ),
-        ],
-      ),
       body: Obx(() {
         if (adminCtrl.isLoadingProfile.value) {
           return const Center(child: CircularProgressIndicator(color: accent));
         }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Profile Section
-              if (adminCtrl.hasProfile) ...[
-                CircleAvatar(
-                  radius: 48,
-                  backgroundImage: adminCtrl.imageUrl.isNotEmpty
-                      ? NetworkImage(adminCtrl.imageUrl)
-                      : const NetworkImage("https://i.pravatar.cc/300"),
-                ),
-                const SizedBox(height: 12),
-
-                Text(
-                  adminCtrl.salonName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 4),
-
-                const Text(
-                  "Salon Owner • AI Active",
-                  style: TextStyle(color: accent),
-                ),
-
-                const SizedBox(height: 24),
-
-                _infoCard("Salon Name", adminCtrl.salonName),
-                _infoCard("Email", adminCtrl.ownerEmail),
-                _infoCard("Phone", adminCtrl.phone),
-                _infoCard("Location", adminCtrl.location),
-
-                const SizedBox(height: 24),
-
-                _infoCard("Revenue", "₹4.2K / month"),
-                _infoCard("Retention", "88%"),
-                _infoCard("Inventory Alerts", "2 Low Stock"),
-
-                const SizedBox(height: 32),
-              ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.store_outlined,
-                        size: 64,
-                        color: accent.withOpacity(0.5),
-                      ),
+        return CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _buildSliverAppBar(adminCtrl),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!adminCtrl.hasProfile) _buildNoProfileState(adminCtrl),
+                    if (adminCtrl.hasProfile) ...[
+                      _buildStatsRow(),
+                      const SizedBox(height: 32),
+                      _buildInfoSection(adminCtrl),
+                      const SizedBox(height: 32),
+                      _buildQuickActionsTitle(),
                       const SizedBox(height: 16),
-                      const Text(
-                        'No Salon Profile Yet',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Create your salon profile to unlock all features',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white60),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.add),
-                        label: const Text('Create Profile'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accent,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: adminCtrl.openEditProfile,
-                      ),
+                      _buildQuickActionsGrid(adminCtrl),
+                      const SizedBox(height: 40),
+                      _buildLogoutButton(adminCtrl),
+                      const SizedBox(height: 40),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-              ],
-
-              // QUICK ACTIONS
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Quick Actions",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              // ✅ UPDATED: Revenue Dashboard Navigation
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 1.2,
-                children: [
-                  _actionCard(
-                    icon: Icons.people,
-                    title: "Staff Management",
-                    onTap: () => Get.to(() => const EmployeeScreen()),
-                  ),
-                  _actionCard(
-                    icon: Icons.local_florist,
-                    title: "Services",
-                    onTap: () => Get.to(() => const ServicesScreen()),
-                  ),
-                  // 💰 UPDATED: Now opens Revenue Dashboard
-                  _actionCard(
-                    icon: Icons.account_balance_wallet,
-                    title: "Revenue Analytics",
-                    subtitle: "Track earnings",
-                    onTap: () => Get.toNamed('/admin/revenue'),
-                  ),
-                  _actionCard(
-                    icon: Icons.settings,
-                    title: "App Settings",
-                    onTap: () => Get.to(() => const SettingsScreen()),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-              // LOGOUT BUTTON
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.logout, color: Colors.redAccent),
-                  label: const Text(
-                    "Logout",
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.redAccent),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () {
-                    Get.dialog(
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.lg),
-                          child: GlassCard(
-                            color: card,
-                            padding: const EdgeInsets.all(AppSpacing.lg),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.redAccent.withOpacity(0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.logout,
-                                    color: Colors.redAccent,
-                                    size: 48,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                const Text(
-                                  "Logout",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                    decoration: TextDecoration.none,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                const Text(
-                                  "Are you sure you want to logout?",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 16,
-                                    decoration: TextDecoration.none,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: AppSpacing.lg),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: () => Get.back(),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.white70,
-                                          side: const BorderSide(
-                                            color: Colors.white24,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        child: const Text("Cancel"),
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.md),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: () async {
-                                          Get.back();
-                                          Get.dialog(
-                                            const Center(
-                                              child: CircularProgressIndicator(
-                                                color: accent,
-                                              ),
-                                            ),
-                                            barrierDismissible: false,
-                                          );
-                                          await adminCtrl.logout();
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.redAccent,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        child: const Text("Logout"),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       }),
     );
   }
 
-  // ════════════ HELPER WIDGETS ════════════
-  Widget _infoCard(String title, String value) {
+  Widget _buildSliverAppBar(AdminController adminCtrl) {
+    return SliverAppBar(
+      expandedHeight: 280,
+      pinned: true,
+      backgroundColor: bg,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Ambient Background
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF1A1F29), bg],
+                ),
+              ),
+            ),
+            // Decorative Circles
+            Positioned(
+              top: -100,
+              right: -50,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withOpacity(0.05),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accent.withOpacity(0.1),
+                      blurRadius: 100,
+                      spreadRadius: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Profile Content
+            if (adminCtrl.hasProfile)
+              SafeArea(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 20),
+                    // Avatar with Glow
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: accent.withOpacity(0.2),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: cardColor,
+                        backgroundImage: adminCtrl.imageUrl.isNotEmpty
+                            ? NetworkImage(adminCtrl.imageUrl)
+                            : const NetworkImage("https://i.pravatar.cc/300"),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      adminCtrl.salonName,
+                      style: const TextStyle(
+                        color: textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: accent.withOpacity(0.2)),
+                      ),
+                      child: const Text(
+                        "Salon Owner • AI Active",
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, color: textPrimary),
+          onPressed: adminCtrl.openEditProfile,
+          tooltip: 'Edit Profile',
+        ),
+        IconButton(
+          icon: const Icon(Icons.refresh, color: textPrimary),
+          onPressed: adminCtrl.loadSalonProfile,
+          tooltip: 'Refresh',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatItem("Revenue", "₹4.2K", Icons.currency_rupee),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: _buildStatItem("Retention", "88%", Icons.repeat)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatItem("Stock Low", "2", Icons.inventory_2_outlined),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(14),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white70)),
-          const SizedBox(height: 6),
+          Icon(icon, color: accent.withOpacity(0.8), size: 20),
+          const SizedBox(height: 12),
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              color: textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(color: textSecondary, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(AdminController adminCtrl) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Contact Info",
+          style: TextStyle(
+            color: textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          child: Column(
+            children: [
+              _buildInfoTile(
+                Icons.email_outlined,
+                "Email",
+                adminCtrl.ownerEmail,
+              ),
+              Divider(height: 1, color: Colors.white.withOpacity(0.05)),
+              _buildInfoTile(Icons.phone_outlined, "Phone", adminCtrl.phone),
+              Divider(height: 1, color: Colors.white.withOpacity(0.05)),
+              _buildInfoTile(
+                Icons.location_on_outlined,
+                "Location",
+                adminCtrl.location,
+                isLast: true,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoTile(
+    IconData icon,
+    String title,
+    String value, {
+    bool isLast = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Icon(icon, color: textSecondary, size: 22),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(color: textSecondary, fontSize: 12),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -370,50 +320,236 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ✅ UPDATED: Added optional subtitle parameter
-  Widget _actionCard({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: card,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+  Widget _buildQuickActionsTitle() {
+    return const Text(
+      "Management",
+      style: TextStyle(
+        color: textPrimary,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsGrid(AdminController adminCtrl) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.3,
+      children: [
+        _buildActionCard(
+          "Staff",
+          "Manage Team",
+          Icons.people_outline,
+          const Color(0xFF6C63FF),
+          () => Get.to(() => const EmployeeScreen()),
         ),
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: accent, size: 30),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 11,
+        _buildActionCard(
+          "Services",
+          "Menu & Pricing",
+          Icons.spa_outlined,
+          const Color(0xFFFF6B9D),
+          () => Get.to(() => const ServicesScreen()),
+        ),
+        _buildActionCard(
+          "Revenue",
+          "Track Earnings",
+          Icons.pie_chart_outline,
+          const Color(0xFFFFA726),
+          () => Get.toNamed('/admin/revenue'),
+        ),
+        _buildActionCard(
+          "Controls",
+          "Shop & Hours",
+          Icons.tune,
+          const Color(0xFF19F6E8),
+          () => Get.to(() => const SalonControlsScreen()),
+        ),
+        _buildActionCard(
+          "Settings",
+          "App Config",
+          Icons.settings_outlined,
+          Colors.blueGrey,
+          () => Get.to(() => const SettingsScreen()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: textSecondary, fontSize: 11),
+                  ),
+                ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoProfileState(AdminController adminCtrl) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.only(top: 40),
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.storefront_outlined,
+              size: 60,
+              color: accent.withOpacity(0.5),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Welcome, Admin',
+              style: TextStyle(
+                color: textPrimary,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Create your salon profile to start managing your business.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: textSecondary),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: adminCtrl.openEditProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                "Create Profile",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(AdminController adminCtrl) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.logout, size: 20),
+        label: const Text("Logout"),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.redAccent,
+          side: const BorderSide(color: Colors.redAccent, width: 1.5),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        onPressed: () {
+          // Simplified logout dialog for modern feel
+          Get.dialog(
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: AlertDialog(
+                backgroundColor: cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: const Text(
+                  "Logout",
+                  style: TextStyle(color: textPrimary),
+                ),
+                content: const Text(
+                  "Are you sure you want to sign out?",
+                  style: TextStyle(color: textSecondary),
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text(
+                      "Cancel",
+                      style: TextStyle(color: textSecondary),
+                    ),
+                    onPressed: () => Get.back(),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () async {
+                      Get.back(); // close dialog
+                      await adminCtrl.logout();
+                    },
+                    child: const Text("Logout"),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
