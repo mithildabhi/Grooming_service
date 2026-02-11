@@ -252,13 +252,16 @@ class ReviewApi {
       if (bookingId != null) body['booking_id'] = bookingId;
       if (serviceId != null) body['service_id'] = serviceId;
       if (salonId != null) body['salon_id'] = salonId;
-      if (serviceQualityRating != null)
+      if (serviceQualityRating != null) {
         body['service_quality_rating'] = serviceQualityRating;
-      if (staffBehaviorRating != null)
+      }
+      if (staffBehaviorRating != null) {
         body['staff_behavior_rating'] = staffBehaviorRating;
+      }
       if (ambianceRating != null) body['ambiance_rating'] = ambianceRating;
-      if (valueForMoneyRating != null)
+      if (valueForMoneyRating != null) {
         body['value_for_money_rating'] = valueForMoneyRating;
+      }
 
       print('✍️ Creating review: $body');
 

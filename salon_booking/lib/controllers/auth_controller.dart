@@ -50,7 +50,11 @@ class AuthController extends GetxController {
     } catch (e) {
       print("❌ LOGIN ERROR: $e");
       print("❌ LOGIN ERROR: $e");
-      CustomSnackbar.show(title: 'Login failed', message: e.toString(), isError: true);
+      CustomSnackbar.show(
+        title: 'Login failed',
+        message: e.toString(),
+        isError: true,
+      );
       rethrow;
     }
   }
@@ -111,7 +115,7 @@ class AuthController extends GetxController {
     String role, {
     String? name,
     String? phone,
-    String? gender,  // ✅ ADD GENDER PARAMETER
+    String? gender, // ✅ ADD GENDER PARAMETER
   }) async {
     try {
       print('📝 Registering user: $email, Role: $role');
@@ -185,7 +189,7 @@ class AuthController extends GetxController {
           // ✅ IMMEDIATELY LOAD USER DATA after registration
           // This ensures the profile data is available right away
           await _loadUserControllerData();
-          
+
           // ✅ FORCE REFRESH to sync the registered data
           if (Get.isRegistered<UserController>()) {
             final userController = Get.find<UserController>();
@@ -196,7 +200,7 @@ class AuthController extends GetxController {
           print('🎯 Registration complete, redirecting as: ${this.role.value}');
 
           Get.offAllNamed(AppRoutes.userHome);
-          
+
           CustomSnackbar.show(
             title: 'Success',
             message: 'Account created successfully!',
@@ -234,7 +238,11 @@ class AuthController extends GetxController {
   Future<void> resetPassword(String email) async {
     try {
       await _authService.resetPassword(email);
-      CustomSnackbar.show(title: 'Success', message: 'Password reset email sent', isSuccess: true);
+      CustomSnackbar.show(
+        title: 'Success',
+        message: 'Password reset email sent',
+        isSuccess: true,
+      );
     } catch (e) {
       CustomSnackbar.show(title: 'Error', message: e.toString(), isError: true);
     }
@@ -283,11 +291,11 @@ class AuthController extends GetxController {
       Get.offAllNamed(AppRoutes.login);
     } catch (e) {
       print('❌ AUTH: Logout error: $e');
-      
+
       // ✅ Ensure state is cleared even on error
       isLoggedIn.value = false;
       role.value = 'user';
-      
+
       // ✅ Force navigation even on error
       Get.offAllNamed(AppRoutes.login);
     }

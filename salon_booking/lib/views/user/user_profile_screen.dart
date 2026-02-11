@@ -182,6 +182,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 onTap: _navigateToEditProfile, // ✅ Use custom navigation
               ),
               _ProfileItem(
+                icon: Icons.rate_review_outlined,
+                label: 'My Reviews',
+                onTap: () => Get.toNamed('/my-reviews'),
+              ),
+              _ProfileItem(
                 icon: Icons.settings_outlined,
                 label: 'Settings',
                 onTap: () => Get.toNamed('/settings'),

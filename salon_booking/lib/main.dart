@@ -8,6 +8,7 @@ import 'package:salon_booking/controllers/booking_controller.dart';
 import 'package:salon_booking/controllers/location_controller.dart';
 import 'package:salon_booking/controllers/user_controller.dart'; // ✅ ADD THIS
 import 'package:salon_booking/services/auth_service.dart';
+import 'package:salon_booking/services/notification_service.dart';
 import 'package:salon_booking/views/splash_screen.dart';
 import 'package:salon_booking/routes/app_routes.dart';
 import 'package:salon_booking/routes/admin_routes.dart';
@@ -18,6 +19,12 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp();
+
+  // Initialize Notification Service
+  await NotificationService.init();
+  String? token = await NotificationService.getToken();
+  print("FCM TOKEN = $token");
+
 
   // ✅ Initialize ALL controllers at startup
   Get.put(AuthService(), permanent: true);
