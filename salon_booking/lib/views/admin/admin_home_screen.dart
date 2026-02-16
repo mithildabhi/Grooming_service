@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salon_booking/controllers/admin_dashboard_controller.dart';
