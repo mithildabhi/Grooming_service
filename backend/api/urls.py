@@ -1,10 +1,7 @@
-# backend/api/urls.py
 from django.urls import path
-from .views import  WhoAmI , TestProtectedView, SyncUserView
+from . import views
 
 urlpatterns = [
-    path('test-auth/', TestProtectedView.as_view(), name='test-auth'),
-    path('sync-user/', SyncUserView.as_view(), name='sync-user'),
-    path('me/', WhoAmI.as_view()),
-
+    path("save-fcm/", views.save_fcm_token),
+    path("test-fcm/", views.test_notification),
 ]

@@ -20,9 +20,20 @@ from salons.models import Salon
 def revenue_overview(request):
     """Complete revenue overview for salon owner"""
     try:
+        bookings = Booking.objects.none()
+        salon = None
+        
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            else:
+                # Salon owner but no salon profile yet
+                return Response({
+                    'revenue': {'total': 0, 'today': 0, 'this_week': 0, 'this_month': 0, 'this_year': 0, 'pending': 0},
+                    'bookings': {'total': 0, 'today': 0, 'this_week': 0, 'this_month': 0},
+                    'metrics': {'average_booking_value': 0, 'completion_rate': 0}
+                })
         elif request.user.role == 'SUPER_ADMIN':
             bookings = Booking.objects.filter(status='COMPLETED')
             salon = None
@@ -65,7 +76,9 @@ def revenue_overview(request):
         month_bookings = bookings.filter(booking_date__gte=month_start).count()
         
         # Average booking value
-        avg_booking_value = (total_revenue / total_bookings) if total_bookings > 0 else 0
+        # Ensure float conversion for division
+        total_rev_float = float(total_revenue)
+        avg_booking_value = (total_rev_float / total_bookings) if total_bookings > 0 else 0
         
         # Pending revenue
         if salon:
@@ -134,13 +147,22 @@ def daily_revenue(request):
         
         # Get salon
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(
-                salon=salon,
-                status='COMPLETED',
-                booking_date__gte=start_date,
-                booking_date__lte=end_date
-            )
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(
+                    salon=salon,
+                    status='COMPLETED',
+                    booking_date__gte=start_date,
+                    booking_date__lte=end_date
+                )
+            else:
+                 return Response({
+                    'start_date': start_date.strftime('%Y-%m-%d'),
+                    'end_date': end_date.strftime('%Y-%m-%d'),
+                    'daily_breakdown': [],
+                    'total_revenue': 0,
+                    'total_bookings': 0,
+                })
         else:
             bookings = Booking.objects.filter(
                 status='COMPLETED',
@@ -190,8 +212,11 @@ def weekly_revenue(request):
         
         # Get salon
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            else:
+                 return Response({'weeks': weeks, 'weekly_breakdown': [], 'total_revenue': 0})
         else:
             bookings = Booking.objects.filter(status='COMPLETED')
         
@@ -244,8 +269,11 @@ def monthly_revenue(request):
         
         # Get salon
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            else:
+                 return Response({'months': months, 'monthly_breakdown': [], 'total_revenue': 0})
         else:
             bookings = Booking.objects.filter(status='COMPLETED')
         
@@ -302,8 +330,11 @@ def service_revenue(request):
     try:
         # Get salon
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            else:
+                 return Response({'total_services': 0, 'total_revenue': 0, 'services': [], 'top_earning_service': None})
         else:
             bookings = Booking.objects.filter(status='COMPLETED')
         
@@ -319,7 +350,9 @@ def service_revenue(request):
         ).order_by('-total_revenue')
         
         # Calculate percentages
-        total_revenue = sum(s['total_revenue'] or 0 for s in service_stats)
+        # ✅ FIX: Convert sum of Decimals to float explicitly before using in division
+        total_revenue_decimal = sum(s['total_revenue'] or 0 for s in service_stats)
+        total_revenue = float(total_revenue_decimal)
         
         result = []
         for service in service_stats:
@@ -345,6 +378,8 @@ def service_revenue(request):
         
     except Exception as e:
         print(f"❌ Service revenue error: {e}")
+        import traceback
+        traceback.print_exc()
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -357,8 +392,11 @@ def staff_performance(request):
     try:
         # Get salon
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            else:
+                 return Response({'total_staff': 0, 'total_revenue': 0, 'staff_performance': [], 'top_performer': None})
         else:
             bookings = Booking.objects.filter(status='COMPLETED')
         
@@ -375,7 +413,9 @@ def staff_performance(request):
         ).order_by('-total_revenue')
         
         # Calculate additional metrics
-        total_revenue = sum(s['total_revenue'] or 0 for s in staff_stats)
+        # ✅ FIX: Convert sum of Decimals to float explicitly
+        total_revenue_decimal = sum(s['total_revenue'] or 0 for s in staff_stats)
+        total_revenue = float(total_revenue_decimal)
         
         result = []
         for staff in staff_stats:
@@ -402,6 +442,8 @@ def staff_performance(request):
         
     except Exception as e:
         print(f"❌ Staff performance error: {e}")
+        import traceback
+        traceback.print_exc()
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -414,8 +456,11 @@ def revenue_by_category(request):
     try:
         # Get salon
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            else:
+                 return Response({'categories': [], 'total_revenue': 0})
         else:
             bookings = Booking.objects.filter(status='COMPLETED')
         
@@ -427,7 +472,9 @@ def revenue_by_category(request):
             total_revenue=Sum('service__price')
         ).order_by('-total_revenue')
         
-        total_revenue = sum(c['total_revenue'] or 0 for c in category_stats)
+        # ✅ FIX: Explicit float conversion
+        total_revenue_decimal = sum(c['total_revenue'] or 0 for c in category_stats)
+        total_revenue = float(total_revenue_decimal)
         
         result = []
         for category in category_stats:
@@ -460,8 +507,11 @@ def peak_hours_revenue(request):
     try:
         # Get salon
         if request.user.role == 'SALON_OWNER':
-            salon = request.user.salon
-            bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            if hasattr(request.user, 'salon'):
+                salon = request.user.salon
+                bookings = Booking.objects.filter(salon=salon, status='COMPLETED')
+            else:
+                 return Response({'hourly_breakdown': [], 'peak_hours': []})
         else:
             bookings = Booking.objects.filter(status='COMPLETED')
         

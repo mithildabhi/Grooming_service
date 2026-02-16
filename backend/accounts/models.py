@@ -1,8 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-
 class User(AbstractUser):
+    fcm_token = models.TextField(null=True, blank=True)
+
     ROLE_CHOICES = (
         ('SUPER_ADMIN', 'Super Admin'),
         ('SALON_OWNER', 'Salon Owner'),

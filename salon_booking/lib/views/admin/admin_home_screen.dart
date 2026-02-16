@@ -86,7 +86,7 @@ class AdminHomeScreen extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   /// 🔮 AI Optimization Card
-                  _buildAIOptimizationCard(controller),
+                  // _buildAIOptimizationCard(controller),
 
                   const SizedBox(height: 20),
 

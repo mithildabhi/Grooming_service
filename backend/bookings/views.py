@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import TimeSlot, BookingBlockout
 from .serializers import TimeSlotSerializer, BookingBlockoutSerializer
+from backend.firebase_service import send_notification
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -124,6 +125,18 @@ def create_booking(request):
         if serializer.is_valid():
             booking = serializer.save()
             
+            # ✅ NOTIFY SALON OWNER
+            try:
+                salon_owner = booking.salon.owner
+                if salon_owner.fcm_token:
+                    send_notification(
+                        salon_owner.fcm_token,
+                        "New Booking! 💇",
+                        f"{booking.user.get_full_name()} booked {booking.service.name} for {booking.booking_date} at {booking.booking_time}."
+                    )
+            except Exception as e:
+                print(f"⚠️ Failed to send owner notification: {e}")
+
             return Response({
                 'message': 'Booking confirmed successfully! ✅',
                 'booking': serializer.data
@@ -173,6 +186,14 @@ def update_booking_status(request, pk):
     booking.status = new_status
     booking.save()
     
+    # ✅ NOTIFIED CUSTOMER
+    if booking.user.fcm_token:
+        send_notification(
+            booking.user.fcm_token,
+            "Booking Update",
+            f"Your booking for {booking.service.name} has been updated to {new_status}."
+        )
+
     return Response({
         'message': f'Booking status updated to {new_status}',
         'booking': BookingSerializer(booking).data

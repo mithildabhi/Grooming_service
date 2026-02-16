@@ -13,6 +13,7 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/ui/glass_card.dart';
 import '../../widgets/ui/section_header.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../services/notification_service.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -207,6 +208,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     message: 'Contact support at support@salonapp.com',
                   );
                 },
+              ),
+              _ProfileItem(
+                 icon: Icons.notifications_active_outlined, 
+                 label: 'Test Notification', 
+                 onTap: () async {
+                   await NotificationService.triggerTestNotification();
+                 }
               ),
               _ProfileItem(
                 icon: Icons.info_outline,

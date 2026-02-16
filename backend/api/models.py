@@ -19,14 +19,6 @@ class Booking(models.Model):
     def __str__(self):
         return self.customer_name
 
-class AppUser(models.Model):
-    firebase_uid = models.CharField(max_length=128, unique=True)
-    email = models.EmailField()
-    role = models.CharField(max_length=20, default='user')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.email
 
 class AppUser(models.Model):
     """

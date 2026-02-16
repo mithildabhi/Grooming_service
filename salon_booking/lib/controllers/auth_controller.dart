@@ -12,6 +12,7 @@ import 'admin_controller.dart';
 import 'booking_controller.dart';
 import '../services/django_api_service.dart';
 import 'user_controller.dart';
+import 'package:salon_booking/services/notification_service.dart';
 import '../widgets/custom_snackbar.dart';
 
 class AuthController extends GetxController {
@@ -44,6 +45,18 @@ class AuthController extends GetxController {
 
       // Load user data into UserController after successful login
       await _loadUserControllerData();
+
+      // ✅ Save FCM Token
+      try {
+        String? fcmToken = await NotificationService.getToken();
+        String? authToken = await user?.getIdToken();
+        if (fcmToken != null && authToken != null) {
+          await NotificationService.saveTokenToBackend(fcmToken, authToken);
+        }
+      } catch (e) {
+        print("⚠️ Failed to save FCM token on login: $e");
+      }
+
 
       print("🎯 Login complete, redirecting as: ${role.value}");
       _redirectByRole();
@@ -207,6 +220,18 @@ class AuthController extends GetxController {
             isSuccess: true,
           );
 
+          // ✅ Save FCM Token
+          try {
+            String? fcmToken = await NotificationService.getToken();
+            // token is already available as a local variable in register method
+            if (fcmToken != null) {
+              await NotificationService.saveTokenToBackend(fcmToken, token!); 
+            }
+          } catch (e) {
+             print("⚠️ Failed to save FCM token on register: $e");
+          }
+
+
           _redirectByRole();
         } else {
           throw Exception('Django registration failed: ${response.body}');
@@ -319,6 +344,18 @@ class AuthController extends GetxController {
 
       // Load user data into UserController after session restore
       await _loadUserControllerData();
+
+      // ✅ Save FCM Token
+      try {
+        String? fcmToken = await NotificationService.getToken();
+        String? authToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+        if (fcmToken != null && authToken != null) {
+          await NotificationService.saveTokenToBackend(fcmToken, authToken);
+        }
+      } catch (e) {
+        print("⚠️ Failed to save FCM token on session init: $e");
+      }
+
 
       print('✅ AUTH: Session initialized with role: ${role.value}');
     } catch (e) {

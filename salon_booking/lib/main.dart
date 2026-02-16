@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:salon_booking/controllers/appointment_controller.dart';
 import 'package:salon_booking/controllers/auth_controller.dart';
 import 'package:salon_booking/controllers/admin_controller.dart'; // ✅ ADD
@@ -23,7 +24,42 @@ void main() async {
   // Initialize Notification Service
   await NotificationService.init();
   String? token = await NotificationService.getToken();
-  print("FCM TOKEN = $token");
+  print("==================================================");
+  print("🔥 FCM TOKEN: $token");
+  print("==================================================");
+
+  // ✅ Foreground Notification Listener
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print("🔔 Foreground Notification: ${message.notification?.title}");
+    
+    if (message.notification != null) {
+      // 1. Show elegant snackbar inside the app
+      Get.snackbar(
+        message.notification!.title ?? 'New Notification',
+        message.notification!.body ?? '',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+        icon: const Icon(Icons.notifications_active, color: Colors.blue),
+        margin: const EdgeInsets.all(15),
+        duration: const Duration(seconds: 4),
+        isDismissible: true,
+        onTap: (_) {
+          _handleNotificationClick(message.data);
+        },
+      );
+
+      // 2. Show in System Tray (Outside the app)
+      NotificationService.showLocalNotification(message);
+    }
+  });
+
+  // ✅ Background/Terminated Notification Tap Listener
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    print("🔔 Notification Clicked: ${message.data}");
+    _handleNotificationClick(message.data);
+  });
+
 
 
   // ✅ Initialize ALL controllers at startup
@@ -56,5 +92,24 @@ class MyApp extends StatelessWidget {
 
       initialRoute: null,
     );
+  }
+}
+
+// ✅ Shared Notification Click Handler
+void _handleNotificationClick(Map<String, dynamic> data) {
+  print("🎯 Handling notification click: $data");
+  
+  try {
+    if (Get.find<AuthController>().isLoggedIn.value) {
+      if (Get.find<AuthController>().role.value == 'admin') {
+         // Navigate to Admin bookings tab (index 1)
+         Get.offAllNamed('/admin', arguments: {'tab': 1});
+      } else {
+         // Navigate to User bookings tab (index 3)
+         Get.offAllNamed(AppRoutes.userHome, arguments: {'tab': 3});
+      }
+    }
+  } catch (e) {
+    print("❌ Error handling notification click: $e");
   }
 }

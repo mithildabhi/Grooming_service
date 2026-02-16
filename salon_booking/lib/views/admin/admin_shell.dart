@@ -41,6 +41,17 @@ class _AdminShellState extends State<AdminShell> {
       EmployeeScreen(),
       ProfileScreen(),
     ];
+
+    // ✅ Deep link support
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = Get.arguments;
+      if (args is Map && args['tab'] is int) {
+        final tab = (args['tab'] as int).clamp(0, _pages.length - 1);
+        if (mounted) {
+          setState(() => _currentIndex = tab);
+        }
+      }
+    });
   }
 
   @override
