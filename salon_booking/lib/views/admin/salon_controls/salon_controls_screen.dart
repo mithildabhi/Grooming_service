@@ -18,7 +18,7 @@ class SalonControlsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Get.put(SalonControlsController());
+    final ctrl = Get.find<SalonControlsController>();
 
     return Scaffold(
       backgroundColor: bg,

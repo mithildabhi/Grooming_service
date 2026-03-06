@@ -1,8 +1,17 @@
 // lib/controllers/salon_controls_controller.dart
-// Pure UI controller with dummy data — no API logic
+// Refactored: persists to backend via Salon API
 
+// ignore_for_file: avoid_print
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import '../config/api_config.dart';
+import '../models/employee_model.dart';
+import '../services/staff_api.dart';
+import 'admin_controller.dart';
 
 class DaySchedule {
   String day;
@@ -36,34 +45,6 @@ class StaffDaySchedule {
        shiftEnd = shiftEnd.obs;
 }
 
-class DummyStaff {
-  final int id;
-  final String name;
-  final String role;
-  final String avatarUrl;
-
-  DummyStaff({
-    required this.id,
-    required this.name,
-    required this.role,
-    this.avatarUrl = '',
-  });
-}
-
-class DummyService {
-  final int id;
-  final String name;
-  final String category;
-  final double price;
-
-  DummyService({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.price,
-  });
-}
-
 class TimeSlot {
   final TimeOfDay time;
   final String
@@ -79,12 +60,10 @@ class SalonControlsController extends GetxController {
   // ═══════════ STAFF SCHEDULES ═══════════
   final RxMap<int, List<StaffDaySchedule>> staffSchedules =
       <int, List<StaffDaySchedule>>{}.obs;
-  final RxList<DummyStaff> staffList = <DummyStaff>[].obs;
 
   // ═══════════ SERVICE DURATIONS ═══════════
   final RxMap<int, int> serviceDurations = <int, int>{}.obs;
   final RxMap<int, int> serviceBufferTimes = <int, int>{}.obs;
-  final RxList<DummyService> serviceList = <DummyService>[].obs;
 
   // ═══════════ BLOCKOUT DATES ═══════════
   final RxList<DateTime> blockoutDates = <DateTime>[].obs;
@@ -92,18 +71,145 @@ class SalonControlsController extends GetxController {
   // ═══════════ LOADING FLAGS ═══════════
   final RxBool isSaving = false.obs;
 
+  // Reference to AdminController for real staff data
+  AdminController? get _adminCtrl {
+    try {
+      return Get.find<AdminController>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Get real staff list from AdminController
+  List<EmployeeModel> get staffList => _adminCtrl?.staffList ?? [];
+
   @override
   void onInit() {
     super.onInit();
-    _initShopHours();
-    _initDummyStaff();
-    _initDummyServices();
-    _initBlockouts();
+    _initDefaults();
+    _loadFromBackend();
+
+    // Defer staff sync to avoid issues during initialization
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _syncStaffSchedules();
+      final ctrl = _adminCtrl;
+      if (ctrl != null) {
+        ever(ctrl.staffList, (_) => _syncStaffSchedules());
+      }
+    });
+  }
+
+  // ═══════════ BACKEND PERSISTENCE ═══════════
+
+  Future<Map<String, String>> _apiHeaders() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Not authenticated');
+    final token = await user.getIdToken();
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+  }
+
+  /// Load shop hours + blockout dates from Salon API
+  Future<void> _loadFromBackend() async {
+    try {
+      final headers = await _apiHeaders();
+      final res = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/salons/my-salon/'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+
+        // ── Parse hours ──
+        final hoursData = data['hours'];
+        if (hoursData is List && hoursData.isNotEmpty) {
+          _applyHoursFromJson(hoursData);
+          print('✅ Shop hours loaded from backend');
+        }
+
+        // ── Parse blockout dates ──
+        final blockoutsData = data['blockout_dates'];
+        if (blockoutsData is List && blockoutsData.isNotEmpty) {
+          blockoutDates.value = blockoutsData
+              .map((s) => DateTime.tryParse(s.toString()))
+              .whereType<DateTime>()
+              .toList()
+            ..sort();
+          print('✅ Blockout dates loaded from backend (${blockoutDates.length})');
+        }
+      }
+    } catch (e) {
+      print('⚠️ Could not load salon controls from backend: $e');
+    }
+  }
+
+  /// Save hours + blockout dates to Salon API
+  Future<void> _persistToBackend() async {
+    try {
+      final headers = await _apiHeaders();
+      final body = jsonEncode({
+        'hours': _hoursToJson(),
+        'blockout_dates': blockoutDates
+            .map((d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}')
+            .toList(),
+      });
+      await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/salons/update/'),
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+      print('✅ Salon controls persisted to backend');
+    } catch (e) {
+      print('❌ Failed to persist salon controls: $e');
+    }
+  }
+
+  /// Convert shopHours → JSON list for the API
+  List<Map<String, dynamic>> _hoursToJson() {
+    return shopHours.map((d) {
+      return {
+        'day': d.day,
+        'is_open': d.isOpen.value,
+        'start': '${d.startTime.value.hour.toString().padLeft(2, '0')}:${d.startTime.value.minute.toString().padLeft(2, '0')}',
+        'end': '${d.endTime.value.hour.toString().padLeft(2, '0')}:${d.endTime.value.minute.toString().padLeft(2, '0')}',
+      };
+    }).toList();
+  }
+
+  /// Apply JSON list → shopHours
+  void _applyHoursFromJson(List<dynamic> list) {
+    for (final item in list) {
+      if (item is! Map) continue;
+      final dayName = item['day']?.toString() ?? '';
+      final daySchedule = shopHours.firstWhereOrNull((d) => d.day == dayName);
+      if (daySchedule == null) continue;
+
+      daySchedule.isOpen.value = item['is_open'] == true;
+      final start = item['start']?.toString() ?? '';
+      final end = item['end']?.toString() ?? '';
+      if (start.contains(':')) {
+        final p = start.split(':');
+        daySchedule.startTime.value = TimeOfDay(
+          hour: int.tryParse(p[0]) ?? 9,
+          minute: int.tryParse(p[1]) ?? 0,
+        );
+      }
+      if (end.contains(':')) {
+        final p = end.split(':');
+        daySchedule.endTime.value = TimeOfDay(
+          hour: int.tryParse(p[0]) ?? 20,
+          minute: int.tryParse(p[1]) ?? 0,
+        );
+      }
+    }
   }
 
   // ────────── SHOP HOURS ──────────
 
-  void _initShopHours() {
+  void _initDefaults() {
     const days = [
       'Monday',
       'Tuesday',
@@ -121,6 +227,7 @@ class SalonControlsController extends GetxController {
         endTime: const TimeOfDay(hour: 20, minute: 0),
       );
     }).toList();
+    blockoutDates.clear();
   }
 
   void toggleDay(int index, bool value) {
@@ -155,35 +262,71 @@ class SalonControlsController extends GetxController {
 
   void saveShopHours() {
     isSaving.value = true;
-    Future.delayed(const Duration(seconds: 1), () {
+    _persistToBackend().then((_) {
       isSaving.value = false;
       Get.snackbar(
         'Saved',
-        'Shop hours updated successfully',
+        'Shop hours saved to server',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: const Color(0xFF121A22),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+    }).catchError((_) {
+      isSaving.value = false;
+      Get.snackbar(
+        'Error',
+        'Failed to save shop hours',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFEF5350),
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
     });
   }
 
-  // ────────── STAFF SCHEDULES ──────────
+  // ────────── STAFF SCHEDULES (Real Data) ──────────
 
-  void _initDummyStaff() {
-    staffList.value = [
-      DummyStaff(id: 1, name: 'Raju Sharma', role: 'Senior Stylist'),
-      DummyStaff(id: 2, name: 'Priya Patel', role: 'Beautician'),
-      DummyStaff(id: 3, name: 'Amit Kumar', role: 'Barber'),
-      DummyStaff(id: 4, name: 'Sunita Devi', role: 'Nail Technician'),
-    ];
-
-    for (final staff in staffList) {
-      staffSchedules[staff.id] = _defaultStaffSchedule();
+  /// Parse "HH:mm" or "HH:mm:ss" string to TimeOfDay
+  TimeOfDay _parseTime(String timeStr) {
+    if (timeStr.isEmpty) return const TimeOfDay(hour: 10, minute: 0);
+    try {
+      final parts = timeStr.split(':');
+      return TimeOfDay(
+        hour: int.tryParse(parts[0]) ?? 10,
+        minute: parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0,
+      );
+    } catch (_) {
+      return const TimeOfDay(hour: 10, minute: 0);
     }
   }
 
-  List<StaffDaySchedule> _defaultStaffSchedule() {
+  /// Convert day abbreviation to full name
+  static const Map<String, String> _dayAbbrevToFull = {
+    'Mon': 'Monday',
+    'Tue': 'Tuesday',
+    'Wed': 'Wednesday',
+    'Thu': 'Thursday',
+    'Fri': 'Friday',
+    'Sat': 'Saturday',
+    'Sun': 'Sunday',
+  };
+
+  /// Build schedules from real EmployeeModel data
+  void _syncStaffSchedules() {
+    for (final staff in staffList) {
+      // Only rebuild if not already customized locally
+      if (!staffSchedules.containsKey(staff.id)) {
+        staffSchedules[staff.id] = _buildScheduleFromEmployee(staff);
+      }
+    }
+
+    // Remove schedules for staff that no longer exist
+    final currentIds = staffList.map((s) => s.id).toSet();
+    staffSchedules.removeWhere((key, _) => !currentIds.contains(key));
+  }
+
+  List<StaffDaySchedule> _buildScheduleFromEmployee(EmployeeModel staff) {
     const days = [
       'Monday',
       'Tuesday',
@@ -193,12 +336,21 @@ class SalonControlsController extends GetxController {
       'Saturday',
       'Sunday',
     ];
+
+    final shiftStart = _parseTime(staff.shiftStartTime);
+    final shiftEnd = _parseTime(staff.shiftEndTime);
+
+    // Convert working days abbreviations to full names
+    final workingDaysFull = staff.workingDays
+        .map((abbrev) => _dayAbbrevToFull[abbrev] ?? abbrev)
+        .toSet();
+
     return days.map((day) {
       return StaffDaySchedule(
         day: day,
-        isWorking: day != 'Sunday',
-        shiftStart: const TimeOfDay(hour: 10, minute: 0),
-        shiftEnd: const TimeOfDay(hour: 18, minute: 0),
+        isWorking: workingDaysFull.contains(day),
+        shiftStart: shiftStart,
+        shiftEnd: shiftEnd,
       );
     }).toList();
   }
@@ -217,42 +369,90 @@ class SalonControlsController extends GetxController {
 
   void saveStaffSchedule(int staffId) {
     isSaving.value = true;
-    Future.delayed(const Duration(seconds: 1), () {
+
+    // Build working days list from schedule
+    final schedule = staffSchedules[staffId];
+    if (schedule == null) {
       isSaving.value = false;
-      Get.snackbar(
-        'Saved',
-        'Staff schedule updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF121A22),
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-    });
+      return;
+    }
+
+    // Convert full day names back to abbreviations
+    const dayFullToAbbrev = {
+      'Monday': 'Mon',
+      'Tuesday': 'Tue',
+      'Wednesday': 'Wed',
+      'Thursday': 'Thu',
+      'Friday': 'Fri',
+      'Saturday': 'Sat',
+      'Sunday': 'Sun',
+    };
+
+    final workingDays = <String>[];
+    for (final day in schedule) {
+      if (day.isWorking.value) {
+        final abbrev = dayFullToAbbrev[day.day] ?? day.day;
+        workingDays.add(abbrev);
+      }
+    }
+
+    // Get shift times from the first working day (uniform shift for now)
+    String shiftStart = '10:00';
+    String shiftEnd = '18:00';
+    final firstWorking = schedule.where((d) => d.isWorking.value).firstOrNull;
+    if (firstWorking != null) {
+      shiftStart =
+          '${firstWorking.shiftStart.value.hour.toString().padLeft(2, '0')}:${firstWorking.shiftStart.value.minute.toString().padLeft(2, '0')}';
+      shiftEnd =
+          '${firstWorking.shiftEnd.value.hour.toString().padLeft(2, '0')}:${firstWorking.shiftEnd.value.minute.toString().padLeft(2, '0')}';
+    }
+
+    // Find the staff member and update via StaffApi directly
+    // (Not AdminController.updateStaff because it calls Get.back())
+    final staff = staffList.firstWhereOrNull((s) => s.id == staffId);
+    if (staff != null) {
+      StaffApi.updateStaff(
+        staffId: staff.id,
+        fullName: staff.fullName,
+        email: staff.email,
+        phone: staff.phone,
+        role: staff.role,
+        primarySkill: staff.primarySkill,
+        workingDays: workingDays,
+        isActive: staff.isActive,
+        shiftStartTime: shiftStart,
+        shiftEndTime: shiftEnd,
+      ).then((_) {
+        // Refresh the staff list to get updated data
+        _adminCtrl?.fetchStaff();
+        // Clear cached schedule so it rebuilds from fresh data
+        staffSchedules.remove(staffId);
+        isSaving.value = false;
+        Get.snackbar(
+          'Saved',
+          'Staff schedule updated successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFF121A22),
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+      }).catchError((_) {
+        isSaving.value = false;
+        Get.snackbar(
+          'Error',
+          'Failed to save staff schedule',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFEF5350),
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+      });
+    } else {
+      isSaving.value = false;
+    }
   }
 
   // ────────── SERVICE DURATIONS ──────────
-
-  void _initDummyServices() {
-    serviceList.value = [
-      DummyService(id: 1, name: "Men's Haircut", category: 'Hair', price: 200),
-      DummyService(id: 2, name: 'Beard Trim', category: 'Grooming', price: 100),
-      DummyService(id: 3, name: 'Hair Coloring', category: 'Hair', price: 800),
-      DummyService(id: 4, name: 'Facial', category: 'Skin', price: 500),
-      DummyService(id: 5, name: 'Manicure', category: 'Nails', price: 350),
-      DummyService(
-        id: 6,
-        name: 'Head Massage',
-        category: 'Relaxation',
-        price: 300,
-      ),
-      DummyService(id: 7, name: 'Shave', category: 'Grooming', price: 150),
-    ];
-
-    for (final svc in serviceList) {
-      serviceDurations[svc.id] = 30; // default 30 min
-      serviceBufferTimes[svc.id] = 0; // default 0 buffer
-    }
-  }
 
   void updateServiceDuration(int serviceId, int duration) {
     serviceDurations[serviceId] = duration;
@@ -279,25 +479,19 @@ class SalonControlsController extends GetxController {
 
   // ────────── BLOCKOUTS ──────────
 
-  void _initBlockouts() {
-    blockoutDates.value = [
-      DateTime(2026, 3, 14), // Holi
-      DateTime(2026, 8, 15), // Independence Day
-      DateTime(2026, 10, 2), // Gandhi Jayanti
-    ];
-  }
-
   void addBlockoutDate(DateTime date) {
     if (!blockoutDates.any(
       (d) => d.year == date.year && d.month == date.month && d.day == date.day,
     )) {
       blockoutDates.add(date);
       blockoutDates.sort();
+      _persistToBackend();
     }
   }
 
   void removeBlockoutDate(int index) {
     blockoutDates.removeAt(index);
+    _persistToBackend();
   }
 
   // ────────── SLOT MANAGEMENT ──────────
@@ -340,7 +534,7 @@ class SalonControlsController extends GetxController {
       String status = 'closed';
       int capacity = 0;
 
-      // 3. Calculate Staff Capacity
+      // 3. Calculate Staff Capacity from REAL staff data
       int availableStaff = 0;
       if (!isHoliday) {
         availableStaff = staffSchedules.values.where((scheduleList) {
@@ -475,5 +669,54 @@ class SalonControlsController extends GetxController {
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.period == DayPeriod.am ? 'AM' : 'PM';
     return '$hour:$minute $period';
+  }
+
+  // ────────── HELPER GETTERS FOR CROSS-CONTROLLER ACCESS ──────────
+
+  /// Get shop hours for a specific day (e.g., "Monday")
+  /// Returns null if shop is closed on that day
+  ({bool isOpen, TimeOfDay startTime, TimeOfDay endTime})? getShopHoursForDay(String dayName) {
+    if (shopHours.isEmpty) return null;
+    final day = shopHours.firstWhereOrNull((d) => d.day == dayName);
+    if (day == null) return null;
+    return (
+      isOpen: day.isOpen.value,
+      startTime: day.startTime.value,
+      endTime: day.endTime.value,
+    );
+  }
+
+  /// Check if a date is a blockout/holiday
+  bool isBlockoutDate(DateTime date) {
+    return blockoutDates.any((d) => isSameDate(d, date));
+  }
+
+  /// Get number of available staff at a given time on a given day
+  int getAvailableStaffCount(String dayName, TimeOfDay time) {
+    int count = 0;
+    for (final entry in staffSchedules.entries) {
+      final daySchedule = entry.value.firstWhereOrNull((s) => s.day == dayName);
+      if (daySchedule == null) continue;
+      if (!daySchedule.isWorking.value) continue;
+      if (_isTimeInShift(time, daySchedule.shiftStart.value, daySchedule.shiftEnd.value)) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /// Get the day name from a DateTime
+  String getDayName(DateTime date) => _getDayName(date);
+
+  /// Check if a specific manually blocked slot exists
+  bool isSlotManuallyBlocked(DateTime date, String timeKey) {
+    final dateKey = "${date.year}-${date.month}-${date.day}";
+    return manualBlockedSlots[dateKey]?.contains(timeKey) ?? false;
+  }
+
+  /// Check if a specific forced-open slot exists
+  bool isSlotForcedOpen(DateTime date, String timeKey) {
+    final dateKey = "${date.year}-${date.month}-${date.day}";
+    return manualAddedSlots[dateKey]?.contains(timeKey) ?? false;
   }
 }

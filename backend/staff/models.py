@@ -2,6 +2,7 @@ from django.db import models
 from accounts.models import User
 from salons.models import Salon
 from django.utils import timezone
+from datetime import time
 
 class Employee(models.Model):
     ROLE_CHOICES = [
@@ -33,6 +34,8 @@ class Employee(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='stylist')
     primary_skill = models.CharField(max_length=30, choices=SKILL_CHOICES, default='hair_styling')
     working_days = models.JSONField(default=list, blank=True)
+    shift_start_time = models.TimeField(default=time(10, 0), help_text="Daily shift start time")
+    shift_end_time = models.TimeField(default=time(18, 0), help_text="Daily shift end time")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)  # Use timezone.now (not timezone.now())
     

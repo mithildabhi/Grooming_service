@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../controllers/admin_controller.dart';
 import '../../../controllers/salon_controls_controller.dart';
+import '../../../models/service_model.dart';
 
 class ManageServiceDurationScreen extends StatelessWidget {
   const ManageServiceDurationScreen({super.key});
@@ -13,6 +15,7 @@ class ManageServiceDurationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<SalonControlsController>();
+    final adminCtrl = Get.find<AdminController>();
 
     return Scaffold(
       backgroundColor: bg,
@@ -29,16 +32,33 @@ class ManageServiceDurationScreen extends StatelessWidget {
         children: [
           Expanded(
             child: Obx(() {
+              final services = adminCtrl.servicesList
+                  .where((s) => s.isActive)
+                  .toList();
+
+              if (services.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.design_services_outlined,
+                          size: 64, color: Colors.white.withOpacity(0.2)),
+                      const SizedBox(height: 16),
+                      Text("No services found",
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 16)),
+                    ],
+                  ),
+                );
+              }
+
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
-                itemCount: ctrl.serviceList.length,
+                itemCount: services.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  return _buildServiceTile(
-                    context,
-                    ctrl,
-                    ctrl.serviceList[index],
-                  );
+                  return _buildServiceTile(context, ctrl, services[index]);
                 },
               );
             }),
@@ -52,10 +72,10 @@ class ManageServiceDurationScreen extends StatelessWidget {
   Widget _buildServiceTile(
     BuildContext context,
     SalonControlsController ctrl,
-    DummyService service,
+    ServiceModel service,
   ) {
     return Obx(() {
-      final duration = ctrl.serviceDurations[service.id] ?? 30;
+      final duration = ctrl.serviceDurations[service.id] ?? service.duration;
       final buffer = ctrl.serviceBufferTimes[service.id] ?? 0;
 
       return Container(
@@ -131,7 +151,7 @@ class ManageServiceDurationScreen extends StatelessWidget {
   void _showDurationSheet(
     BuildContext context,
     SalonControlsController ctrl,
-    DummyService service,
+    ServiceModel service,
     int currentDuration,
     int currentBuffer,
   ) {

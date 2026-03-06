@@ -141,6 +141,29 @@ class BookingApi {
     }
   }
 
+  /// Get public busy slots
+  static Future<List<Map<String, dynamic>>> fetchPublicSlots({
+    required dynamic salonId, // int or String
+    required String date,
+  }) async {
+    try {
+      final url = '$baseUrl/bookings/public/slots/?salon_id=$salonId&date=$date';
+      print('🔍 Fetching public slots: $url');
+      
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      } else {
+        throw Exception('Failed to load slots: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Public slots error: $e');
+      return [];
+    }
+  }
+
   /// Create new booking
   static Future<Map<String, dynamic>> createBooking({
     required int serviceId,

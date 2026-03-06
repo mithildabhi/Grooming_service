@@ -1,7 +1,7 @@
 # bookings/views.py - ENHANCED VERSION
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
@@ -10,14 +10,8 @@ from django.utils import timezone
 
 from services.models import Service
 from .models import Booking, TimeSlot, BookingBlockout
-from .serializers import BookingSerializer, TimeSlotSerializer
+from .serializers import BookingSerializer, TimeSlotSerializer, BookingBlockoutSerializer
 from staff.models import Employee
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from .models import TimeSlot, BookingBlockout
-from .serializers import TimeSlotSerializer, BookingBlockoutSerializer
 from backend.firebase_service import send_notification
 
 @api_view(['GET'])
@@ -55,6 +49,40 @@ def booking_list(request):
     
     serializer = BookingSerializer(bookings, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def booking_public_slots(request):
+    """
+    Get busy slots for a salon and date (Public access)
+    Usage: /bookings/public/slots/?salon_id=1&date=2024-03-20
+    Returns: List of {staff, booking_time, end_time}
+    """
+    salon_id = request.query_params.get('salon_id')
+    date_str = request.query_params.get('date')
+    
+    if not salon_id or not date_str:
+        return Response(
+            {'error': 'salon_id and date are required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    try:
+        # Get confirmed/pending bookings
+        # Return only necessary fields to protect privacy
+        bookings = Booking.objects.filter(
+            salon_id=salon_id,
+            booking_date=date_str,
+            status__in=['CONFIRMED', 'PENDING']
+        ).values('staff', 'booking_time', 'end_time')
+        
+        return Response(list(bookings))
+    except Exception as e:
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['POST'])
@@ -267,14 +295,20 @@ def available_slots(request):
                 current_time += timedelta(minutes=15)  # 15-minute intervals
         
         # Check which slots are available
+        # Map weekday number to day abbreviation for working_days check
+        day_abbrev_map = {0: 'Mon', 1: 'Tue', 2: 'Wed', 3: 'Thu', 4: 'Fri', 5: 'Sat', 6: 'Sun'}
+        day_abbrev = day_abbrev_map.get(day_of_week, '')
+        
         if staff_id:
-            staff_list = [staff_id]
+            staff_list = Employee.objects.filter(id=staff_id, is_active=True)
         else:
-            # Get all active staff for this salon
+            # Get all active staff for this salon who work on this day
             staff_list = Employee.objects.filter(
                 salon=salon,
                 is_active=True
-            ).values_list('id', flat=True)
+            )
+            # Filter by working_days (JSONField containing day abbreviations)
+            staff_list = [s for s in staff_list if day_abbrev in (s.working_days or [])]
         
         # Mark unavailable slots
         for slot in all_slots:
@@ -283,8 +317,14 @@ def available_slots(request):
             
             # Check if any staff is available
             available_staff_count = 0
-            for sid in staff_list:
-                if check_staff_availability(sid, booking_date, slot_time, slot_end):
+            for staff in staff_list:
+                # Check shift times
+                if hasattr(staff, 'shift_start_time') and hasattr(staff, 'shift_end_time'):
+                    if staff.shift_start_time and staff.shift_end_time:
+                        if slot_time < staff.shift_start_time or slot_end > staff.shift_end_time:
+                            continue
+                
+                if check_staff_availability(staff.id, booking_date, slot_time, slot_end):
                     available_staff_count += 1
             
             slot['available'] = available_staff_count > 0

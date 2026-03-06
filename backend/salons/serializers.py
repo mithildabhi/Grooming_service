@@ -34,6 +34,7 @@ class SalonSerializer(serializers.ModelSerializer):
             'about',
             'image_url',
             'hours',
+            'blockout_dates',
             'latitude',       # ✅ NEW
             'longitude',      # ✅ NEW
             'rating',
@@ -81,19 +82,15 @@ class SalonSerializer(serializers.ModelSerializer):
         return value.strip()
     
     def validate_hours(self, value):
-        """Validate working hours format"""
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Hours must be a dictionary")
-        
-        # Accept both formats: "Mon" and "monday"
-        valid_days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
-                      'monday', 'tuesday', 'wednesday', 'thursday', 
-                      'friday', 'saturday', 'sunday']
-        
-        for day in value.keys():
-            if day not in valid_days:
-                raise serializers.ValidationError(f"Invalid day: {day}")
-        
+        """Validate working hours format — accepts any JSON dict"""
+        if not isinstance(value, (dict, list)):
+            raise serializers.ValidationError("Hours must be a dictionary or list")
+        return value
+
+    def validate_blockout_dates(self, value):
+        """Validate blockout dates — list of ISO date strings"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Blockout dates must be a list")
         return value
     
     def validate_city(self, value):

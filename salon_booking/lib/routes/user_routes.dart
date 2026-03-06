@@ -7,6 +7,7 @@ import '../views/user/user_main_shell.dart';
 import '../views/user/user_salon_details_screen.dart';
 import '../views/user/user_salon_reviews_screen.dart';
 import '../views/user/user_select_datetime_screen.dart';
+import '../views/user/user_select_staff_screen.dart';
 import '../views/user/user_review_booking_screen.dart';
 import '../views/user/user_payment_screen.dart';
 import '../views/user/user_booking_success_screen.dart';
@@ -31,6 +32,11 @@ class UserRoutes {
     GetPage(
       name: '/select-datetime',
       page: () => const UserSelectDateTimeScreen(),
+    ),
+
+    GetPage(
+      name: '/select-staff',
+      page: () => const UserSelectStaffScreen(),
     ),
 
     GetPage(

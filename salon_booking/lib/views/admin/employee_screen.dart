@@ -353,6 +353,35 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                           fontSize: 12,
                         ),
                       ),
+                      if (staff.workingDays.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: staff.workingDays.map((day) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF19F6E8).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                day,
+                                style: const TextStyle(
+                                  color: Color(0xFF19F6E8),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '🕐 ${_formatShiftTime(staff.shiftStartTime)} - ${_formatShiftTime(staff.shiftEndTime)}',
+                          style: const TextStyle(color: Colors.white38, fontSize: 11),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -459,6 +488,15 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
       ),
       child: child,
     );
+  }
+
+  /// Format "HH:MM:SS" or "HH:MM" to "HH:MM"
+  String _formatShiftTime(String time) {
+    final parts = time.split(':');
+    if (parts.length >= 2) {
+      return '${parts[0]}:${parts[1]}';
+    }
+    return time;
   }
 }
 

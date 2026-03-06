@@ -8,6 +8,8 @@ class EmployeeModel {
   final String role;
   final String primarySkill;
   final List<String> workingDays;
+  final String shiftStartTime; // HH:mm format, e.g. '10:00'
+  final String shiftEndTime;   // HH:mm format, e.g. '18:00'
   final DateTime? createdAt;
   final bool isActive;
 
@@ -21,6 +23,8 @@ class EmployeeModel {
     required this.role,
     required this.primarySkill,
     required this.workingDays,
+    this.shiftStartTime = '10:00',
+    this.shiftEndTime = '18:00',
     this.createdAt,
     this.isActive = true,
   });
@@ -38,6 +42,8 @@ class EmployeeModel {
       workingDays: json['working_days'] != null
           ? List<String>.from(json['working_days'])
           : [],
+      shiftStartTime: json['shift_start_time'] as String? ?? '10:00',
+      shiftEndTime: json['shift_end_time'] as String? ?? '18:00',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
@@ -56,6 +62,8 @@ class EmployeeModel {
       'role': role,
       'primary_skill': primarySkill,
       'working_days': workingDays,
+      'shift_start_time': shiftStartTime,
+      'shift_end_time': shiftEndTime,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
   }
@@ -70,9 +78,10 @@ class EmployeeModel {
     String? role,
     String? primarySkill,
     List<String>? workingDays,
+    String? shiftStartTime,
+    String? shiftEndTime,
     DateTime? createdAt,
     bool? isActive,
-
   }) {
     return EmployeeModel(
       id: id ?? this.id,
@@ -84,6 +93,8 @@ class EmployeeModel {
       role: role ?? this.role,
       primarySkill: primarySkill ?? this.primarySkill,
       workingDays: workingDays ?? this.workingDays,
+      shiftStartTime: shiftStartTime ?? this.shiftStartTime,
+      shiftEndTime: shiftEndTime ?? this.shiftEndTime,
       createdAt: createdAt ?? this.createdAt,
       isActive: isActive ?? this.isActive,
     );

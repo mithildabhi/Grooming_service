@@ -1,6 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from accounts.permissions import IsSalonOwner
 from accounts.models import User
 from .models import Employee
@@ -15,6 +16,32 @@ def staff_list(request):
     employees = Employee.objects.filter(salon=salon)
     serializer = EmployeeSerializer(employees, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def staff_public_list(request):
+    """
+    Get all active staff for a specific salon (Public access)
+    Usage: /staff/public/?salon_id=1
+    """
+    salon_id = request.query_params.get('salon_id')
+    if not salon_id:
+        return Response(
+            {'error': 'salon_id is required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    try:
+        # Only show active staff
+        employees = Employee.objects.filter(salon_id=salon_id, is_active=True)
+        serializer = EmployeeSerializer(employees, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['POST'])

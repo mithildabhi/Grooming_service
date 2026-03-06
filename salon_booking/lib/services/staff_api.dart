@@ -38,6 +38,24 @@ class StaffApi {
     }
   }
 
+
+  static Future<List<EmployeeModel>> fetchPublicStaff(dynamic salonId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/staff/public/?salon_id=$salonId'),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => EmployeeModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to fetch public staff: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   static Future<EmployeeModel> createStaff({
     required String fullName,
     required String email,
@@ -105,6 +123,8 @@ class StaffApi {
     required String primarySkill,
     required List<String> workingDays,
     required bool isActive,
+    String? shiftStartTime,
+    String? shiftEndTime,
   }) async {
     try {
       final headers = await _getHeaders();
@@ -113,7 +133,7 @@ class StaffApi {
       final normalizedRole = role.toLowerCase();
       final normalizedSkill = primarySkill.toLowerCase().replaceAll(' ', '_');
       
-      final body = jsonEncode({
+      final Map<String, dynamic> bodyMap = {
         'full_name': fullName,
         'email': email,
         'phone': phone,
@@ -121,8 +141,13 @@ class StaffApi {
         'primary_skill': normalizedSkill,
         'working_days': workingDays,
         'is_active': isActive,
+      };
 
-      });
+      // Include shift times if provided
+      if (shiftStartTime != null) bodyMap['shift_start_time'] = shiftStartTime;
+      if (shiftEndTime != null) bodyMap['shift_end_time'] = shiftEndTime;
+
+      final body = jsonEncode(bodyMap);
 
       final response = await http.patch(
         Uri.parse('$baseUrl/staff/$staffId/'),

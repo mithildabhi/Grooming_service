@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../controllers/admin_controller.dart';
 import '../../../controllers/salon_controls_controller.dart';
+import '../../../models/employee_model.dart';
 import 'staff_schedule_screen.dart';
 
 class StaffListScreen extends StatelessWidget {
@@ -13,7 +15,7 @@ class StaffListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<SalonControlsController>();
+    final adminCtrl = Get.find<AdminController>();
 
     return Scaffold(
       backgroundColor: bg,
@@ -21,13 +23,23 @@ class StaffListScreen extends StatelessWidget {
         backgroundColor: bg,
         elevation: 0,
         title: const Text(
-          'Staff Management',
+          'Staff Structure',
           style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: textPrimary),
       ),
       body: Obx(() {
-        if (ctrl.staffList.isEmpty) {
+        final staffList = adminCtrl.staffList
+            .where((s) => s.isActive)
+            .toList();
+
+        if (adminCtrl.isLoadingStaff.value) {
+          return const Center(
+            child: CircularProgressIndicator(color: accent),
+          );
+        }
+
+        if (staffList.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -39,8 +51,19 @@ class StaffListScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No Staff Members',
-                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  "No active staff members",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Add staff from Employee Management",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.3),
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -49,61 +72,84 @@ class StaffListScreen extends StatelessWidget {
 
         return ListView.separated(
           padding: const EdgeInsets.all(16),
-          itemCount: ctrl.staffList.length,
+          itemCount: staffList.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final staff = ctrl.staffList[index];
-            return _buildStaffTile(staff);
+            return _buildStaffTile(staffList[index]);
           },
         );
       }),
     );
   }
 
-  Widget _buildStaffTile(DummyStaff staff) {
+  Widget _buildStaffTile(EmployeeModel staff) {
     return Container(
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: ListTile(
         onTap: () => Get.to(() => StaffScheduleScreen(staff: staff)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: CircleAvatar(
-          backgroundColor: accent.withOpacity(0.1),
+          backgroundColor: accent.withOpacity(0.15),
           child: Text(
-            staff.name.isNotEmpty ? staff.name[0] : '?',
-            style: const TextStyle(color: accent, fontWeight: FontWeight.bold),
+            staff.fullName.isNotEmpty ? staff.fullName[0].toUpperCase() : '?',
+            style: const TextStyle(
+              color: accent,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         title: Text(
-          staff.name,
+          staff.fullName,
           style: const TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: Text(
-          staff.role,
-          style: TextStyle(color: Colors.white.withOpacity(0.5)),
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Text(
-            "Schedule",
-            style: TextStyle(
-              color: accent,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _capitalizeFirst(staff.role),
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
             ),
-          ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 4,
+              children: staff.workingDays.map((day) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    day,
+                    style: const TextStyle(color: accent, fontSize: 10),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+        trailing: const Icon(
+          Icons.schedule,
+          color: accent,
+          size: 20,
         ),
       ),
     );
+  }
+
+  String _capitalizeFirst(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 }

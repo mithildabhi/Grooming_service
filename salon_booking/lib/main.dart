@@ -6,6 +6,7 @@ import 'package:salon_booking/controllers/appointment_controller.dart';
 import 'package:salon_booking/controllers/auth_controller.dart';
 import 'package:salon_booking/controllers/admin_controller.dart'; // ✅ ADD
 import 'package:salon_booking/controllers/booking_controller.dart';
+import 'package:salon_booking/controllers/salon_controls_controller.dart';
 import 'package:salon_booking/controllers/location_controller.dart';
 import 'package:salon_booking/controllers/user_controller.dart'; // ✅ ADD THIS
 import 'package:salon_booking/services/auth_service.dart';
@@ -69,6 +70,7 @@ void main() async {
   Get.put(AppointmentController(), permanent: true);
   Get.put(UserController(), permanent: true);
   Get.put(AdminController(), permanent: true);
+  Get.put(SalonControlsController(), permanent: true);
   Get.put(LocationController(), permanent: true);
   runApp(const MyApp());
 }

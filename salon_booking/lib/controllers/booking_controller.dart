@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:salon_booking/controllers/auth_controller.dart';
+import 'package:salon_booking/controllers/admin_controller.dart';
+import 'package:salon_booking/controllers/salon_controls_controller.dart';
 import '../models/booking_model.dart';
 import '../models/salon_model.dart';
 import '../models/service_model.dart';
@@ -284,49 +286,158 @@ class BookingController extends GetxController {
           : '👤 No staff selected',
     );
   }
-
-  // ✅ FIXED: TIME SLOTS WITH PROPER FILTERING FOR TODAY
+  // ✅ FULLY CONNECTED TIME SLOT GENERATION
+  // Uses: Shop Hours + Staff Shifts + Blockouts + Manual Slot Overrides
   void generateTimeSlots(DateTime date) {
     try {
       isLoadingSlots.value = true;
       availableTimeSlots.clear();
 
       final now = DateTime.now();
-
-      // ✅ Check if selected date is TODAY
       final isToday =
           date.year == now.year &&
           date.month == now.month &&
           date.day == now.day;
 
       print('📅 Generating time slots for: ${date.toString().split(' ')[0]}');
-      print('🔍 Is today: $isToday');
 
-      if (isToday) {
-        print('⏰ Current time: ${now.hour}:${now.minute}');
+      // ── 1. Get SalonControlsController ──
+      SalonControlsController? salonCtrl;
+      try {
+        salonCtrl = Get.find<SalonControlsController>();
+      } catch (_) {
+        print('⚠️ SalonControlsController not available');
       }
 
+      // ── 2. Check Blockout Dates (Holidays) ──
+      if (salonCtrl != null && salonCtrl.isBlockoutDate(date)) {
+        print('🚫 Date is a blockout/holiday — no slots');
+        isLoadingSlots.value = false;
+        return;
+      }
+
+      // ── 3. Get Day Info ──
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const fullDayNames = [
+        'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+        'Friday', 'Saturday', 'Sunday',
+      ];
+      final dayAbbrev = dayNames[date.weekday - 1];
+      final fullDayName = fullDayNames[date.weekday - 1];
+
+      // ── 4. Check Shop Hours (Operating Hours) ──
+      int startHour = 9;
+      int startMinute = 0;
+      int endHour = 21;
+      int endMinute = 0;
+      bool shopIsOpen = true;
+
+      if (salonCtrl != null) {
+        final shopHours = salonCtrl.getShopHoursForDay(fullDayName);
+        if (shopHours != null) {
+          shopIsOpen = shopHours.isOpen;
+          if (!shopIsOpen) {
+            print('🚫 Shop is closed on $fullDayName — no slots');
+            isLoadingSlots.value = false;
+            return;
+          }
+          startHour = shopHours.startTime.hour;
+          startMinute = shopHours.startTime.minute;
+          endHour = shopHours.endTime.hour;
+          endMinute = shopHours.endTime.minute;
+          print('🕐 Shop hours: ${shopHours.startTime.hour}:${shopHours.startTime.minute.toString().padLeft(2, '0')} - ${shopHours.endTime.hour}:${shopHours.endTime.minute.toString().padLeft(2, '0')}');
+        }
+      }
+
+      // ── 5. Get Available Staff for this day ──
+      List<EmployeeModel> availableStaff = [];
+      try {
+        final adminCtrl = Get.find<AdminController>();
+        availableStaff = adminCtrl.staffList
+            .where((s) => s.isActive && s.workingDays.contains(dayAbbrev))
+            .toList();
+        print('👥 Available staff on $dayAbbrev: ${availableStaff.length}');
+      } catch (e) {
+        print('⚠️ AdminController not available');
+      }
+
+      // Narrow to staff shift range if staff data available
+      if (availableStaff.isNotEmpty) {
+        int earliest = 24;
+        int latest = 0;
+        for (final staff in availableStaff) {
+          final parts = staff.shiftStartTime.split(':');
+          final sH = int.tryParse(parts[0]) ?? 10;
+          if (sH < earliest) earliest = sH;
+
+          final endParts = staff.shiftEndTime.split(':');
+          final eH = int.tryParse(endParts[0]) ?? 18;
+          if (eH > latest) latest = eH;
+        }
+        // Use the wider of shop hours and staff hours
+        if (earliest > startHour) startHour = earliest;
+        if (latest < endHour) {
+          endHour = latest;
+          endMinute = 0;
+        }
+      }
+
+      // ── 6. Generate Slots ──
       List<String> slots = [];
 
-      // Generate slots from 9 AM to 9 PM (21:00)
-      for (int hour = 9; hour <= 21; hour++) {
+      for (int hour = startHour; hour <= endHour; hour++) {
         for (int minute = 0; minute < 60; minute += 30) {
+          if (hour == endHour && minute > endMinute) break;
+          if (hour == startHour && minute < startMinute) continue;
+
           final timeSlot =
               '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
-          // ✅ FILTER PAST TIMES IF TODAY
+          // ── Skip past times if today ──
           if (isToday) {
-            // Skip if this slot is in the past
-            if (hour < now.hour) {
-              print('⏭️ Skipping past hour: $timeSlot');
+            if (hour < now.hour) continue;
+            if (hour == now.hour && minute <= now.minute) continue;
+          }
+
+          // ── Check manually blocked slots ──
+          if (salonCtrl != null) {
+            // Build a readable time key matching SalonControlsController format
+            final timeOfDay = TimeOfDay(hour: hour, minute: minute);
+            final readableKey = salonCtrl.formatTime(timeOfDay);
+            if (salonCtrl.isSlotManuallyBlocked(date, readableKey)) {
+              print('🚫 Slot $timeSlot manually blocked');
               continue;
             }
 
-            // If same hour, check minutes
-            if (hour == now.hour && minute <= now.minute) {
-              print('⏭️ Skipping past minute: $timeSlot');
+            // ── Force-open slots bypass staff check ──
+            if (salonCtrl.isSlotForcedOpen(date, readableKey)) {
+              print('✅ Slot $timeSlot forced open');
+              slots.add(timeSlot);
               continue;
             }
+          }
+
+          // ── Check staff availability at this time ──
+          if (availableStaff.isNotEmpty) {
+            bool hasStaff = false;
+            for (final staff in availableStaff) {
+              final startParts = staff.shiftStartTime.split(':');
+              final endParts = staff.shiftEndTime.split(':');
+              final sH = int.tryParse(startParts[0]) ?? 10;
+              final sM = startParts.length > 1 ? (int.tryParse(startParts[1]) ?? 0) : 0;
+              final eH = int.tryParse(endParts[0]) ?? 18;
+              final eM = endParts.length > 1 ? (int.tryParse(endParts[1]) ?? 0) : 0;
+
+              final slotMin = hour * 60 + minute;
+              final shiftStartMin = sH * 60 + sM;
+              final shiftEndMin = eH * 60 + eM;
+
+              if (slotMin >= shiftStartMin && slotMin < shiftEndMin) {
+                hasStaff = true;
+                break;
+              }
+            }
+            if (!hasStaff) continue;
           }
 
           slots.add(timeSlot);
@@ -337,9 +448,10 @@ class BookingController extends GetxController {
       isLoadingSlots.value = false;
 
       print('✅ Generated ${slots.length} available time slots');
-      if (slots.isNotEmpty) {
-        print('   First slot: ${slots.first}');
-        print('   Last slot: ${slots.last}');
+      print('   Shop hours: $startHour:${startMinute.toString().padLeft(2, '0')} - $endHour:${endMinute.toString().padLeft(2, '0')}');
+      print('   Staff: ${availableStaff.length} available');
+      if (salonCtrl != null) {
+        print('   Blockouts: ${salonCtrl.blockoutDates.length} dates');
       }
     } catch (e) {
       print('❌ Error generating time slots: $e');

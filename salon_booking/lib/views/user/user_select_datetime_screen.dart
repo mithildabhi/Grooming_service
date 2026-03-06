@@ -587,23 +587,11 @@ class _UserSelectDateTimeScreenState extends State<UserSelectDateTimeScreen> {
                     ),
                   ),
                 PrimaryButton(
-                  label: canContinue ? 'Continue to Review' : 'Select Date & Time',
+                  label: canContinue ? 'Choose Stylist' : 'Select Date & Time',
                   enabled: canContinue,
                   onPressed: canContinue
                       ? () {
-                          Get.toNamed(
-                            '/review-booking',
-                            arguments: {
-                              'salon': s,
-                              'date': selectedDate != null
-                                  ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
-                                  : null,
-                              'dateDisplay': selectedDate != null
-                                  ? _formatDateDisplay(selectedDate!)
-                                  : null,
-                              'time': selectedTime,
-                            },
-                          );
+                          Get.toNamed('/select-staff');
                         }
                       : () {},
                 ),

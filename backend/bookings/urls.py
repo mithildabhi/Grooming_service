@@ -11,6 +11,7 @@ urlpatterns = [
     
     # ✅ NEW: Slot availability
     path('available-slots/', views.available_slots, name='available-slots'),  # GET
+    path('public/slots/', views.booking_public_slots, name='booking-public-slots'),  # GET
     
     # ✅ NEW: Statistics
     path('statistics/', views.booking_statistics, name='booking-statistics'),  # GET

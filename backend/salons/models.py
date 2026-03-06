@@ -59,6 +59,9 @@ class Salon(models.Model):
     # Working Hours (stored as JSON)
     hours = models.JSONField(default=dict, blank=True)
     
+    # Blockout Dates — holidays/closures (stored as list of ISO date strings)
+    blockout_dates = models.JSONField(default=list, blank=True, help_text="List of ISO date strings for holidays")
+    
     # ✅ NEW: Location coordinates (for future distance calculations)
     latitude = models.DecimalField(
         max_digits=9,

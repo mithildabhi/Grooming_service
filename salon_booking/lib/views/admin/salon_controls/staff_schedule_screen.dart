@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/salon_controls_controller.dart';
+import '../../../models/employee_model.dart';
 
 class StaffScheduleScreen extends StatelessWidget {
-  final DummyStaff staff;
+  final EmployeeModel staff;
   const StaffScheduleScreen({super.key, required this.staff});
 
   static const Color bg = Color(0xFF0B0F14);
@@ -22,7 +23,7 @@ class StaffScheduleScreen extends StatelessWidget {
         backgroundColor: bg,
         elevation: 0,
         title: Text(
-          "${staff.name}'s Schedule",
+          "${staff.fullName}'s Schedule",
           style: const TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -39,9 +40,61 @@ class StaffScheduleScreen extends StatelessWidget {
             )
           : Column(
               children: [
+                // Staff info header
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: accent.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: accent.withOpacity(0.15),
+                        radius: 24,
+                        child: Text(
+                          staff.fullName.isNotEmpty
+                              ? staff.fullName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              staff.fullName,
+                              style: const TextStyle(
+                                color: textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _capitalizeFirst(staff.role),
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: schedule.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
@@ -221,5 +274,10 @@ class StaffScheduleScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _capitalizeFirst(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 }
