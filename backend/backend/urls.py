@@ -25,9 +25,12 @@ from django.core.management import call_command
 from django.contrib.auth import get_user_model
 
 def run_migrate(request):
-    call_command('migrate')
-    return HttpResponse("Migration done!")
-
+    try:
+        call_command('migrate')
+        call_command('loaddata', 'datadump.json')
+        return HttpResponse("Migration and data load done!")
+    except Exception as e:
+        return HttpResponse(f"Error: {e}")
 def create_super(request):
     User = get_user_model()
     if not User.objects.filter(username='admin').exists():
