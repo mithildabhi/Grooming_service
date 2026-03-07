@@ -40,12 +40,21 @@ if settings.DEBUG:
 
 from django.http import HttpResponse
 from django.core.management import call_command
+from django.contrib.auth import get_user_model
 
-def run_migrate(request):
-    call_command('migrate')
-    return HttpResponse("Migration done!")
+def create_super(request):
+    User = get_user_model()
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser(
+            username='admin',
+            password='admin123',
+            email='admin@admin.com'
+        )
+        return HttpResponse("Superuser created!")
+    return HttpResponse("Superuser already exists!")
 
 urlpatterns = [
-    # ... your existing urls ...
-    path('run-migrate/', run_migrate),
+    # ...your existing urls...
+    path('create-super/', create_super),
+    path('run-migrate/', run_migrate),  # if you added this earlier
 ]
