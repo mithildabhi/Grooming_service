@@ -17,7 +17,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-2ng!llghlr)g(2!9*mfxs
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Railway provides the domain automatically
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'grooming-service.onrender.com').split(',')
 
 # Add Railway domain
 RAILWAY_STATIC_URL = os.environ.get('RAILWAY_STATIC_URL', '')

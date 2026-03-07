@@ -61,7 +61,7 @@ class RegisterScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   _roleChip(
-                    label: "Admin",
+                    label: "Salon owner",
                     role: "admin",
                     selectedRole: selectedRole,
                   ),

@@ -26,7 +26,8 @@ SECRET_KEY = 'django-insecure-2ng!llghlr)g(2!9*mfxs0_%#_5b6(ch&i5#fwy&mb*ykbp20!
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '*'
+    '*',
+    'grooming-service.onrender.com',
 ]
 # Chatbot settings
 
