@@ -89,7 +89,8 @@ MIDDLEWARE = [
 ]
 
 # CORS configuration for production
-CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
+# CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
+CORS_ALLOW_ALL_ORIGINS = True
 
 # If not allowing all origins, specify allowed origins from environment
 if not CORS_ALLOW_ALL_ORIGINS:
