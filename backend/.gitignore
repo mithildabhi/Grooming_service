@@ -59,8 +59,7 @@ db.sqlite3
 /db.sqlite3
 
 # media/
-*/migrations/
-migrations/
+
 local_settings.py
 staticfiles/
 
