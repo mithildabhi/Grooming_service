@@ -19,24 +19,6 @@ from django.urls import path , include
 from django.conf import settings
 from django.conf.urls.static import static
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include('api.urls')),  # 🔥 THIS LINE
-
-    path('api/auth/', include('accounts.urls')),
-    path('api/salons/', include('salons.urls')),
-    path('api/services/', include('services.urls')),
-    path('api/bookings/', include('bookings.urls')),
-    path('api/staff/', include('staff.urls')),
-    path('api/chatbot/', include('chatbot.urls')),
-    path('api/customers/', include('customers.urls')),
-    path('api/reviews/', include('reviews.urls')),
-    path('api/hairstyle/', include('hairstyle_ml.urls')),
-]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 
 from django.http import HttpResponse
 from django.core.management import call_command
@@ -57,8 +39,29 @@ def create_super(request):
         return HttpResponse("Superuser created!")
     return HttpResponse("Superuser already exists!")
 
+
 urlpatterns = [
-    # ...your existing urls...
+    path('admin/', admin.site.urls),
+    path('api/', include('api.urls')),  # 🔥 THIS LINE
+
+    path('api/auth/', include('accounts.urls')),
+    path('api/salons/', include('salons.urls')),
+    path('api/services/', include('services.urls')),
+    path('api/bookings/', include('bookings.urls')),
+    path('api/staff/', include('staff.urls')),
+    path('api/chatbot/', include('chatbot.urls')),
+    path('api/customers/', include('customers.urls')),
+    path('api/reviews/', include('reviews.urls')),
+    path('api/hairstyle/', include('hairstyle_ml.urls')),
+
     path('run-migrate/', run_migrate),
     path('create-super/', create_super),
+
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+
