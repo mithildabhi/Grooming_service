@@ -36,3 +36,16 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+from django.http import HttpResponse
+from django.core.management import call_command
+
+def run_migrate(request):
+    call_command('migrate')
+    return HttpResponse("Migration done!")
+
+urlpatterns = [
+    # ... your existing urls ...
+    path('run-migrate/', run_migrate),
+]
