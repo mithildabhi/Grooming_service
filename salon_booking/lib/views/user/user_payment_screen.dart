@@ -229,15 +229,14 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                         const SizedBox(height: 8),
                         _PriceRow(
                           label: 'Convenience Fee',
-                          value: selectedPaymentMethod == 'cash' ? '₹0' : '₹10',
+                          value: '₹0',
                         ),
                         const SizedBox(height: 8),
                         _PriceRow(label: 'Tax', value: '₹0'),
                         const Divider(height: 24),
                         _PriceRow(
                           label: 'Total Amount',
-                          value:
-                              '₹${(amount + (selectedPaymentMethod == 'cash' ? 0 : 10)).toStringAsFixed(0)}',
+                          value: '₹${amount.toStringAsFixed(0)}',
                           isTotal: true,
                         ),
                       ],
@@ -302,7 +301,7 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                       ),
                     ),
                     Text(
-                      '₹${(amount + (selectedPaymentMethod == 'cash' ? 0 : 10)).toStringAsFixed(0)}',
+                      '₹${amount.toStringAsFixed(0)}',
                       style: AppTextStyles.heading.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
@@ -315,9 +314,7 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                   () => PrimaryButton(
                     label: bookingController.isCreatingBooking.value
                         ? 'Processing...'
-                        : selectedPaymentMethod == 'cash'
-                        ? 'Confirm Booking'
-                        : 'Pay ₹${(amount + 10).toStringAsFixed(0)}',
+                        : 'Confirm Booking',
                     enabled: !bookingController.isCreatingBooking.value,
                     onPressed: () async {
                       final user = FirebaseAuth.instance.currentUser;
@@ -330,57 +327,12 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                         return;
                       }
 
-                      // For online payments, show a mock payment processing
                       if (selectedPaymentMethod != 'cash') {
-                        Get.dialog(
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(AppSpacing.lg),
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(AppSpacing.lg),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(
-                                          0.15,
-                                        ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.primary,
-                                        strokeWidth: 3,
-                                      ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.md),
-                                    Text(
-                                      'Processing Payment',
-                                      style: AppTextStyles.heading.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        decoration: TextDecoration.none,
-                                      ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.sm),
-                                    Text(
-                                      'Please wait while we process your payment...',
-                                      style: AppTextStyles.body.copyWith(
-                                        color: AppColors.textPrimary,
-                                        decoration: TextDecoration.none,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          barrierDismissible: false,
+                        CustomSnackbar.show(
+                          title: 'Coming Soon',
+                          message:
+                              'Online payments will be available soon. Your booking will be placed as Pay at Salon.',
                         );
-                        await Future.delayed(const Duration(seconds: 2));
-                        Get.back(); // Close dialog
                       }
 
                       final success = await bookingController.createBooking(
