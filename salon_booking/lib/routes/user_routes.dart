@@ -15,6 +15,7 @@ import '../views/user/user_appointment_details_screen.dart';
 import '../views/user/user_rate_experience_screen.dart';
 import '../views/user/user_edit_profile_screen.dart';
 import '../views/user/user_settings_screen.dart';
+import '../views/notifications/notifications_screen.dart';
 
 class UserRoutes {
   static const userHome = '/user';
@@ -64,6 +65,7 @@ class UserRoutes {
     GetPage(name: '/edit-profile', page: () => const UserEditProfileScreen()),
 
     GetPage(name: '/settings', page: () => const UserSettingsScreen()),
+    GetPage(name: '/notifications', page: () => const NotificationsScreen()),
   ];
 
   /// ✅ REQUIRED for main.dart spread operator

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 
 class NotificationService {
@@ -56,7 +57,6 @@ class NotificationService {
     }
   }
 
-  // Show system tray notification
   static Future<void> showLocalNotification(RemoteMessage message) async {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
@@ -78,7 +78,32 @@ class NotificationService {
         ),
         payload: jsonEncode(message.data),
       );
+
+      await _saveToHistory(
+        notification.title ?? '',
+        notification.body ?? '',
+        message.data,
+      );
     }
+  }
+
+  static Future<void> _saveToHistory(
+      String title, String body, Map<String, dynamic>? data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList('notification_history') ?? [];
+      final entry = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'title': title,
+        'body': body,
+        'timestamp': DateTime.now().toIso8601String(),
+        'isRead': false,
+        'data': data,
+      };
+      list.insert(0, jsonEncode(entry));
+      if (list.length > 100) list.removeRange(100, list.length);
+      await prefs.setStringList('notification_history', list);
+    } catch (_) {}
   }
 
   // Get token
