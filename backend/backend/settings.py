@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2ng!llghlr)g(2!9*mfxs0_%#_5b6(ch&i5#fwy&mb*ykbp20!'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-only-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -29,14 +33,7 @@ ALLOWED_HOSTS = [
     '*',
     'grooming-service.onrender.com',
 ]
-# Chatbot settings
 
-from dotenv import load_dotenv
-import os
-
-load_dotenv()  # Load .env file
-
-# Then later in the file, you can access:
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Application definition
@@ -80,15 +77,14 @@ SIMPLE_JWT = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
 ]
 CORS_ALLOW_ALL_ORIGINS = True  # for development
 
@@ -161,6 +157,6 @@ STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 import firebase.firebase
-print("🔥 Firebase initialization check complete")

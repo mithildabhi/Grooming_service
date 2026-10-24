@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from datetime import datetime, timedelta, time
 from django.utils import timezone
 
@@ -91,87 +92,87 @@ def create_booking(request):
     """Create a new booking with automatic validation"""
     try:
         data = request.data.copy()
-        
+
         # Get service to calculate duration and price
         service = Service.objects.get(id=data['service'])
         salon = service.salon
-        
-        # ✅ AUTO-SET PRICE FROM SERVICE
+
+        # AUTO-SET PRICE FROM SERVICE
         data['price'] = str(service.price)
-        
+
         # Parse booking date and time
         booking_date = datetime.strptime(data['booking_date'], '%Y-%m-%d').date()
         booking_time = datetime.strptime(data['booking_time'], '%H:%M:%S').time()
-        
+
         # Calculate end time
         start_datetime = datetime.combine(booking_date, booking_time)
         end_datetime = start_datetime + timedelta(minutes=service.duration)
         end_time = end_datetime.time()
-        
-        # Find available staff
-        staff_id = data.get('staff')
-        if not staff_id:
-            staff_id = find_available_staff(
-                salon, 
-                booking_date, 
-                booking_time, 
-                end_time,
-                service
-            )
-            if not staff_id:
-                return Response({
-                    'error': 'No staff available for this time slot',
-                    'message': 'Please choose a different time or date'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            data['staff'] = staff_id
-        else:
-            is_available = check_staff_availability(
-                staff_id,
-                booking_date,
-                booking_time,
-                end_time
-            )
-            if not is_available:
-                return Response({
-                    'error': 'Selected staff is not available for this time slot',
-                    'message': 'Please choose a different staff member or time'
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Set additional fields
-        data['user'] = request.user.id
-        data['salon'] = salon.id
-        data['end_time'] = end_time.strftime('%H:%M:%S')
-        data['status'] = 'CONFIRMED'
-        
-        # Set customer details
-        if not data.get('customer_name'):
-            data['customer_name'] = request.user.get_full_name() or request.user.email
-        if not data.get('customer_phone'):
-            data['customer_phone'] = getattr(request.user, 'phone', '')
-        
-        serializer = BookingSerializer(data=data)
-        if serializer.is_valid():
-            booking = serializer.save()
-            
-            # ✅ NOTIFY SALON OWNER
-            try:
-                salon_owner = booking.salon.owner
-                if salon_owner.fcm_token:
-                    send_notification(
-                        salon_owner.fcm_token,
-                        "New Booking! 💇",
-                        f"{booking.user.get_full_name()} booked {booking.service.name} for {booking.booking_date} at {booking.booking_time}."
-                    )
-            except Exception as e:
-                print(f"⚠️ Failed to send owner notification: {e}")
 
-            return Response({
-                'message': 'Booking confirmed successfully! ✅',
-                'booking': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+        with transaction.atomic():
+            # Find available staff (inside transaction for row-level locking)
+            staff_id = data.get('staff')
+            if not staff_id:
+                staff_id = find_available_staff(
+                    salon,
+                    booking_date,
+                    booking_time,
+                    end_time,
+                    service
+                )
+                if not staff_id:
+                    return Response({
+                        'error': 'No staff available for this time slot',
+                        'message': 'Please choose a different time or date'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                data['staff'] = staff_id
+            else:
+                is_available = check_staff_availability(
+                    staff_id,
+                    booking_date,
+                    booking_time,
+                    end_time
+                )
+                if not is_available:
+                    return Response({
+                        'error': 'Selected staff is not available for this time slot',
+                        'message': 'Please choose a different staff member or time'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Set additional fields
+            data['user'] = request.user.id
+            data['salon'] = salon.id
+            data['end_time'] = end_time.strftime('%H:%M:%S')
+            data['status'] = 'CONFIRMED'
+
+            # Set customer details
+            if not data.get('customer_name'):
+                data['customer_name'] = request.user.get_full_name() or request.user.email
+            if not data.get('customer_phone'):
+                data['customer_phone'] = getattr(request.user, 'phone', '')
+
+            serializer = BookingSerializer(data=data)
+            if serializer.is_valid():
+                booking = serializer.save()
+
+                try:
+                    salon_owner = booking.salon.owner
+                    if salon_owner.fcm_token:
+                        send_notification(
+                            salon_owner.fcm_token,
+                            "New Booking!",
+                            f"{booking.user.get_full_name()} booked {booking.service.name} for {booking.booking_date} at {booking.booking_time}."
+                        )
+                except Exception:
+                    pass
+
+                return Response({
+                    'message': 'Booking confirmed successfully!',
+                    'booking': serializer.data
+                }, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     except Service.DoesNotExist:
         return Response({
             'error': 'Service not found'
@@ -371,8 +372,8 @@ def check_staff_availability(staff_id, date, start_time, end_time):
     Check if staff member is available for the given time slot
     Returns True if available, False otherwise
     """
-    # Check for existing bookings
-    overlapping_bookings = Booking.objects.filter(
+    # Check for existing bookings (select_for_update prevents race conditions)
+    overlapping_bookings = Booking.objects.select_for_update().filter(
         staff_id=staff_id,
         booking_date=date,
         status__in=['CONFIRMED', 'PENDING']

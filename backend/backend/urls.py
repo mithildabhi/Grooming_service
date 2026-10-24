@@ -20,29 +20,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 
-from django.http import HttpResponse
-from django.core.management import call_command
-from django.contrib.auth import get_user_model
-
-def run_migrate(request):
-    try:
-        call_command('migrate')
-        call_command('loaddata', 'datadump.json')
-        return HttpResponse("Migration and data load done!")
-    except Exception as e:
-        return HttpResponse(f"Error: {e}")
-def create_super(request):
-    User = get_user_model()
-    if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser(
-            username='admin',
-            password='admin123',
-            email='admin@admin.com'
-        )
-        return HttpResponse("Superuser created!")
-    return HttpResponse("Superuser already exists!")
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),  # 🔥 THIS LINE
@@ -56,9 +33,6 @@ urlpatterns = [
     path('api/customers/', include('customers.urls')),
     path('api/reviews/', include('reviews.urls')),
     path('api/hairstyle/', include('hairstyle_ml.urls')),
-
-    path('run-migrate/', run_migrate),
-    path('create-super/', create_super),
 
 ]
 
