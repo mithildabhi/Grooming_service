@@ -577,8 +577,9 @@ class SalonControlsController extends GetxController {
     final timeKey = formatTime(time);
 
     // Initialize lists if null
-    if (!manualBlockedSlots.containsKey(dateKey))
+    if (!manualBlockedSlots.containsKey(dateKey)) {
       manualBlockedSlots[dateKey] = [];
+    }
     if (!manualAddedSlots.containsKey(dateKey)) manualAddedSlots[dateKey] = [];
 
     if (currentStatus == 'available') {

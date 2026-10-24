@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/admin_controller.dart';
-import '../../../controllers/salon_controls_controller.dart';
 import '../../../models/employee_model.dart';
 import 'staff_schedule_screen.dart';
 

@@ -212,8 +212,6 @@ class AuthController extends GetxController {
 
           print('🎯 Registration complete, redirecting as: ${this.role.value}');
 
-          Get.offAllNamed(AppRoutes.userHome);
-
           CustomSnackbar.show(
             title: 'Success',
             message: 'Account created successfully!',
@@ -225,7 +223,7 @@ class AuthController extends GetxController {
             String? fcmToken = await NotificationService.getToken();
             // token is already available as a local variable in register method
             if (fcmToken != null) {
-              await NotificationService.saveTokenToBackend(fcmToken, token!); 
+              await NotificationService.saveTokenToBackend(fcmToken, token); 
             }
           } catch (e) {
              print("⚠️ Failed to save FCM token on register: $e");

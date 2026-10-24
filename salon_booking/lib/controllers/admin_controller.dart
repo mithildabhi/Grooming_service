@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:salon_booking/controllers/auth_controller.dart';
 import 'package:salon_booking/models/employee_model.dart';
 import 'package:salon_booking/services/auth_service.dart';
@@ -30,14 +31,20 @@ class AdminController extends GetxController {
   final RxList<Map<String, dynamic>> bookingsList =
       <Map<String, dynamic>>[].obs;
 
-  List<Map<String, dynamic>> get todayBookings =>
-      bookingsList.where((b) => b['status'] == 'created').toList();
+  List<Map<String, dynamic>> get todayBookings {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return bookingsList
+        .where((b) =>
+            b['booking_date'] == today &&
+            (b['status'] == 'PENDING' || b['status'] == 'CONFIRMED'))
+        .toList();
+  }
 
   List<Map<String, dynamic>> get pendingBookings =>
-      bookingsList.where((b) => b['status'] == 'created').toList();
+      bookingsList.where((b) => b['status'] == 'PENDING').toList();
 
   List<Map<String, dynamic>> get completedBookings =>
-      bookingsList.where((b) => b['status'] == 'completed').toList();
+      bookingsList.where((b) => b['status'] == 'COMPLETED').toList();
 
   List<Map<String, dynamic>> get weeklyBookings => bookingsList;
 

@@ -43,6 +43,7 @@ class _ManageSlotsScreenState extends State<ManageSlotsScreen> {
           Expanded(child: _buildSlotsGrid()),
         ],
       ),
+      bottomNavigationBar: _buildBottomAction(ctrl),
     );
   }
 

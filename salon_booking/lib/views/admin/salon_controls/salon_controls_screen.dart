@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/salon_controls_controller.dart';
 import 'manage_blockouts_screen.dart';
 import 'manage_service_duration_screen.dart';
 import 'manage_shop_hours_screen.dart';
@@ -18,8 +17,6 @@ class SalonControlsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<SalonControlsController>();
-
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
